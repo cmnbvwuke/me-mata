@@ -1,0 +1,475 @@
+<title>Quebra Tijolos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one full-screen canvas scaled to fit, with a modal card over it between rounds */
+:root{
+  --bg:#050506; --frame:#36363a; --field:#1b1b1d; --text:#f1efe9; --muted:#9a989f;
+  --accent:#ee8a4f; --red:#9a3346; --gray:#7c7c80;
+  --font:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+  overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+canvas{display:block;background:var(--frame)}
+#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(5,5,6,.72);padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px))}
+#card{background:var(--field);border:1px solid var(--frame);padding:24px;max-width:320px;width:100%;
+  display:flex;flex-direction:column;gap:14px;text-align:center}
+#card h1{margin:0;font-size:28px;letter-spacing:.02em;text-wrap:balance}
+#card p{margin:0;color:var(--muted);line-height:1.45;font-size:15px}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;text-align:left;font-size:14px}
+.chip{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12px;color:#fff}
+button{font:inherit;font-weight:700;font-size:17px;padding:12px 18px;border:0;background:var(--accent);
+  color:#1b1b1d;cursor:pointer}
+button:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
+
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="overlay">
+  <div id="card">
+    <h1 id="ovTitle">Quebra Tijolos</h1>
+    <p id="ovText">Arraste o dedo para mover a raquete. Toque para lançar a bola. Ache a entrada no muro cinza e destrua todos os tijolos vermelhos.</p>
+    <div class="legend" id="legend">
+      <span class="chip" style="background:#a6c93a">×3</span><span>Triplica todas as bolas</span>
+      <span class="chip" style="background:#3db4e6">+3</span><span>Solta mais 3 bolas</span>
+      <span class="chip" style="background:#2e7d1e">«»</span><span>Raquete maior por 12 s</span>
+    </div>
+    <button id="ovBtn">Jogar</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+// ---- Dimensões lógicas ----
+const W = 360, H = 640;
+const CELL = 7, COLS = 50, ROWS = 56;
+const GX = 5, GY = 18;                 // canto do grid
+const FX0 = 5, FX1 = 355, FY0 = 18;    // limites do campo
+const FB = 596;                        // fundo do campo (bola cai daqui)
+const PY = 540, PH = 6;                // raquete
+const R = 2.6;                         // raio da bola
+const MAX_BALLS = 600;
+const DROP_CHANCE = 0.012;
+const COLORS = {
+  red: '#9a3346', redEdge: '#3b1820', gray: '#7c7c80', grayEdge: '#3e3e42',
+  field: '#1b1b1d', frame: '#36363a', paddle: '#ee8a4f', ball: '#ffffff',
+  barBg: '#ee8a4f', barFill: '#c9c4bd', text: '#f1efe9', muted: '#9a989f'
+};
+const POWER = {
+  x3:   { color: '#a6c93a', label: '×3' },
+  p3:   { color: '#3db4e6', label: '+3' },
+  wide: { color: '#2e7d1e', label: '«»' }
+};
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const off = document.createElement('canvas');
+const offCtx = off.getContext('2d');
+let S = 1, scale = 1;
+
+const grid = new Uint8Array(COLS * ROWS); // 0 vazio, 1 tijolo, 2 muro
+let totalBricks = 0, bricksLeft = 0;
+let balls = [], powers = [];
+let paddle = { x: W / 2 - 30, w: 60, baseW: 60, wideUntil: 0 };
+let level = 1, lives = 3, score = 0, best = 0;
+let speed = 4.2;
+let stuck = true, running = false, paused = false;
+let now = 0;
+
+try { best = +localStorage.getItem('qt-best') || 0; } catch (e) {}
+
+// ---- Fases ----
+function baseLevel() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      grid[r * COLS + c] = (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) ? 2 : 1;
+}
+const set = (r, c, v) => { if (r >= 0 && r < ROWS && c >= 0 && c < COLS) grid[r * COLS + c] = v; };
+const rect = (r0, c0, r1, c1, v) => { for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) set(r, c, v); };
+
+const LEVELS = [
+  // 1: corredor embaixo à esquerda (como no vídeo)
+  () => {
+    const B = ROWS - 1;
+    rect(B, 16, B, 18, 0);          // buraco no muro de baixo
+    rect(B - 2, 1, B - 1, 18, 0);   // corredor
+    rect(B - 3, 3, B - 3, 19, 2);   // teto do corredor
+    rect(B - 2, 19, B - 1, 19, 2);  // parede do fim do corredor
+    rect(B - 3, 1, B - 3, 2, 0);    // abertura para cima
+  },
+  // 2: chaminé na direita
+  () => {
+    const B = ROWS - 1;
+    rect(B, 45, B, 46, 0);
+    rect(24, 43, B - 1, 43, 2);
+    rect(24, 44, B - 1, 48, 0);
+    rect(23, 44, 23, 46, 2);        // telhado com fresta na ponta
+  },
+  // 3: duas entradas e prateleiras de muro
+  () => {
+    const B = ROWS - 1;
+    for (const c0 of [8, 37]) {
+      rect(B, c0 + 2, B, c0 + 3, 0);
+      rect(B - 5, c0, B - 1, c0 + 5, 0);
+      rect(B - 6, c0 - 1, B - 6, c0 + 6, 2);
+      rect(B - 5, c0 - 1, B - 1, c0 - 1, 2);
+      rect(B - 5, c0 + 6, B - 1, c0 + 6, 2);
+      rect(B - 6, c0 + 2, B - 6, c0 + 3, 0);
+    }
+    rect(14, 4, 14, 20, 2); rect(14, 29, 14, 45, 2);
+    rect(30, 12, 30, 37, 2);
+  },
+  // 4: labirinto em zigue-zague no centro
+  () => {
+    const B = ROWS - 1;
+    rect(B, 24, B, 25, 0);
+    rect(B - 2, 10, B - 1, 25, 0);
+    rect(B - 3, 12, B - 3, 26, 2);
+    rect(B - 2, 26, B - 1, 26, 2);
+    rect(B - 3, 9, B - 3, 9, 2);
+    rect(B - 5, 10, B - 4, 39, 0);
+    rect(B - 6, 10, B - 6, 37, 2);
+    rect(B - 3, 9, B - 1, 9, 2);
+    rect(B - 5, 40, B - 4, 40, 2);
+    rect(B - 6, 38, B - 6, 39, 0);
+  }
+];
+
+function loadLevel(n) {
+  baseLevel();
+  LEVELS[(n - 1) % LEVELS.length]();
+  totalBricks = 0;
+  for (let i = 0; i < grid.length; i++) if (grid[i] === 1) totalBricks++;
+  bricksLeft = totalBricks;
+  speed = Math.min(6.2, 4.2 + 0.35 * (n - 1));
+  powers = [];
+  paddle.w = paddle.baseW; paddle.wideUntil = 0;
+  resetBall();
+  drawGrid();
+}
+
+function resetBall() {
+  balls = [{ x: paddle.x + paddle.w / 2, y: PY - R - 1, vx: 0, vy: 0 }];
+  stuck = true;
+}
+
+function launch() {
+  if (!stuck) return;
+  stuck = false;
+  const a = (Math.random() * 0.6 - 0.3);
+  balls[0].vx = Math.sin(a) * speed;
+  balls[0].vy = -Math.cos(a) * speed;
+}
+
+// ---- Desenho dos tijolos (offscreen, atualizado por célula) ----
+function cellBox(r, c) {
+  const x0 = Math.round(c * CELL * S), x1 = Math.round((c + 1) * CELL * S);
+  const y0 = Math.round(r * CELL * S), y1 = Math.round((r + 1) * CELL * S);
+  return [x0, y0, x1 - x0, y1 - y0];
+}
+function paintCell(r, c) {
+  const v = grid[r * COLS + c];
+  const [x, y, w, h] = cellBox(r, c);
+  if (v === 0) { offCtx.fillStyle = COLORS.field; offCtx.fillRect(x, y, w, h); return; }
+  const e = Math.max(1, Math.round(S * 0.9));
+  offCtx.fillStyle = v === 1 ? COLORS.redEdge : COLORS.grayEdge;
+  offCtx.fillRect(x, y, w, h);
+  offCtx.fillStyle = v === 1 ? COLORS.red : COLORS.gray;
+  offCtx.fillRect(x + e, y + e, w - e, h - e);
+}
+function drawGrid() {
+  off.width = Math.round(COLS * CELL * S);
+  off.height = Math.round(ROWS * CELL * S);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) paintCell(r, c);
+}
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const wr = document.getElementById('wrap').getBoundingClientRect();
+  scale = Math.min(wr.width / W, wr.height / H);
+  canvas.style.width = (W * scale) + 'px';
+  canvas.style.height = (H * scale) + 'px';
+  S = scale * dpr;
+  canvas.width = Math.round(W * S);
+  canvas.height = Math.round(H * S);
+  drawGrid();
+}
+
+// ---- Colisão ----
+function hit(x, y) {
+  const c = Math.floor((x - GX) / CELL), r = Math.floor((y - GY) / CELL);
+  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return 0;
+  const i = r * COLS + c, v = grid[i];
+  if (v === 1) {
+    grid[i] = 0;
+    bricksLeft--;
+    score += 10;
+    paintCell(r, c);
+    if (Math.random() < DROP_CHANCE) {
+      const t = Math.random();
+      powers.push({ x: GX + (c + 0.5) * CELL, y: GY + (r + 0.5) * CELL,
+        type: t < 0.4 ? 'x3' : t < 0.75 ? 'p3' : 'wide' });
+    }
+  }
+  return v;
+}
+
+function fixAngle(b) {
+  const sp = Math.hypot(b.vx, b.vy) || 1;
+  b.vx = b.vx / sp * speed; b.vy = b.vy / sp * speed;
+  const min = speed * 0.28;
+  if (Math.abs(b.vy) < min) {
+    b.vy = (b.vy < 0 ? -1 : 1) * min;
+    b.vx = Math.sign(b.vx || 1) * Math.sqrt(speed * speed - min * min);
+  }
+}
+
+function stepBall(b, k) {
+  const n = Math.max(1, Math.ceil(speed * k / 2.4));
+  const h = k / n;
+  for (let s = 0; s < n; s++) {
+    // eixo X
+    let nx = b.x + b.vx * h;
+    const ex = nx + Math.sign(b.vx) * R;
+    if (hit(ex, b.y - R * 0.7) | hit(ex, b.y + R * 0.7)) b.vx = -b.vx; else b.x = nx;
+    // eixo Y
+    let ny = b.y + b.vy * h;
+    const ey = ny + Math.sign(b.vy) * R;
+    if (hit(b.x - R * 0.7, ey) | hit(b.x + R * 0.7, ey)) b.vy = -b.vy; else b.y = ny;
+    // paredes do campo
+    if (b.x < FX0 + R) { b.x = FX0 + R; b.vx = Math.abs(b.vx); }
+    if (b.x > FX1 - R) { b.x = FX1 - R; b.vx = -Math.abs(b.vx); }
+    if (b.y < FY0 + R) { b.y = FY0 + R; b.vy = Math.abs(b.vy); }
+    // raquete
+    if (b.vy > 0 && b.y + R >= PY && b.y - R <= PY + PH &&
+        b.x >= paddle.x - R && b.x <= paddle.x + paddle.w + R) {
+      const rel = Math.max(-1, Math.min(1, (b.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2)));
+      const a = rel * 1.1;
+      b.vx = Math.sin(a) * speed; b.vy = -Math.cos(a) * speed;
+      b.y = PY - R;
+    }
+    if (b.y > FB + R) { b.dead = true; return; }
+  }
+}
+
+// ---- Power-ups ----
+function applyPower(type) {
+  if (type === 'x3') {
+    const add = [];
+    for (const b of balls) {
+      if (balls.length + add.length >= MAX_BALLS) break;
+      for (const da of [-0.35, 0.35]) {
+        if (balls.length + add.length >= MAX_BALLS) break;
+        const cs = Math.cos(da), sn = Math.sin(da);
+        const nb = { x: b.x, y: b.y, vx: b.vx * cs - b.vy * sn, vy: b.vx * sn + b.vy * cs };
+        fixAngle(nb); add.push(nb);
+      }
+    }
+    balls.push(...add);
+  } else if (type === 'p3') {
+    for (let i = 0; i < 3 && balls.length < MAX_BALLS; i++) {
+      const a = -0.5 + i * 0.5;
+      balls.push({ x: paddle.x + paddle.w / 2, y: PY - R - 1, vx: Math.sin(a) * speed, vy: -Math.cos(a) * speed });
+    }
+  } else if (type === 'wide') {
+    paddle.wideUntil = Math.max(paddle.wideUntil, now) + 12000;
+  }
+  score += 50;
+}
+
+// ---- Loop ----
+let last = 0;
+function frame(t) {
+  requestAnimationFrame(frame);
+  const dt = last ? Math.min(50, t - last) : 16.7;
+  last = t;
+  if (running && !paused) update(dt / 16.667, dt);
+  render();
+}
+
+function update(k, dtMs) {
+  now += dtMs;
+  // raquete larga
+  const target = paddle.wideUntil > now ? paddle.baseW * 1.7 : paddle.baseW;
+  if (paddle.w !== target) {
+    const cx = paddle.x + paddle.w / 2;
+    paddle.w += Math.sign(target - paddle.w) * Math.min(Math.abs(target - paddle.w), 3 * k);
+    paddle.x = cx - paddle.w / 2;
+  }
+  paddle.x = Math.max(FX0, Math.min(FX1 - paddle.w, paddle.x));
+
+  if (stuck) {
+    balls[0].x = paddle.x + paddle.w / 2; balls[0].y = PY - R - 1;
+  } else {
+    for (const b of balls) stepBall(b, k);
+    balls = balls.filter(b => !b.dead);
+  }
+
+  for (const p of powers) {
+    p.y += 1.7 * k;
+    if (p.y + 7 >= PY && p.y - 7 <= PY + PH && p.x >= paddle.x - 6 && p.x <= paddle.x + paddle.w + 6) {
+      p.taken = true; applyPower(p.type);
+    }
+  }
+  powers = powers.filter(p => !p.taken && p.y < FB + 10);
+
+  if (bricksLeft <= 0) { endLevel(true); return; }
+  if (!stuck && balls.length === 0) {
+    lives--;
+    powers = [];
+    if (lives <= 0) { endLevel(false); return; }
+    resetBall();
+  }
+}
+
+function render() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = COLORS.frame;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  ctx.fillStyle = COLORS.field;
+  ctx.fillRect(FX0, FY0, FX1 - FX0, FB - FY0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(off, Math.round(GX * S), Math.round(GY * S));
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+
+  // barra de progresso
+  const prog = totalBricks ? 1 - bricksLeft / totalBricks : 0;
+  ctx.fillStyle = COLORS.barBg;
+  ctx.fillRect(FX0, 8, FX1 - FX0, 4);
+  ctx.fillStyle = COLORS.barFill;
+  ctx.fillRect(FX0, 8, (FX1 - FX0) * prog, 4);
+
+  // power-ups
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '700 7.5px Rubik, system-ui, sans-serif';
+  for (const p of powers) {
+    const pw = POWER[p.type];
+    ctx.fillStyle = pw.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillText(pw.label, p.x, p.y + 0.5);
+  }
+
+  // raquete
+  ctx.fillStyle = COLORS.paddle;
+  ctx.fillRect(paddle.x, PY, paddle.w, PH);
+  if (paddle.wideUntil > now) {
+    const left = (paddle.wideUntil - now) / 12000;
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.fillRect(paddle.x, PY + PH + 2, paddle.w * Math.min(1, left), 1.5);
+  }
+
+  // bolas
+  ctx.fillStyle = COLORS.ball;
+  ctx.beginPath();
+  for (const b of balls) { ctx.moveTo(b.x + R, b.y); ctx.arc(b.x, b.y, R, 0, Math.PI * 2); }
+  ctx.fill();
+
+  if (stuck && running) {
+    ctx.fillStyle = COLORS.muted;
+    ctx.font = '400 11px Rubik, system-ui, sans-serif';
+    ctx.fillText('Toque para lançar', W / 2, PY + 30);
+  }
+
+  // HUD
+  ctx.font = '700 12px Rubik, system-ui, sans-serif';
+  ctx.textBaseline = 'middle';
+  const y = (FB + H) / 2;
+  ctx.textAlign = 'left'; ctx.fillStyle = COLORS.text;
+  ctx.fillText('Fase ' + level, FX0 + 4, y);
+  ctx.fillStyle = COLORS.paddle;
+  ctx.fillText('♥'.repeat(Math.max(0, lives)), FX0 + 62, y);
+  ctx.textAlign = 'center'; ctx.fillStyle = COLORS.muted;
+  ctx.fillText(balls.length + (balls.length === 1 ? ' bola' : ' bolas'), W / 2 + 20, y);
+  ctx.textAlign = 'right'; ctx.fillStyle = COLORS.text;
+  ctx.fillText(score.toLocaleString('pt-BR'), FX1 - 4, y);
+}
+
+// ---- Telas ----
+const overlay = document.getElementById('overlay');
+const ovTitle = document.getElementById('ovTitle');
+const ovText = document.getElementById('ovText');
+const ovBtn = document.getElementById('ovBtn');
+const legend = document.getElementById('legend');
+let onButton = null;
+
+function showOverlay(title, text, btn, fn, showLegend) {
+  ovTitle.textContent = title; ovText.textContent = text; ovBtn.textContent = btn;
+  legend.hidden = !showLegend;
+  onButton = fn; overlay.hidden = false; running = false;
+  setTimeout(() => ovBtn.focus(), 0);
+}
+ovBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  overlay.hidden = true; running = true; ignoreTapUntil = performance.now() + 250;
+  if (onButton) onButton();
+});
+
+function endLevel(won) {
+  if (score > best) { best = score; try { localStorage.setItem('qt-best', best); } catch (e) {} }
+  if (won) {
+    showOverlay('Fase ' + level + ' concluída', 'Pontos: ' + score.toLocaleString('pt-BR') +
+      '. A próxima fase é mais rápida.', 'Próxima fase', () => { level++; loadLevel(level); });
+  } else {
+    showOverlay('Fim de jogo', 'Você chegou à fase ' + level + ' com ' + score.toLocaleString('pt-BR') +
+      ' pontos. Recorde: ' + best.toLocaleString('pt-BR') + '.', 'Jogar de novo',
+      () => { level = 1; lives = 3; score = 0; loadLevel(1); });
+  }
+}
+
+// ---- Controles ----
+let ignoreTapUntil = 0;
+function toLogicalX(clientX) {
+  const r = canvas.getBoundingClientRect();
+  return (clientX - r.left) / scale;
+}
+let dragging = false, dragStartX = 0, dragMoved = false;
+window.addEventListener('pointerdown', e => {
+  if (!running) return;
+  dragging = true; dragStartX = e.clientX; dragMoved = false;
+  paddle.x = toLogicalX(e.clientX) - paddle.w / 2;
+});
+window.addEventListener('pointermove', e => {
+  if (!running) return;
+  if (e.pointerType === 'mouse' || dragging) {
+    paddle.x = toLogicalX(e.clientX) - paddle.w / 2;
+    if (Math.abs(e.clientX - dragStartX) > 8) dragMoved = true;
+  }
+});
+window.addEventListener('pointerup', () => {
+  if (!running) return;
+  dragging = false;
+  if (performance.now() > ignoreTapUntil && (!dragMoved || stuck)) launch();
+});
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if ((e.key === ' ' || e.key === 'ArrowUp') && running) { launch(); e.preventDefault(); }
+  if (e.key === 'p' || e.key === 'P') paused = !paused;
+});
+window.addEventListener('keyup', e => { keys[e.key] = false; });
+setInterval(() => {
+  if (!running || paused) return;
+  if (keys.ArrowLeft) paddle.x -= 7;
+  if (keys.ArrowRight) paddle.x += 7;
+}, 16);
+document.addEventListener('visibilitychange', () => { if (document.hidden) paused = true; else paused = false; last = 0; });
+window.addEventListener('resize', resize);
+
+resize();
+loadLevel(1);
+showOverlay('Quebra Tijolos',
+  'Arraste o dedo para mover a raquete e toque para lançar a bola. Ache a entrada no muro cinza e destrua todos os tijolos vermelhos.',
+  'Jogar', null, true);
+requestAnimationFrame(frame);
+})();
+</script>
