@@ -342,7 +342,7 @@ func spawn_enemy(kind: String, pos: Vector3, stage: int, patrol: Array[Vector3] 
 	var e := ENEMY_SCENE.instantiate() as Enemy
 	e.profile = profile_override if profile_override != null else PROFILES[kind]
 	e.stage = stage
-	e.use_flashlight = flashlight
+	e.use_flashlight = flashlight and environment_preset() != "overcast"  # sem lanterna em plena luz do dia
 	e.patrol_points = patrol.duplicate()
 	e.position = pos
 	e.rotation.y = deg_to_rad(yaw_deg)

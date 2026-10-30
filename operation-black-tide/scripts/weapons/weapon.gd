@@ -172,7 +172,7 @@ func refill() -> void:
 # =========================================================================
 
 func _build_model() -> void:
-	var metal := _mat(Color(0.07, 0.07, 0.075), 0.5, 0.45)
+	var metal := _mat(Color(0.07, 0.07, 0.075), 0.1, 0.78)
 	var polymer := _mat(Color(0.16, 0.145, 0.115), 0.0, 0.85)
 	var glove := _mat(Color(0.075, 0.072, 0.065), 0.0, 0.8)
 	var sleeve := _mat(Color(0.22, 0.23, 0.17), 0.0, 1.0)

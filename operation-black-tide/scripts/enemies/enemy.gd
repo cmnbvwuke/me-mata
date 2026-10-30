@@ -770,7 +770,11 @@ func _build_visual() -> void:
 		BodyParts.box(_visual, Vector3(0.09, 0.05, 0.06), Vector3(0, 1.79, -0.13), boot)                  # suporte NVG
 		BodyParts.box(_visual, Vector3(0.11, 0.045, 0.08), Vector3(0, 1.75, -0.18), boot)                 # NVG
 	elif militia:
-		BodyParts.box(_visual, Vector3(0.2, 0.09, 0.14), Vector3(0, 1.6, -0.06), BodyParts.mat(Color(0.45, 0.08, 0.06)))  # bandana no rosto
+		# Bandana: pano escuro envolvendo nariz e boca, com nó atrás da cabeça
+		var cloth_band := BodyParts.mat(Color(0.2, 0.07, 0.06), 1.0)
+		BodyParts.sphere(_visual, 0.12, Vector3(0, 1.605, -0.008), cloth_band, Vector3(0.96, 0.55, 1.04))
+		BodyParts.box(_visual, Vector3(0.05, 0.05, 0.05), Vector3(0, 1.63, 0.125), cloth_band)
+		BodyParts.box(_visual, Vector3(0.04, 0.1, 0.02), Vector3(0.015, 1.57, 0.14), cloth_band, Vector3(0.3, 0, 0.2))
 		BodyParts.sphere(_visual, 0.125, Vector3(0, 1.7, 0.0), BodyParts.mat(Color(0.1, 0.09, 0.08)), Vector3(1, 0.7, 1), true)  # cabelo
 	else:
 		BodyParts.sphere(_visual, 0.128, Vector3(0, 1.71, 0.0), cloth, Vector3(1, 0.75, 1.05), true)      # boné
