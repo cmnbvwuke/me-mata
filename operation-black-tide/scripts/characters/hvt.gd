@@ -18,6 +18,10 @@ enum State { HIDING, FOLLOWING, BOARDING }
 @export var interact_prompt: String = "Segure [E] para render e algemar o General Salcedo"
 @export var uniform_color: Color = Color(0.27, 0.3, 0.2)
 @export var beret_color: Color = Color(0.5, 0.05, 0.05)
+## Modelo 3D com esqueleto Mixamo (opcional). Sem ele, usa o boneco procedural.
+## As poses (rendido, capturado) e a caminhada são aplicadas nos ossos por código.
+@export var model_scene: PackedScene
+@export var model_height: float = 1.78
 ## Som ao interagir ("zip_tie" = algemas; "radio_beep" = resgate amigável)
 @export var interact_sound: String = "zip_tie"
 
@@ -31,6 +35,9 @@ var _stuck_time := 0.0
 var _stuck_sample := 0.0
 var _stuck_check_pos := Vector3.ZERO
 var _visual: Node3D
+var _skeleton: Skeleton3D
+var _hands_up := true
+var _walk_phase := 0.0
 var _arms: Node3D
 
 @onready var agent: NavigationAgent3D = $NavigationAgent3D
@@ -39,7 +46,11 @@ var _arms: Node3D
 func _ready() -> void:
 	add_to_group("hvt")
 	health = max_health
-	_build_visual()
+	if model_scene:
+		_build_model()
+	else:
+		_build_visual()
+	_add_tag()
 	_set_pose_hiding(true)
 
 
@@ -77,6 +88,8 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if dir.length() > 0.1:
 		rotation.y = lerp_angle(rotation.y, atan2(-dir.x, -dir.z), clampf(delta * 6.0, 0.0, 1.0))
+	if _skeleton:
+		_animate_model(delta, horizontal.length())
 
 
 ## Recuperação de travamento: se ele quer andar mas não sai do lugar,
@@ -169,6 +182,10 @@ func take_damage(info: DamageInfo) -> void:
 # --- Visual ---------------------------------------------------------------------
 
 func _set_pose_hiding(hiding: bool) -> void:
+	if _skeleton:
+		_hands_up = hiding
+		_animate_model(0.0, 0.0)
+		return
 	# Escondido: agachado com as mãos para cima. Capturado: de pé, mãos para trás.
 	_visual.scale.y = 0.7 if hiding else 1.0
 	_arms.rotation.x = deg_to_rad(160.0) if hiding else deg_to_rad(-20.0)
@@ -209,6 +226,70 @@ func _build_visual() -> void:
 	_visual.add_child(_arms)
 	for side in [-1.0, 1.0]:
 		BodyParts.arm(_arms, Vector3(side * 0.22, 0, 0), Vector3(side * 0.25, -0.28, 0.02), Vector3(side * 0.22, -0.55, 0.0), uniform, skin)
+
+
+# --- Modelo com esqueleto (Mixamo) ------------------------------------------
+
+func _build_model() -> void:
+	_visual = Node3D.new()
+	add_child(_visual)
+	var model := model_scene.instantiate() as Node3D
+	_visual.add_child(model)
+	model.rotation.y = PI  # modelos Mixamo olham para +Z; no Godot a frente é -Z
+	for ap in model.find_children("*", "AnimationPlayer", true, false):
+		(ap as AnimationPlayer).active = false  # só contém a pose T
+	var skeletons := model.find_children("*", "Skeleton3D", true, false)
+	_skeleton = skeletons[0] if not skeletons.is_empty() else null
+	# Escala pela altura real da malha
+	var top := 0.0
+	var bottom := INF
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		var aabb := (mi as MeshInstance3D).get_aabb()
+		top = maxf(top, aabb.end.y)
+		bottom = minf(bottom, aabb.position.y)
+	if top > bottom:
+		model.scale = Vector3.ONE * (model_height / (top - bottom))
+	_arms = Node3D.new()  # compatibilidade com o código do boneco procedural
+	_visual.add_child(_arms)
+
+
+## Monta a pose a partir da pose de repouso: braços (rendido/capturado) e passada.
+func _animate_model(delta: float, speed: float) -> void:
+	_skeleton.reset_bone_poses()
+	if _hands_up:
+		_rotate_bone("LeftArm", Vector3.BACK, 68.0)
+		_rotate_bone("RightArm", Vector3.BACK, -68.0)
+		_rotate_bone("LeftForeArm", Vector3.BACK, 15.0)
+		_rotate_bone("RightForeArm", Vector3.BACK, -15.0)
+	else:
+		_rotate_bone("LeftArm", Vector3.BACK, -74.0)
+		_rotate_bone("RightArm", Vector3.BACK, 74.0)
+	if speed > 0.2:
+		_walk_phase += delta * (4.0 + speed * 1.6)
+	else:
+		_walk_phase = lerpf(_walk_phase, roundf(_walk_phase / PI) * PI, clampf(delta * 6.0, 0.0, 1.0))
+	var amount := clampf(speed / 3.0, 0.0, 1.0)
+	var swing := sin(_walk_phase) * 30.0 * amount
+	_rotate_bone("LeftUpLeg", Vector3.RIGHT, -swing)
+	_rotate_bone("RightUpLeg", Vector3.RIGHT, swing)
+	_rotate_bone("LeftLeg", Vector3.RIGHT, maxf(0.0, swing) * 1.3)
+	_rotate_bone("RightLeg", Vector3.RIGHT, maxf(0.0, -swing) * 1.3)
+
+
+## Gira um osso em torno de um eixo do espaço do esqueleto (graus).
+func _rotate_bone(bone: String, axis: Vector3, degrees: float) -> void:
+	if absf(degrees) < 0.01:
+		return
+	var i := _skeleton.find_bone("mixamorig_" + bone)
+	if i < 0:
+		return
+	var parent := _skeleton.get_bone_parent(i)
+	var parent_global := _skeleton.get_bone_global_pose(parent) if parent >= 0 else Transform3D()
+	var rotated := Basis(Quaternion(axis, deg_to_rad(degrees))) * _skeleton.get_bone_global_pose(i).basis
+	_skeleton.set_bone_pose_rotation(i, (parent_global.basis.inverse() * rotated).get_rotation_quaternion())
+
+
+func _add_tag() -> void:
 	var tag := Label3D.new()
 	tag.text = tag_text
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED

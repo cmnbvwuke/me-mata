@@ -14,6 +14,7 @@ extends Node3D
 
 const ENEMY_SCENE := preload("res://scenes/enemies/enemy.tscn")
 const HVT_SCENE := preload("res://scenes/characters/hvt.tscn")
+const GENERAL_MODEL := preload("res://assets/characters/general_salcedo.fbx")
 const PROFILES := {
 	"guard": preload("res://resources/enemies/guard.tres"),
 	"elite": preload("res://resources/enemies/elite.tres"),
@@ -581,6 +582,7 @@ func _spawn(kind: String, pos: Vector3, stage: int, patrol: Array[Vector3] = [],
 
 func _spawn_hvt() -> void:
 	hvt = HVT_SCENE.instantiate() as HVTCharacter
+	hvt.model_scene = GENERAL_MODEL
 	hvt.position = HVT_POS
 	hvt.rotation.y = deg_to_rad(20.0)
 	dynamic_root.add_child(hvt)
