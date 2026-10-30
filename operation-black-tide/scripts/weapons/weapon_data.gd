@@ -44,7 +44,7 @@ extends Resource
 @export var ads_fov: float = 52.0
 @export var ads_time: float = 0.2
 @export var hip_position: Vector3 = Vector3(0.18, -0.17, -0.38)
-@export var ads_position: Vector3 = Vector3(0.0, -0.088, -0.27)
+@export var ads_position: Vector3 = Vector3(0.0, -0.088, -0.34)
 
 @export_group("Furtividade")
 ## Raio (m) em que inimigos ouvem o disparo. >= 25 é tratado como "tiro alto".

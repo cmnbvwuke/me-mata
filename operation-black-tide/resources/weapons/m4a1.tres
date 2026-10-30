@@ -30,5 +30,5 @@ recoil_horizontal = 0.35
 ads_fov = 52.0
 ads_time = 0.2
 hip_position = Vector3(0.18, -0.17, -0.38)
-ads_position = Vector3(0, -0.088, -0.27)
+ads_position = Vector3(0, -0.088, -0.34)
 noise_radius = 60.0

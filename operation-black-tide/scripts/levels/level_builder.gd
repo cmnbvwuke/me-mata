@@ -8,7 +8,11 @@ extends RefCounted
 var root: Node3D          ## Geometria estática (entra no bake do navmesh)
 var cover_root: Node3D    ## Onde os CoverPoints são criados
 var _materials: Dictionary = {}
+## Janelas recebem vidro (visual, sem colisão) quando true; moldura sempre.
+var glass_windows: bool = false
 var _detail_texture: NoiseTexture2D
+var _normal_texture: NoiseTexture2D
+const WATER_SHADER := preload("res://shaders/water.gdshader")
 
 
 func _init(p_root: Node3D, p_cover_root: Node3D) -> void:
@@ -33,6 +37,10 @@ func material(mat_name: String, color: Color, roughness: float = 0.9, metallic: 
 		m.albedo_texture = _get_detail_texture()
 		m.uv1_triplanar = true
 		m.uv1_scale = Vector3(0.35, 0.35, 0.35)
+		# Relevo sutil (normal map de ruído) para as superfícies não parecerem lisas
+		m.normal_enabled = true
+		m.normal_texture = _get_normal_texture()
+		m.normal_scale = 0.55
 	_materials[mat_name] = m
 	return m
 
@@ -47,6 +55,100 @@ func emissive(mat_name: String, color: Color, energy: float = 2.0) -> StandardMa
 	m.emission_energy_multiplier = energy
 	_materials[mat_name] = m
 	return m
+
+
+func _get_normal_texture() -> NoiseTexture2D:
+	if _normal_texture == null:
+		var noise := FastNoiseLite.new()
+		noise.frequency = 0.08
+		noise.fractal_octaves = 3
+		_normal_texture = NoiseTexture2D.new()
+		_normal_texture.noise = noise
+		_normal_texture.width = 256
+		_normal_texture.height = 256
+		_normal_texture.seamless = true
+		_normal_texture.as_normal_map = true
+		_normal_texture.bump_strength = 5.0
+	return _normal_texture
+
+
+## Superfície de água animada (sem colisão).
+func water(center: Vector3, size: Vector2, level: float, subdivisions: int = 140) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = size
+	plane.subdivide_width = subdivisions
+	plane.subdivide_depth = subdivisions
+	mi.mesh = plane
+	var m := ShaderMaterial.new()
+	m.shader = WATER_SHADER
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = Vector3(center.x, level, center.z)
+	root.add_child(mi)
+	return mi
+
+
+## Coqueiro: tronco curvado em segmentos, folhas caídas em leque e cocos.
+func palm(base: Vector3, height: float, rng: RandomNumberGenerator) -> void:
+	var trunk := material("palm_trunk", Color(0.32, 0.25, 0.17))
+	var frond := material("palm_frond", Color(0.12, 0.22, 0.07), 1.0, 0.0, false)
+	var lean := Vector3(rng.randf_range(-1, 1), 0, rng.randf_range(-1, 1)).normalized() * rng.randf_range(0.6, 1.6)
+	var pts: Array[Vector3] = []
+	for i in 4:
+		var t := float(i) / 3.0
+		pts.append(base + Vector3.UP * height * t + lean * t * t)
+	var holder := Node3D.new()
+	root.add_child(holder)
+	for i in 3:
+		var r := lerpf(0.2, 0.13, float(i) / 3.0)
+		BodyParts.limb(holder, pts[i], pts[i + 1], r, r - 0.03, trunk)
+	# Colisão simples do tronco
+	var body := StaticBody3D.new()
+	body.collision_layer = Layers.WORLD
+	body.collision_mask = 0
+	var cs := CollisionShape3D.new()
+	var shape := CylinderShape3D.new()
+	shape.radius = 0.2
+	shape.height = height * 0.6
+	cs.shape = shape
+	body.add_child(cs)
+	body.position = base + Vector3.UP * height * 0.3 + lean * 0.1
+	root.add_child(body)
+	var top := pts[3]
+	var count := 8
+	for i in count:
+		var yaw := TAU * i / count + rng.randf_range(-0.2, 0.2)
+		var droop := rng.randf_range(0.35, 0.75)
+		var dir := Vector3(sin(yaw), 0, cos(yaw))
+		var tip := top + dir * 2.4 * cos(droop) - Vector3.UP * 2.4 * sin(droop) * 0.7
+		var mid := top + dir * 1.3 + Vector3.UP * 0.25
+		var leaf := BodyParts.box(holder, Vector3(0.55, 0.03, top.distance_to(mid) + 0.1), (top + mid) * 0.5, frond)
+		leaf.look_at_from_position(leaf.position, mid, Vector3.UP)
+		var leaf2 := BodyParts.box(holder, Vector3(0.45, 0.03, mid.distance_to(tip)), (mid + tip) * 0.5, frond)
+		leaf2.look_at_from_position(leaf2.position, tip, Vector3.UP)
+		leaf.visibility_range_end = 140.0
+		leaf2.visibility_range_end = 140.0
+	var nut := material("coconut", Color(0.25, 0.18, 0.09))
+	for i in 3:
+		var c := BodyParts.sphere(holder, 0.11, top + Vector3(cos(i * 2.1) * 0.18, -0.2, sin(i * 2.1) * 0.18), nut)
+		c.visibility_range_end = 45.0
+
+
+## Árvore de copa larga: tronco com galho e copa formada por esferas sobrepostas.
+func broadleaf(base: Vector3, height: float, rng: RandomNumberGenerator) -> void:
+	var trunk := material("trunk", Color(0.13, 0.1, 0.07))
+	var greens := [material("leaves", Color(0.04, 0.08, 0.04), 1.0), material("leaves_light", Color(0.07, 0.12, 0.05), 1.0)]
+	cylinder(rng.randf_range(0.2, 0.3), height, base, trunk, true, 8)
+	var holder := Node3D.new()
+	root.add_child(holder)
+	BodyParts.limb(holder, base + Vector3.UP * height * 0.6, base + Vector3(1.2, height * 0.85, 0.4), 0.12, 0.07, trunk)
+	var crown := base + Vector3.UP * height
+	for i in 4:
+		var off := Vector3(rng.randf_range(-1.4, 1.4), rng.randf_range(-0.6, 0.5), rng.randf_range(-1.4, 1.4))
+		var r := rng.randf_range(1.5, 2.4)
+		var s := BodyParts.sphere(holder, r, crown + off, greens[i % 2], Vector3(1, 0.7, 1))
+		s.visibility_range_end = 160.0
 
 
 func _get_detail_texture() -> NoiseTexture2D:
@@ -188,6 +290,9 @@ func wall_x(x0: float, x1: float, z: float, height: float, thickness: float, mat
 	for seg in _segments(x0, x1, height, openings):
 		box(Vector3(seg.y - seg.x, seg.w - seg.z, thickness),
 			Vector3((seg.x + seg.y) * 0.5, (seg.z + seg.w) * 0.5, z), mat)
+	for o in openings:
+		if o.z > 0.0:
+			_window_frame(Vector3(o.x, 0, z), o.y, o.z, minf(o.w, height), thickness, false)
 
 
 func wall_z(z0: float, z1: float, x: float, height: float, thickness: float, mat: Material,
@@ -195,6 +300,43 @@ func wall_z(z0: float, z1: float, x: float, height: float, thickness: float, mat
 	for seg in _segments(z0, z1, height, openings):
 		box(Vector3(thickness, seg.w - seg.z, seg.y - seg.x),
 			Vector3(x, (seg.z + seg.w) * 0.5, (seg.x + seg.y) * 0.5), mat)
+	for o in openings:
+		if o.z > 0.0:
+			_window_frame(Vector3(x, 0, o.x), o.y, o.z, minf(o.w, height), thickness, true)
+
+
+## Moldura de janela (peitoril saliente, verga e batentes) + vidro opcional.
+## Peças finas e sem colisão: não atrapalham o salto pela janela.
+func _window_frame(center: Vector3, width: float, sill: float, top: float, thickness: float, along_z: bool) -> void:
+	var trim := material("window_trim", Color(0.82, 0.8, 0.74), 0.7)
+	var depth := thickness + 0.1
+	var parts := [
+		[Vector3(width + 0.16, 0.07, depth + 0.06), Vector3(0, sill - 0.035, 0)],   # peitoril
+		[Vector3(width + 0.16, 0.08, depth), Vector3(0, top + 0.04, 0)],            # verga
+		[Vector3(0.07, top - sill, depth), Vector3(-width * 0.5 - 0.035, (sill + top) * 0.5, 0)],
+		[Vector3(0.07, top - sill, depth), Vector3(width * 0.5 + 0.035, (sill + top) * 0.5, 0)],
+	]
+	for part in parts:
+		var size: Vector3 = part[0]
+		var off: Vector3 = part[1]
+		if along_z:
+			size = Vector3(size.z, size.y, size.x)
+			off = Vector3(off.z, off.y, off.x)
+		box(size, center + off, trim, false)
+	if glass_windows:
+		var glass := StandardMaterial3D.new()
+		glass.albedo_color = Color(0.45, 0.6, 0.7, 0.18)
+		glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		glass.metallic = 0.4
+		glass.roughness = 0.05
+		var gsize := Vector3(width, top - sill, 0.02)
+		if along_z:
+			gsize = Vector3(0.02, top - sill, width)
+		var g := box(gsize, center + Vector3(0, (sill + top) * 0.5, 0), glass, false)
+		(g as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# Travessa central para ler como janela, não como buraco
+		var bar := Vector3(0.05, top - sill, 0.05) if not along_z else Vector3(0.05, top - sill, 0.05)
+		box(bar, center + Vector3(0, (sill + top) * 0.5, 0), trim, false)
 
 
 ## Divide uma parede em retângulos sólidos: Vector4(início, fim, base, topo).

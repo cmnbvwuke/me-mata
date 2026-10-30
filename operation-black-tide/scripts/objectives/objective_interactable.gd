@@ -6,7 +6,8 @@ extends StaticBody3D
 
 signal used(target: ObjectiveInteractable)
 
-enum Visual { CHARGE, TERMINAL, INTEL, SPOTTER, HELM }
+## CHARGE = painel/transformador com carga; SATCHEL = bolsa de explosivo pequena (barcos, bancadas)
+enum Visual { CHARGE, TERMINAL, INTEL, SPOTTER, HELM, SATCHEL }
 
 @export var visual: Visual = Visual.TERMINAL
 @export var prompt: String = "Segure [E] para interagir"
@@ -46,7 +47,7 @@ func interact(_by: Node3D) -> void:
 ## Marca como concluído sem disparar o sinal (ex.: ao carregar um checkpoint).
 func mark_used() -> void:
 	is_used = true
-	if visual == Visual.CHARGE:
+	if visual == Visual.CHARGE or visual == Visual.SATCHEL:
 		_arm_charge()
 	elif _light:
 		_light.light_color = Color(0.3, 1.0, 0.4)
@@ -77,6 +78,12 @@ func _build() -> void:
 			# Tripé com binóculo/telêmetro laser
 			_part(Vector3(0.6, 1.2, 0.6), Vector3(0, 0.6, 0), Color(0.1, 0.1, 0.1), true, false, true)
 			_part(Vector3(0.12, 0.12, 0.35), Vector3(0, 1.3, 0), Color(0.12, 0.14, 0.1))
+		Visual.SATCHEL:
+			# Bolsa de explosivo plástico com detonador e antena
+			_part(Vector3(0.34, 0.2, 0.22), Vector3(0, 0.1, 0), Color(0.24, 0.26, 0.16), true)
+			_part(Vector3(0.12, 0.06, 0.1), Vector3(0.06, 0.23, 0), Color(0.08, 0.08, 0.08))
+			_part(Vector3(0.01, 0.18, 0.01), Vector3(0.1, 0.33, 0.02), Color(0.05, 0.05, 0.05))
+			_part(Vector3(0.36, 0.03, 0.05), Vector3(0, 0.12, -0.08), Color(0.12, 0.1, 0.08))
 		Visual.HELM:
 			_part(Vector3(1.4, 1.0, 0.6), Vector3(0, 0.5, 0), Color(0.15, 0.16, 0.18), true)
 			_part(Vector3(0.5, 0.5, 0.05), Vector3(0, 1.25, -0.1), Color(0.35, 0.25, 0.12))
@@ -84,7 +91,7 @@ func _build() -> void:
 	_light.light_color = Color(1.0, 0.75, 0.25)
 	_light.light_energy = 0.8
 	_light.omni_range = 2.5
-	_light.position = Vector3(0, 1.6, -0.3)
+	_light.position = Vector3(0, 0.5, 0) if visual == Visual.SATCHEL else Vector3(0, 1.6, -0.3)
 	_light.visible = false
 	add_child(_light)
 

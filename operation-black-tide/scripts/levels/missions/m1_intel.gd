@@ -31,7 +31,7 @@ func success_text() -> String:
 
 
 func build_world() -> void:
-	ground(Vector2(110, 96), Vector3(0, 0, -6), Color(0.17, 0.17, 0.16), "asphalt")
+	ground(Vector2(110, 96), Vector3(0, 0, -6), Color(0.17, 0.17, 0.16), "asphalt", 41.0)
 	sea(Vector3(0, 0, 220), Vector2(800, 360), -2.0)
 	builder.box(Vector3(110, 2, 1.0), Vector3(0, -1.0, 42.5), builder.material("quay", Color(0.3, 0.29, 0.27)), false)
 	# Cargueiro atracado (visual) e defensas do cais

@@ -177,30 +177,38 @@ func _set_pose_hiding(hiding: bool) -> void:
 func _build_visual() -> void:
 	_visual = Node3D.new()
 	add_child(_visual)
-	var uniform := _mat(uniform_color)
-	var skin := _mat(Color(0.4, 0.28, 0.2))
-	var beret := _mat(beret_color)
-	var gold := _mat(Color(0.8, 0.62, 0.2))
-	_box(_visual, Vector3(0.36, 0.88, 0.22), Vector3(0, 0.44, 0), uniform)
-	_box(_visual, Vector3(0.48, 0.64, 0.3), Vector3(0, 1.18, 0), uniform)
-	_box(_visual, Vector3(0.18, 0.05, 0.02), Vector3(-0.12, 1.32, -0.16), gold)  # medalhas
-	_box(_visual, Vector3(0.12, 0.12, 0.02), Vector3(0.24, 1.47, 0), gold)       # dragonas
-	_box(_visual, Vector3(0.12, 0.12, 0.02), Vector3(-0.24, 1.47, 0), gold)
-	var head := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.13
-	sphere.height = 0.27
-	head.mesh = sphere
-	head.material_override = skin
-	head.position = Vector3(0, 1.64, 0)
-	_visual.add_child(head)
-	_box(_visual, Vector3(0.28, 0.06, 0.3), Vector3(0.03, 1.75, 0), beret)
-	_box(_visual, Vector3(0.14, 0.03, 0.03), Vector3(0, 1.58, -0.12), _mat(Color(0.08, 0.06, 0.05)))  # bigode
+	var uniform := BodyParts.mat(uniform_color, 0.85)
+	var skin := BodyParts.mat(Color(0.45, 0.31, 0.22), 0.7)
+	var beret := BodyParts.mat(beret_color, 0.9)
+	var gold := BodyParts.mat(Color(0.85, 0.66, 0.22), 0.35, 0.7)
+	var boot := BodyParts.mat(Color(0.04, 0.035, 0.03), 0.4)
+	var hair := BodyParts.mat(Color(0.12, 0.1, 0.09), 0.9)
+	for x in [-0.1, 0.1]:
+		var pivot := Node3D.new()
+		pivot.position = Vector3(x, 0.92, 0)
+		_visual.add_child(pivot)
+		BodyParts.leg(pivot, uniform, boot)
+	BodyParts.box(_visual, Vector3(0.36, 0.16, 0.24), Vector3(0, 0.96, 0), uniform)
+	BodyParts.box(_visual, Vector3(0.38, 0.05, 0.26), Vector3(0, 1.03, 0), boot)                       # cinto
+	BodyParts.box(_visual, Vector3(0.07, 0.05, 0.02), Vector3(0, 1.03, -0.135), gold)                   # fivela
+	BodyParts.capsule(_visual, 0.19, 0.68, Vector3(0, 1.25, 0), uniform, Vector3(1.22, 1.0, 0.8))       # tronco (barriga)
+	for i in 3:
+		BodyParts.box(_visual, Vector3(0.05, 0.03, 0.015), Vector3(-0.1 + (i % 2) * 0.05, 1.36 - i * 0.04, -0.15), gold)  # medalhas
+	for x in [-0.22, 0.22]:
+		BodyParts.box(_visual, Vector3(0.12, 0.025, 0.14), Vector3(x, 1.47, 0), gold)                   # dragonas
+	BodyParts.limb(_visual, Vector3(0, 1.47, 0), Vector3(0, 1.57, 0), 0.065, 0.06, skin)
+	BodyParts.sphere(_visual, 0.125, Vector3(0, 1.67, 0), skin, Vector3(0.95, 1.05, 1.0))
+	BodyParts.box(_visual, Vector3(0.035, 0.045, 0.045), Vector3(0, 1.66, -0.125), skin)               # nariz
+	BodyParts.box(_visual, Vector3(0.13, 0.025, 0.03), Vector3(0, 1.615, -0.115), hair)                # bigode
+	BodyParts.sphere(_visual, 0.13, Vector3(0, 1.7, 0.01), hair, Vector3(1, 0.7, 1), true)             # cabelo
+	BodyParts.sphere(_visual, 0.14, Vector3(0.03, 1.75, 0.0), beret, Vector3(1.05, 0.45, 1.05))        # boina
+	BodyParts.box(_visual, Vector3(0.04, 0.04, 0.01), Vector3(-0.06, 1.77, -0.13), gold)               # insígnia
+	# Braços num pivô no ombro: mãos para cima (rendido) ou para trás (algemado)
 	_arms = Node3D.new()
-	_arms.position = Vector3(0, 1.42, 0)
+	_arms.position = Vector3(0, 1.43, 0)
 	_visual.add_child(_arms)
-	_box(_arms, Vector3(0.12, 0.6, 0.12), Vector3(0.3, -0.28, 0), uniform)
-	_box(_arms, Vector3(0.12, 0.6, 0.12), Vector3(-0.3, -0.28, 0), uniform)
+	for side in [-1.0, 1.0]:
+		BodyParts.arm(_arms, Vector3(side * 0.22, 0, 0), Vector3(side * 0.25, -0.28, 0.02), Vector3(side * 0.22, -0.55, 0.0), uniform, skin)
 	var tag := Label3D.new()
 	tag.text = tag_text
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED

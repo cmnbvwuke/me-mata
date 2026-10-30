@@ -408,7 +408,43 @@ func detonate_later(pos: Vector3, seconds: float, owner_node: Node = null) -> vo
 	tw.tween_callback(func() -> void:
 		explode(pos + Vector3.UP, 7.0, 300.0)
 		if owner_node and is_instance_valid(owner_node):
-			(owner_node as Node3D).visible = false)
+			(owner_node as Node3D).visible = false
+			if owner_node.has_meta("wreck"):
+				_wreck(owner_node.get_meta("wreck") as Node3D))
+
+
+## Destroço: o barco/objeto aderna, afunda devagar e fica queimando.
+func _wreck(node: Node3D) -> void:
+	_bobbing.erase(node)
+	var fire := OmniLight3D.new()
+	fire.light_color = Color(1.0, 0.5, 0.15)
+	fire.light_energy = 3.0
+	fire.omni_range = 9.0
+	fire.position = Vector3(0, 1.5, 0)
+	node.add_child(fire)
+	add_flicker(fire)
+	var tw := node.create_tween().set_parallel(true)
+	tw.tween_property(node, "rotation:z", node.rotation.z + 0.45, 3.0).set_ease(Tween.EASE_OUT)
+	tw.tween_property(node, "rotation:x", node.rotation.x - 0.12, 3.0)
+	tw.tween_property(node, "position:y", node.position.y - 1.6, 8.0).set_ease(Tween.EASE_IN)
+	var smoke := CPUParticles3D.new()
+	smoke.amount = 24
+	smoke.lifetime = 3.5
+	smoke.direction = Vector3.UP
+	smoke.spread = 15.0
+	smoke.initial_velocity_min = 1.5
+	smoke.initial_velocity_max = 3.0
+	smoke.gravity = Vector3(0, 0.6, 0)
+	smoke.scale_amount_min = 0.8
+	smoke.scale_amount_max = 1.8
+	var sm := BoxMesh.new()
+	sm.size = Vector3(0.6, 0.6, 0.6)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.08, 0.08, 0.08)
+	sm.material = mat
+	smoke.mesh = sm
+	smoke.position = Vector3(0, 1.2, 0)
+	node.add_child(smoke)
 
 
 func explode(pos: Vector3, radius: float, max_damage: float) -> void:
@@ -436,16 +472,18 @@ func explode(pos: Vector3, radius: float, max_damage: float) -> void:
 # Helpers de construção
 # =========================================================================
 
-func ground(size: Vector2, center: Vector3, color: Color, mat_name: String = "ground") -> void:
-	builder.box(Vector3(size.x, 1.0, size.y), center + Vector3(0, -0.5, 0), builder.material(mat_name, color))
+## Chão jogável + terreno visual que se estende até o horizonte (sem colisão).
+## `horizon_until_z` limita a extensão quando há mar além desse z.
+func ground(size: Vector2, center: Vector3, color: Color, mat_name: String = "ground", horizon_until_z: float = INF) -> void:
+	var m := builder.material(mat_name, color)
+	builder.box(Vector3(size.x, 1.0, size.y), center + Vector3(0, -0.5, 0), m)
+	var z0 := -600.0
+	var z1 := minf(horizon_until_z, 600.0)
+	builder.box(Vector3(1200, 0.02, z1 - z0), Vector3(0, -0.03, (z0 + z1) * 0.5), m, false)
 
 
 func sea(center: Vector3, size: Vector2, level: float = -0.8) -> void:
-	var water := StandardMaterial3D.new()
-	water.albedo_color = Color(0.01, 0.03, 0.045)
-	water.metallic = 0.7
-	water.roughness = 0.12
-	builder.box(Vector3(size.x, 0.1, size.y), Vector3(center.x, level, center.z), water, false)
+	builder.water(center, size, level)
 
 
 ## Paredes invisíveis delimitando a área jogável.
@@ -472,8 +510,10 @@ func scatter_jungle(area: Rect2, count: int, avoid: Array[Rect2] = [], bush_chan
 			continue
 		var p := Vector3(p2.x, 0, p2.y)
 		var h := rng.randf_range(5.0, 9.0)
-		builder.cylinder(rng.randf_range(0.18, 0.3), h, p, trunk, true, 8)
-		builder.sphere(rng.randf_range(2.0, 3.2), p + Vector3.UP * h, leaves, 0.6)
+		if rng.randf() < 0.5:
+			builder.palm(p, h + 1.5, rng)
+		else:
+			builder.broadleaf(p, h * 0.75, rng)
 		if rng.randf() < bush_chance:
 			builder.bush(p + Vector3(rng.randf_range(-2, 2), 0.5, rng.randf_range(-2, 2)), rng.randf_range(0.8, 1.3), bush_mat)
 		placed += 1
@@ -547,7 +587,8 @@ func crates(pos: Vector3, rot_y: float = 0.0) -> void:
 
 
 ## Barco decorativo que balança na água.
-func boat(pos: Vector3, rot_y: float, length: float = 9.0, color: Color = Color(0.75, 0.75, 0.72), lit: bool = true) -> Node3D:
+func boat(pos: Vector3, rot_y: float, length: float = 9.0, color: Color = Color(0.75, 0.75, 0.72), lit: bool = true,
+		bob: bool = true) -> Node3D:
 	var root := Node3D.new()
 	root.position = pos
 	root.rotation.y = rot_y
@@ -562,7 +603,8 @@ func boat(pos: Vector3, rot_y: float, length: float = 9.0, color: Color = Color(
 		l.omni_range = 6.0
 		l.position = Vector3(0, 2.0, 0)
 		root.add_child(l)
-	_bobbing.append(root)
+	if bob:
+		_bobbing.append(root)
 	return root
 
 
@@ -604,6 +646,8 @@ func _make_target(t: Dictionary) -> ObjectiveInteractable:
 	target.hold_time = float(t.get("hold", 1.8))
 	target.position = t["pos"]
 	target.rotation.y = deg_to_rad(float(t.get("yaw", 0.0)))
+	if t.has("wreck"):
+		target.set_meta("wreck", t["wreck"])
 	dynamic_root.add_child(target)
 	return target
 
@@ -726,7 +770,7 @@ func _setup_environment(preset: String) -> void:
 	sky_mat.sky_top_color = top
 	sky_mat.sky_horizon_color = horizon
 	sky_mat.ground_horizon_color = horizon
-	sky_mat.ground_bottom_color = Color(0, 0, 0)
+	sky_mat.ground_bottom_color = horizon.darkened(0.4)
 	sky_mat.sun_angle_max = 2.0
 	sky_mat.sun_curve = 0.05
 	sky.sky_material = sky_mat
@@ -740,6 +784,13 @@ func _setup_environment(preset: String) -> void:
 	env.glow_intensity = 0.6
 	env.glow_bloom = 0.04
 	env.ssao_enabled = true
+	# Pós-processamento: luz indireta em tela, oclusão mais marcada e grade de cor
+	env.ssil_enabled = true
+	env.ssil_intensity = 0.8
+	env.ssao_intensity = 2.2
+	env.adjustment_enabled = true
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 0.9
 	env.fog_enabled = true
 	env.fog_light_color = fog
 	env.fog_density = fog_density

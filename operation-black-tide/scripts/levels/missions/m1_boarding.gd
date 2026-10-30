@@ -65,6 +65,7 @@ func build_world() -> void:
 		builder.cover_obstacle(Vector3(2.0, 0.9, 1.6), Vector3(0, 0.45, z), steel, 0.0, true)
 
 	# Superestrutura com a ponte de comando
+	builder.glass_windows = true  # ponte de comando com vidraças
 	var white := Color(0.75, 0.75, 0.72)
 	var wall := builder.material("super_wall", white)
 	var h := 3.2

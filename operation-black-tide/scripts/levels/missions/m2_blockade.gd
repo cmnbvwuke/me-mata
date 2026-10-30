@@ -8,6 +8,8 @@ const POST := Vector3(0, 0, 30)
 const LAND_SPAWNS := [Vector3(-20, 0, -40), Vector3(20, 0, -40), Vector3(0, 0, -42), Vector3(-42, 0, -22), Vector3(42, 0, -26)]
 const PIER_SPAWNS := [Vector3(-3, 0, 58), Vector3(3, 0, 58), Vector3(0, 0, 56)]
 
+var _escape_boats: Array[Node3D] = []
+
 
 func environment_preset() -> String:
 	return "dawn"
@@ -29,7 +31,7 @@ func success_text() -> String:
 
 
 func build_world() -> void:
-	ground(Vector2(104, 66), Vector3(0, 0, -13), Color(0.3, 0.29, 0.26), "concrete_yard")
+	ground(Vector2(104, 66), Vector3(0, 0, -13), Color(0.3, 0.29, 0.26), "concrete_yard", 20.0)
 	sea(Vector3(0, 0, 200), Vector2(800, 420), -1.5)
 	builder.box(Vector3(104, 1.5, 0.6), Vector3(0, -0.75, 20.3), builder.material("quay", Color(0.3, 0.29, 0.27)), false)
 	# Píer
@@ -45,8 +47,9 @@ func build_world() -> void:
 	builder.box(Vector3(2.0, 2.4, 2.0), POST + Vector3(3.5, 1.2, 7.5), builder.material("booth", Color(0.4, 0.42, 0.35)))
 	ammo_crate(POST + Vector3(-1.5, 0, 1.5))
 	# Lanchas de fuga atracadas
-	boat(Vector3(-9.5, -1.0, 45), 0.0, 9.0, Color(0.85, 0.85, 0.82))
-	boat(Vector3(9.5, -1.0, 52), 0.0, 9.0, Color(0.15, 0.2, 0.3))
+	# Atracadas rente ao píer (sem balanço), com o convés quase no nível do píer
+	_escape_boats.append(boat(Vector3(-8.0, -0.7, 45), 0.0, 9.0, Color(0.85, 0.85, 0.82), true, false))
+	_escape_boats.append(boat(Vector3(8.0, -0.7, 52), 0.0, 9.0, Color(0.15, 0.2, 0.3), true, false))
 	boat(Vector3(-30, -1.0, 70), 0.6, 12.0, Color(0.5, 0.5, 0.5), false)   # navio da Marinha ao fundo
 	# Porto em terra
 	house(Vector3(-30, 0, -10), Vector2(16, 12), 5.0, ["s", "e"], Color(0.45, 0.43, 0.38))
@@ -92,8 +95,10 @@ func define_objectives() -> Array[Dictionary]:
 		{"type": "interact", "title": "Sabotar as lanchas de fuga", "label": "Lanchas sabotadas", "detonate": "each",
 			"checkpoint": [POST, 180.0], "air": true,
 			"targets": [
-				{"pos": Vector3(-5.0, 0, 45), "yaw": 90.0, "visual": ObjectiveInteractable.Visual.CHARGE, "prompt": "Segure [E] para plantar a carga na lancha", "hold": 2.0},
-				{"pos": Vector3(5.0, 0, 52), "yaw": -90.0, "visual": ObjectiveInteractable.Visual.CHARGE, "prompt": "Segure [E] para plantar a carga na lancha", "hold": 2.0},
+				{"pos": Vector3(-6.9, -0.1, 45), "yaw": 90.0, "visual": ObjectiveInteractable.Visual.SATCHEL, "wreck": _escape_boats[0],
+					"prompt": "Segure [E] para fixar a carga no casco da lancha", "hold": 2.0},
+				{"pos": Vector3(6.9, -0.1, 52), "yaw": -90.0, "visual": ObjectiveInteractable.Visual.SATCHEL, "wreck": _escape_boats[1],
+					"prompt": "Segure [E] para fixar a carga no casco da lancha", "hold": 2.0},
 			],
 			"waves": [{"spawns": [["militia", PIER_SPAWNS[2]], ["militia", LAND_SPAWNS[2]]]}],
 			"radio": [["CAP. REYES", "As lanchas no píer ainda podem fugir. Cargas nelas — 5 segundos de espoleta, afastem-se!", 4.5]]},

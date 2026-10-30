@@ -643,7 +643,7 @@ func _flat_distance(a: Vector3, b: Vector3) -> float:
 # =========================================================================
 
 func is_headshot_point(point: Vector3) -> bool:
-	return point.y - global_position.y > 1.42 * _posture
+	return point.y - global_position.y > 1.5 * _posture
 
 
 func take_damage(info: DamageInfo) -> void:
@@ -734,44 +734,58 @@ func _build_visual() -> void:
 	_visual = Node3D.new()
 	_visual.name = "Visual"
 	add_child(_visual)
-	var cloth := _mat(profile.body_color)
-	var vest := _mat(profile.vest_color)
-	var skin := _mat(Color(0.36, 0.25, 0.18))
-	var dark := _mat(Color(0.04, 0.04, 0.04), 0.4)
+	var cloth := BodyParts.mat(profile.body_color, 0.95)
+	var vest := BodyParts.mat(profile.vest_color, 0.9)
+	var skin := BodyParts.mat(Color(0.42, 0.29, 0.21), 0.7)
+	var boot := BodyParts.mat(Color(0.05, 0.045, 0.04), 0.6)
+	var glove := BodyParts.mat(Color(0.07, 0.07, 0.06), 0.8)
+	var webbing := BodyParts.mat(profile.vest_color.darkened(0.35), 0.9)
+	var elite := profile.has_helmet
+	var militia := not profile.uses_cover
 
-	_leg_l = _pivot(Vector3(-0.11, 0.86, 0))
-	_leg_r = _pivot(Vector3(0.11, 0.86, 0))
-	_part(_leg_l, Vector3(0.17, 0.86, 0.19), Vector3(0, -0.43, 0), cloth)
-	_part(_leg_r, Vector3(0.17, 0.86, 0.19), Vector3(0, -0.43, 0), cloth)
-	_part(_leg_l, Vector3(0.18, 0.1, 0.27), Vector3(0, -0.82, -0.04), dark)  # botas
-	_part(_leg_r, Vector3(0.18, 0.1, 0.27), Vector3(0, -0.82, -0.04), dark)
-	_part(_visual, Vector3(0.46, 0.62, 0.26), Vector3(0, 1.16, 0), cloth)      # tronco
-	_part(_visual, Vector3(0.5, 0.42, 0.32), Vector3(0, 1.2, 0), vest)        # colete
-	_part(_visual, Vector3(0.12, 0.12, 0.5), Vector3(0.22, 1.3, -0.2), cloth)  # braços segurando a arma
-	_part(_visual, Vector3(0.12, 0.12, 0.45), Vector3(-0.14, 1.3, -0.32), cloth, 0.5)
-	_part(_visual, Vector3(0.12, 0.1, 0.14), Vector3(0, 1.5, 0), skin)         # pescoço
-	var head := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.13
-	sphere.height = 0.28
-	head.mesh = sphere
-	head.material_override = skin
-	head.position = Vector3(0, 1.64, 0)
-	_visual.add_child(head)
-	if profile.has_helmet:
-		_part(_visual, Vector3(0.3, 0.13, 0.32), Vector3(0, 1.74, 0), vest)
-		_part(_visual, Vector3(0.2, 0.06, 0.06), Vector3(0, 1.72, -0.16), dark)  # NVG no capacete
+	# Pernas (pivôs no quadril para a animação de caminhada)
+	_leg_l = _pivot(Vector3(-0.1, 0.92, 0))
+	_leg_r = _pivot(Vector3(0.1, 0.92, 0))
+	BodyParts.leg(_leg_l, cloth, boot)
+	BodyParts.leg(_leg_r, cloth, boot)
+	# Quadril, cinto e tronco
+	BodyParts.box(_visual, Vector3(0.34, 0.14, 0.22), Vector3(0, 0.96, 0), cloth)
+	BodyParts.box(_visual, Vector3(0.36, 0.05, 0.24), Vector3(0, 1.02, 0), webbing)
+	BodyParts.capsule(_visual, 0.17, 0.66, Vector3(0, 1.24, 0), cloth, Vector3(1.25, 1.0, 0.78))
+	# Colete com porta-carregadores
+	if not militia:
+		BodyParts.box(_visual, Vector3(0.42, 0.38, 0.3), Vector3(0, 1.25, 0), vest)
+		for x in [-0.11, 0.0, 0.11]:
+			BodyParts.box(_visual, Vector3(0.09, 0.12, 0.06), Vector3(x, 1.14, -0.17), webbing)
+		BodyParts.box(_visual, Vector3(0.12, 0.08, 0.05), Vector3(0.12, 1.35, -0.17), webbing)  # rádio
 	else:
-		_part(_visual, Vector3(0.28, 0.07, 0.3), Vector3(0, 1.76, 0), cloth)    # boné/bandana
-	# Fuzil (AK)
-	_part(_visual, Vector3(0.06, 0.09, 0.75), Vector3(0.1, 1.3, -0.45), dark)
-	_part(_visual, Vector3(0.04, 0.18, 0.07), Vector3(0.1, 1.18, -0.5), dark, -0.35)
+		BodyParts.box(_visual, Vector3(0.06, 0.5, 0.33), Vector3(-0.05, 1.25, 0), webbing, Vector3(0, 0, 0.5))  # bandoleira
+	# Pescoço e cabeça
+	BodyParts.limb(_visual, Vector3(0, 1.47, 0), Vector3(0, 1.57, 0), 0.06, 0.055, skin)
+	var head_mat := skin if not elite else BodyParts.mat(Color(0.06, 0.06, 0.06), 0.9)  # balaclava na elite
+	BodyParts.sphere(_visual, 0.12, Vector3(0, 1.66, 0), head_mat, Vector3(0.92, 1.05, 1.0))
+	BodyParts.box(_visual, Vector3(0.03, 0.04, 0.04), Vector3(0, 1.65, -0.12), head_mat)                 # nariz
+	if elite:
+		BodyParts.sphere(_visual, 0.145, Vector3(0, 1.69, 0.005), vest, Vector3(1.0, 1.0, 1.08), true)    # capacete
+		BodyParts.box(_visual, Vector3(0.09, 0.05, 0.06), Vector3(0, 1.79, -0.13), boot)                  # suporte NVG
+		BodyParts.box(_visual, Vector3(0.11, 0.045, 0.08), Vector3(0, 1.75, -0.18), boot)                 # NVG
+	elif militia:
+		BodyParts.box(_visual, Vector3(0.2, 0.09, 0.14), Vector3(0, 1.6, -0.06), BodyParts.mat(Color(0.45, 0.08, 0.06)))  # bandana no rosto
+		BodyParts.sphere(_visual, 0.125, Vector3(0, 1.7, 0.0), BodyParts.mat(Color(0.1, 0.09, 0.08)), Vector3(1, 0.7, 1), true)  # cabelo
+	else:
+		BodyParts.sphere(_visual, 0.128, Vector3(0, 1.71, 0.0), cloth, Vector3(1, 0.75, 1.05), true)      # boné
+		BodyParts.box(_visual, Vector3(0.2, 0.02, 0.1), Vector3(0, 1.72, -0.15), cloth)                    # aba
+	# Fuzil segurado com as duas mãos
+	var gun := Vector3(0.08, 1.31, -0.3)
+	BodyParts.rifle(_visual, gun)
+	BodyParts.arm(_visual, Vector3(0.21, 1.43, 0.0), Vector3(0.27, 1.2, -0.06), gun + Vector3(0.01, -0.08, 0.07), cloth, glove)
+	BodyParts.arm(_visual, Vector3(-0.21, 1.43, 0.0), Vector3(-0.13, 1.21, -0.3), gun + Vector3(-0.025, -0.05, -0.36), cloth, glove)
 
 	_eyes = Marker3D.new()
-	_eyes.position = Vector3(0, 1.64, -0.12)
+	_eyes.position = Vector3(0, 1.66, -0.11)
 	_visual.add_child(_eyes)
 	_muzzle = Marker3D.new()
-	_muzzle.position = Vector3(0.1, 1.31, -0.85)
+	_muzzle.position = Vector3(0.08, 1.32, -0.99)
 	_visual.add_child(_muzzle)
 
 	if profile.has_flashlight and use_flashlight:
@@ -782,7 +796,7 @@ func _build_visual() -> void:
 		_flashlight.spot_range = 20.0
 		_flashlight.spot_angle = 20.0
 		_flashlight.shadow_enabled = not OS.has_feature("web")
-		_flashlight.position = Vector3(0.1, 1.33, -0.7)
+		_flashlight.position = Vector3(0.11, 1.31, -0.62)
 		_visual.add_child(_flashlight)
 
 

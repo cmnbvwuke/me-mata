@@ -6,6 +6,8 @@ extends MissionLevel
 
 const START := Vector3(44, 0, 44)
 const LABS := [Vector3(-26, 0, -18), Vector3(26, 0, -12), Vector3(2, 0, 26)]
+## Bancada de cada laboratório (relativa ao barraco), onde vai a carga
+const BENCHES := [Vector3(-1.5, 0, -1.5), Vector3(1.5, 0, -1.5), Vector3(2.0, 0, 0)]
 const MAIN_HOUSE := Vector3(0, 0, -28)
 const LZ := Vector3(-32, 0, 34)
 
@@ -44,6 +46,12 @@ func build_world() -> void:
 	var doors := ["e", "w", "n"]
 	for i in LABS.size():
 		house(LABS[i], Vector2(7, 6), 2.8, [doors[i]], Color(0.42, 0.36, 0.28), true, false)
+		# Bancada com vidraria do laboratório
+		var bench: Vector3 = LABS[i] + BENCHES[i]
+		builder.box(Vector3(1.6, 0.85, 0.8), bench + Vector3.UP * 0.425, builder.material("bench", Color(0.3, 0.24, 0.16)))
+		for k in 3:
+			builder.cylinder(0.06, 0.22, bench + Vector3(-0.55 + k * 0.22, 0.85, 0.15),
+				builder.material("glassware", Color(0.6, 0.75, 0.7), 0.1, 0.2), false, 8)
 		for j in 3:
 			builder.cylinder(0.3, 0.95, LABS[i] + Vector3(-2.4 + j * 0.7, 0, 2.0), builder.material("drum_blue", Color(0.1, 0.25, 0.5), 0.6, 0.3), true, 10)
 	# Casa principal de El Tiburón
@@ -74,11 +82,9 @@ func build_world() -> void:
 
 
 func define_objectives() -> Array[Dictionary]:
-	var charge := ObjectiveInteractable.Visual.CHARGE
 	var targets: Array = []
-	var offsets := [Vector3(-1.5, 0, -1.5), Vector3(1.5, 0, -1.5), Vector3(2.5, 0, 0)]
 	for i in LABS.size():
-		targets.append({"pos": LABS[i] + offsets[i], "visual": charge, "hold": 2.0,
+		targets.append({"pos": LABS[i] + BENCHES[i] + Vector3(0.3, 0.85, -0.1), "visual": ObjectiveInteractable.Visual.SATCHEL, "hold": 2.0,
 			"prompt": "Segure [E] para plantar a carga incendiária no laboratório"})
 	var list: Array[Dictionary] = [
 		{"type": "interact", "title": "Destruir os laboratórios do cartel", "label": "Laboratórios destruídos",

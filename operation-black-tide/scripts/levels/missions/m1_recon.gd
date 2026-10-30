@@ -29,7 +29,7 @@ func success_text() -> String:
 
 
 func build_world() -> void:
-	ground(Vector2(140, 100), Vector3(0, 0, -10), Color(0.16, 0.15, 0.1))
+	ground(Vector2(140, 100), Vector3(0, 0, -10), Color(0.16, 0.15, 0.1), "ground", 40.0)
 	# Penhasco e mar ao sul
 	sea(Vector3(0, 0, 200), Vector2(800, 320), -12.0)
 	builder.box(Vector3(140, 12, 2), Vector3(0, -6, 41), builder.material("cliff", Color(0.22, 0.2, 0.17)), false)

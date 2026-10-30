@@ -126,7 +126,7 @@ func _setup_environment() -> void:
 	sky_mat.sky_top_color = Color(0.004, 0.007, 0.018)
 	sky_mat.sky_horizon_color = Color(0.03, 0.04, 0.06)
 	sky_mat.ground_horizon_color = Color(0.03, 0.04, 0.06)
-	sky_mat.ground_bottom_color = Color(0.0, 0.0, 0.0)
+	sky_mat.ground_bottom_color = Color(0.02, 0.025, 0.035)
 	sky_mat.sun_angle_max = 2.0
 	sky_mat.sun_curve = 0.05
 	sky.sky_material = sky_mat
@@ -140,6 +140,13 @@ func _setup_environment() -> void:
 	env.glow_intensity = 0.7
 	env.glow_bloom = 0.05
 	env.ssao_enabled = true
+	# Pós-processamento: luz indireta em tela, oclusão mais marcada e grade de cor
+	env.ssil_enabled = true
+	env.ssil_intensity = 0.8
+	env.ssao_intensity = 2.2
+	env.adjustment_enabled = true
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 0.9
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.035, 0.045, 0.065)
 	env.fog_density = 0.01
@@ -176,11 +183,7 @@ func _build_terrain() -> void:
 	builder.box(Vector3(6, 0.02, 60), Vector3(8, 0.012, 40), road, false)
 	builder.box(Vector3(3, 0.02, 40), Vector3(-6, 0.012, 48), road, false, 0.35)
 	# Mar
-	var water := StandardMaterial3D.new()
-	water.albedo_color = Color(0.01, 0.025, 0.04)
-	water.metallic = 0.7
-	water.roughness = 0.12
-	builder.box(Vector3(800, 0.1, 400), Vector3(0, -0.8, 275), water, false)
+	builder.water(Vector3(0, 0, 275), Vector2(800, 400), -0.8)
 	builder.box(Vector3(300, 1.2, 4), Vector3(0, -0.6, 76.5), sand, false)
 	# Píer e lancha do cartel (ambientação da Fase 1)
 	var wood := builder.material("wood", Color(0.22, 0.16, 0.1))
@@ -208,8 +211,10 @@ func _build_jungle() -> void:
 		if Vector2(p.x + 22, p.z - 30).length() < 6.0 or Vector2(p.x - 14, p.z - 24).length() < 6.0:
 			continue
 		var h := _rng.randf_range(5.0, 9.0)
-		builder.cylinder(_rng.randf_range(0.18, 0.3), h, p, trunk, true, 8)
-		builder.sphere(_rng.randf_range(2.0, 3.2), p + Vector3.UP * h, leaves, 0.6)
+		if _rng.randf() < 0.55:
+			builder.palm(p, h + 1.5, _rng)
+		else:
+			builder.broadleaf(p, h * 0.75, _rng)
 		if _rng.randf() < 0.6:
 			builder.bush(p + Vector3(_rng.randf_range(-2, 2), 0.5, _rng.randf_range(-2, 2)), _rng.randf_range(0.8, 1.3), bush_mat)
 		placed += 1
@@ -222,8 +227,10 @@ func _build_jungle() -> void:
 			1: p = Vector3(_rng.randf_range(38, 70), 0, _rng.randf_range(-70, 14))
 			_: p = Vector3(_rng.randf_range(-40, 40), 0, _rng.randf_range(-75, -48))
 		var h := _rng.randf_range(6.0, 11.0)
-		builder.cylinder(0.25, h, p, trunk, true, 6)
-		builder.sphere(_rng.randf_range(2.5, 3.5), p + Vector3.UP * h, leaves, 0.6)
+		if _rng.randf() < 0.35:
+			builder.palm(p, h + 1.0, _rng)
+		else:
+			builder.broadleaf(p, h * 0.75, _rng)
 	# Moitas que permitem uma aproximação furtiva até a brecha do muro sul
 	for p in [Vector3(-24, 0.5, 18), Vector3(-17, 0.5, 19.5), Vector3(-21, 0.5, 24), Vector3(-13, 0.5, 26),
 			Vector3(-26, 0.5, 33), Vector3(-15, 0.5, 34), Vector3(-9, 0.5, 40), Vector3(-19, 0.5, 42),
