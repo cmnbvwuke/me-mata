@@ -1,0 +1,42 @@
+; Operation Black Tide — protótipo de FPS tático (Godot 4.3+)
+
+config_version=5
+
+[application]
+
+config/name="Operation Black Tide"
+config/description="Protótipo de FPS tático em primeira pessoa. Missão: Absolute Resolve."
+run/main_scene="res://scenes/menus/main_menu.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://scripts/autoload/game_manager.gd"
+AudioManager="*res://scripts/autoload/audio_manager.gd"
+StealthSystem="*res://scripts/autoload/stealth_system.gd"
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="player"
+3d_physics/layer_3="enemy"
+3d_physics/layer_4="hvt"
+3d_physics/layer_5="trigger"
+3d_physics/layer_6="foliage"
+
+[physics]
+
+common/physics_ticks_per_second=60
+
+[rendering]
+
+anti_aliasing/quality/msaa_3d=2
+lights_and_shadows/positional_shadow/atlas_size=4096

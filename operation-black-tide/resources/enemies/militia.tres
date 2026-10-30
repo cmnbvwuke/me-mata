@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EnemyProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/enemy_profile.gd" id="1_ep"]
+
+[resource]
+script = ExtResource("1_ep")
+type_name = "Milícia do Cartel"
+body_color = Color(0.33, 0.28, 0.22, 1)
+vest_color = Color(0.2, 0.17, 0.14, 1)
+has_helmet = false
+has_flashlight = true
+weapon_sound = "enemy_rifle"
+max_health = 85.0
+armor = 0.0
+walk_speed = 1.9
+run_speed = 5.0
+vision_range = 20.0
+vision_fov = 100.0
+hearing_multiplier = 0.9
+detection_speed = 0.8
+reaction_time = 0.9
+accuracy = 0.32
+damage = 6.0
+fire_rate = 650.0
+burst_min = 4
+burst_max = 8
+uses_cover = false
+flank_chance = 0.1
+aggression = 0.7

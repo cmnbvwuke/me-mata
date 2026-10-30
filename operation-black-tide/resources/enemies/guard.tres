@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EnemyProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/enemy_profile.gd" id="1_ep"]
+
+[resource]
+script = ExtResource("1_ep")
+type_name = "Guarda Presidencial"
+body_color = Color(0.2, 0.23, 0.16, 1)
+vest_color = Color(0.11, 0.12, 0.09, 1)
+has_helmet = false
+has_flashlight = true
+weapon_sound = "enemy_rifle"
+max_health = 100.0
+armor = 0.0
+walk_speed = 1.7
+run_speed = 4.2
+vision_range = 24.0
+vision_fov = 110.0
+hearing_multiplier = 1.0
+detection_speed = 1.0
+reaction_time = 0.65
+accuracy = 0.5
+damage = 6.0
+fire_rate = 480.0
+burst_min = 3
+burst_max = 5
+uses_cover = true
+flank_chance = 0.15
+aggression = 0.2
