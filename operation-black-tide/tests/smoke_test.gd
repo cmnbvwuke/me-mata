@@ -134,6 +134,15 @@ func _run() -> void:
 	var hvt: HVTCharacter = level.get("hvt")
 	player.global_position = Vector3(11.5, 0.1, -32.5)
 	await _physics(10)
+	# O modelo do General precisa estar de pé sobre o chão (não enterrado)
+	var sk: Skeleton3D = hvt._skeleton
+	_check(sk != null, "General sem esqueleto")
+	if sk:
+		var foot := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftFoot")).origin
+		var head := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_Head")).origin
+		print("  General: pé a %.2f m, cabeça a %.2f m do chão" % [foot.y - hvt.global_position.y, head.y - hvt.global_position.y])
+		_check(foot.y - hvt.global_position.y > -0.05 and foot.y - hvt.global_position.y < 0.4, "pés do General fora do chão")
+		_check(head.y - hvt.global_position.y > 1.2, "General enterrado/deitado")
 	hvt.interact(player)
 	await _physics(10)
 	_check(objectives.is_current("extract"), "captura do HVT não concluiu")

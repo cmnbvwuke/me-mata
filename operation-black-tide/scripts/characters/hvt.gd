@@ -36,6 +36,10 @@ var _stuck_sample := 0.0
 var _stuck_check_pos := Vector3.ZERO
 var _visual: Node3D
 var _skeleton: Skeleton3D
+## Pose-base de cada osso (posição, rotação, escala). Vem do 1º quadro da animação
+## importada — a "rest pose" de FBX do Mixamo pode vir deslocada (personagem
+## enterrado no chão), enquanto a animação tem o posicionamento correto.
+var _base_pose: Array = []
 var _hands_up := true
 var _walk_phase := 0.0
 var _arms: Node3D
@@ -239,10 +243,20 @@ func _build_model() -> void:
 	var model := model_scene.instantiate() as Node3D
 	_visual.add_child(model)
 	model.rotation.y = PI  # modelos Mixamo olham para +Z; no Godot a frente é -Z
-	for ap in model.find_children("*", "AnimationPlayer", true, false):
-		(ap as AnimationPlayer).active = false  # só contém a pose T
 	var skeletons := model.find_children("*", "Skeleton3D", true, false)
 	_skeleton = skeletons[0] if not skeletons.is_empty() else null
+	for node in model.find_children("*", "AnimationPlayer", true, false):
+		var ap := node as AnimationPlayer
+		var anims := ap.get_animation_list()
+		if _skeleton and not anims.is_empty():
+			ap.play(anims[0])
+			ap.seek(0.0, true)
+		ap.stop(false)
+		ap.active = false  # as poses passam a ser aplicadas por código
+	if _skeleton:
+		for i in _skeleton.get_bone_count():
+			_base_pose.append([_skeleton.get_bone_pose_position(i), _skeleton.get_bone_pose_rotation(i),
+				_skeleton.get_bone_pose_scale(i)])
 	# Escala pela altura real da malha
 	var top := 0.0
 	var bottom := INF
@@ -258,7 +272,11 @@ func _build_model() -> void:
 
 ## Monta a pose a partir da pose de repouso: braços (rendido/capturado) e passada.
 func _animate_model(delta: float, speed: float) -> void:
-	_skeleton.reset_bone_poses()
+	for i in _base_pose.size():
+		var p: Array = _base_pose[i]
+		_skeleton.set_bone_pose_position(i, p[0])
+		_skeleton.set_bone_pose_rotation(i, p[1])
+		_skeleton.set_bone_pose_scale(i, p[2])
 	if _hands_up:
 		_rotate_bone("LeftArm", Vector3.BACK, 68.0)
 		_rotate_bone("RightArm", Vector3.BACK, -68.0)
