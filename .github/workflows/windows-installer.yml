@@ -1,0 +1,83 @@
+# Gera o instalador Windows do Operation Black Tide e publica num GitHub Release.
+# Link fixo do download: releases/download/<tag>/OperationBlackTide-Setup-<versão>.exe
+name: Instalador Windows
+
+on:
+  push:
+    branches: [claude/operation-black-tide-fps-pxr9pd]
+    paths:
+      - "operation-black-tide/**"
+      - "electron-app/**"
+      - ".github/workflows/windows-installer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-installer
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.3-stable"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: electron-app/package-lock.json
+
+      - name: Baixar Godot e export template do Windows
+        run: |
+          $base = "https://github.com/godotengine/godot/releases/download/$env:GODOT_VERSION"
+          Invoke-WebRequest "$base/Godot_v$($env:GODOT_VERSION)_win64.exe.zip" -OutFile godot.zip
+          7z x godot.zip -ogodot -y | Out-Null
+          Invoke-WebRequest "$base/Godot_v$($env:GODOT_VERSION)_export_templates.tpz" -OutFile templates.zip
+          $dest = Join-Path $env:APPDATA "Godot\export_templates\$($env:GODOT_VERSION -replace '-', '.')"
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          7z e templates.zip "templates/windows_release_x86_64.exe" "templates/version.txt" "-o$dest" -y | Out-Null
+          Remove-Item templates.zip
+          Get-ChildItem $dest
+          "GODOT=$((Resolve-Path "godot\Godot_v$($env:GODOT_VERSION)_win64_console.exe").Path)" >> $env:GITHUB_ENV
+
+      - name: Instalar dependências
+        working-directory: electron-app
+        run: npm ci
+
+      - name: Exportar jogo e gerar instalador
+        working-directory: electron-app
+        run: npm run dist:win
+
+      - name: Ler versão
+        id: version
+        working-directory: electron-app
+        run: |
+          $v = (Get-Content package.json | ConvertFrom-Json).version
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Publicar release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Operation Black Tide v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            Protótipo jogável de **Operation Black Tide** — missão *Absolute Resolve*.
+
+            **Download (Windows 10/11, 64 bits):** `OperationBlackTide-Setup-${{ steps.version.outputs.version }}.exe`
+
+            O instalador não é assinado digitalmente: se o SmartScreen avisar,
+            clique em **Mais informações → Executar assim mesmo**.
+            Se o jogo não abrir, o launcher tenta sozinho o modo compatibilidade (OpenGL).
+          files: electron-app/dist/OperationBlackTide-Setup-${{ steps.version.outputs.version }}.exe
+          fail_on_unmatched_files: true
