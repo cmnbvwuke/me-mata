@@ -836,6 +836,7 @@ func _on_mission_success() -> void:
 	_mission_over = true
 	pause_menu.set_enabled(false)
 	player.cinematic_mode = true
+	GameManager.mark_mission_completed(GameManager.current_mission_id)
 	hud.show_banner("JACKPOT", "General Salcedo capturado com vida. Extraindo...", 5.0)
 	hud.show_radio("OVERLORD", "Viper 2-1 decolando com o pacote. Excelente trabalho, TRIDENT.", 4.0)
 	hud.fade_to_black(3.5)

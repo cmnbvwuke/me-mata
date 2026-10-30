@@ -24,6 +24,8 @@ var intro_seen: bool = false
 var stats: Dictionary = {}
 ## Preenchido ao final da missão para a tela de resultado.
 var last_result: Dictionary = {}
+## IDs das missões já concluídas (salvo junto com as configurações).
+var completed_missions: PackedStringArray = []
 
 
 func _ready() -> void:
@@ -75,6 +77,27 @@ func finish_mission(success: bool, reason: String = "") -> void:
 	_change_scene(MISSION_END_SCENE)
 
 
+func mark_mission_completed(mission_id: String) -> void:
+	if not completed_missions.has(mission_id):
+		completed_missions.append(mission_id)
+		save_settings()
+
+
+func is_mission_completed(mission_id: String) -> bool:
+	return completed_missions.has(mission_id)
+
+
+## Próxima missão jogável na ordem da campanha (ou "" se for a última).
+func get_next_mission(mission_id: String) -> String:
+	var ids: Array[String] = []
+	for phase in Campaign.PHASES:
+		for mission in phase["missions"]:
+			if String(mission["scene"]) != "":
+				ids.append(String(mission["id"]))
+	var i := ids.find(mission_id)
+	return ids[i + 1] if i >= 0 and i + 1 < ids.size() else ""
+
+
 func go_to_main_menu() -> void:
 	_change_scene(MAIN_MENU_SCENE)
 
@@ -114,6 +137,7 @@ func load_settings() -> void:
 		mouse_sensitivity = float(cfg.get_value("controls", "mouse_sensitivity", mouse_sensitivity))
 		master_volume = float(cfg.get_value("audio", "master_volume", master_volume))
 		field_of_view = float(cfg.get_value("video", "field_of_view", field_of_view))
+		completed_missions = PackedStringArray(cfg.get_value("progress", "completed_missions", PackedStringArray()))
 	apply_settings()
 
 
@@ -122,6 +146,7 @@ func save_settings() -> void:
 	cfg.set_value("controls", "mouse_sensitivity", mouse_sensitivity)
 	cfg.set_value("audio", "master_volume", master_volume)
 	cfg.set_value("video", "field_of_view", field_of_view)
+	cfg.set_value("progress", "completed_missions", completed_missions)
 	cfg.save(SETTINGS_PATH)
 
 

@@ -1,0 +1,47 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/missions/m1_recon.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="4_pause"]
+[ext_resource type="Script" path="res://scripts/objectives/objective_manager.gd" id="5_objectives"]
+[ext_resource type="Script" path="res://scripts/support/air_support.gd" id="6_air"]
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_level"]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 2.0
+agent_radius = 0.5
+agent_max_climb = 0.5
+filter_baking_aabb = AABB(-62, -2, -72, 124, 14, 152)
+
+[node name="M1Recon" type="Node3D"]
+script = ExtResource("1_level")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="Moon" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.286788, 0.409576, 0, 0.819152, 0.573576, -0.5, -0.496732, 0.709406, 0, 40, 0)
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_level")
+
+[node name="Geometry" type="Node3D" parent="NavigationRegion3D"]
+
+[node name="Dynamic" type="Node3D" parent="."]
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="ObjectiveManager" type="Node" parent="."]
+script = ExtResource("5_objectives")
+
+[node name="AirSupport" type="Node" parent="."]
+script = ExtResource("6_air")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("4_pause")]

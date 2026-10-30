@@ -4,6 +4,8 @@ extends CharacterBody3D
 ## Escondido na sala segura; o jogador segura [E] para rendê-lo e algemá-lo.
 ## Depois disso segue o jogador via navmesh até a extração.
 ## Se morrer (inclusive por fogo amigo), a missão falha.
+## Também é reutilizado como NPC escoltável (ex.: o desertor Coronel Ibarra),
+## configurando nome, texto da interação e cores pelas propriedades exportadas.
 
 signal captured
 signal killed
@@ -12,6 +14,12 @@ enum State { HIDING, FOLLOWING, BOARDING }
 
 @export var max_health: float = 140.0
 @export var follow_distance: float = 2.6
+@export var tag_text: String = "HVT"
+@export var interact_prompt: String = "Segure [E] para render e algemar o General Salcedo"
+@export var uniform_color: Color = Color(0.27, 0.3, 0.2)
+@export var beret_color: Color = Color(0.5, 0.05, 0.05)
+## Som ao interagir ("zip_tie" = algemas; "radio_beep" = resgate amigável)
+@export var interact_sound: String = "zip_tie"
 
 var state: State = State.HIDING
 var health: float = 140.0
@@ -74,7 +82,7 @@ func can_interact() -> bool:
 
 
 func get_interact_prompt() -> String:
-	return "Segure [E] para render e algemar o General Salcedo"
+	return interact_prompt
 
 
 func get_interact_hold_time() -> float:
@@ -83,7 +91,7 @@ func get_interact_hold_time() -> float:
 
 func interact(by: Node3D) -> void:
 	set_captured(by)
-	AudioManager.play_2d("zip_tie", -2.0)
+	AudioManager.play_2d(interact_sound, -2.0)
 	captured.emit()
 
 
@@ -134,9 +142,9 @@ func _set_pose_hiding(hiding: bool) -> void:
 func _build_visual() -> void:
 	_visual = Node3D.new()
 	add_child(_visual)
-	var uniform := _mat(Color(0.27, 0.3, 0.2))
+	var uniform := _mat(uniform_color)
 	var skin := _mat(Color(0.4, 0.28, 0.2))
-	var beret := _mat(Color(0.5, 0.05, 0.05))
+	var beret := _mat(beret_color)
 	var gold := _mat(Color(0.8, 0.62, 0.2))
 	_box(_visual, Vector3(0.36, 0.88, 0.22), Vector3(0, 0.44, 0), uniform)
 	_box(_visual, Vector3(0.48, 0.64, 0.3), Vector3(0, 1.18, 0), uniform)
@@ -159,7 +167,7 @@ func _build_visual() -> void:
 	_box(_arms, Vector3(0.12, 0.6, 0.12), Vector3(0.3, -0.28, 0), uniform)
 	_box(_arms, Vector3(0.12, 0.6, 0.12), Vector3(-0.3, -0.28, 0), uniform)
 	var tag := Label3D.new()
-	tag.text = "HVT"
+	tag.text = tag_text
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	tag.modulate = Color(1.0, 0.75, 0.25)
 	tag.outline_size = 10

@@ -52,9 +52,10 @@ func _ready() -> void:
 		["Tiros na cabeça (abates)", str(stats.get("headshots", 0))],
 		["Precisão", "%.0f%%  (%d/%d)" % [accuracy, hits, shots]],
 		["Vezes detectado (alarmes)", str(stats.get("times_detected", 0))],
-		["Inteligência coletada", "%d / %d" % [int(stats.get("intel", 0)), int(stats.get("intel_total", 0))]],
 		["Reinícios de checkpoint", str(stats.get("restarts", 0))],
 	]
+	if int(stats.get("intel_total", 0)) > 0:
+		lines.append(["Inteligência coletada", "%d / %d" % [int(stats.get("intel", 0)), int(stats.get("intel_total", 0))]])
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 40)
@@ -65,5 +66,10 @@ func _ready() -> void:
 	box.add_child(HSeparator.new())
 	if not success:
 		box.add_child(UIStyle.button("TENTAR NOVAMENTE (CHECKPOINT)", func() -> void: GameManager.restart_from_checkpoint()))
+	else:
+		var next_id := GameManager.get_next_mission(String(result.get("mission_id", "")))
+		if next_id != "":
+			var next_title := String(Campaign.get_mission(next_id).get("title", ""))
+			box.add_child(UIStyle.button("PRÓXIMA MISSÃO: " + next_title.to_upper(), func() -> void: GameManager.start_mission(next_id)))
 	box.add_child(UIStyle.button("REINICIAR MISSÃO", func() -> void: GameManager.start_mission(String(result.get("mission_id", "")))))
 	box.add_child(UIStyle.button("MENU PRINCIPAL", func() -> void: GameManager.go_to_main_menu()))

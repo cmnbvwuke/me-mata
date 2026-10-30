@@ -13,26 +13,36 @@ const PHASES := [
 		"id": "phase_1",
 		"title": "FASE 1 — SOMBRA NO CARIBE",
 		"missions": [
-			{"id": "m1_recon", "title": "Olhos no Horizonte", "scene": "",
-				"brief": "Reconhecimento e interdição marítima. Monitorar rotas de lanchas rápidas " \
-				+ "que partem do Porto de San Lázaro e marcar embarcações suspeitas."},
-			{"id": "m1_boarding", "title": "Maré Baixa", "scene": "",
-				"brief": "Abordagem (VBSS) de um cargueiro de bandeira falsa. Assumir a ponte de " \
-				+ "comando e neutralizar a tripulação armada."},
-			{"id": "m1_intel", "title": "Pacote Silencioso", "scene": "",
-				"brief": "Coletar inteligência no cargueiro: manifestos, telefones e o HD do capitão."},
+			{"id": "m1_recon", "title": "Olhos no Horizonte", "scene": "res://scenes/levels/missions/m1_recon.tscn",
+				"brief": "Reconhecimento e interdição marítima ao entardecer. Infiltre-se pela costa, " \
+				+ "marque com laser as lanchas do cartel na baía para a Marinha, derrube o repetidor " \
+				+ "de rádio e extraia pela enseada.\n\nFOCO: furtividade e vegetação."},
+			{"id": "m1_boarding", "title": "Maré Baixa", "scene": "res://scenes/levels/missions/m1_boarding.tscn",
+				"brief": "Abordagem (VBSS) noturna ao cargueiro \"Estrella del Sur\". Limpe o convés " \
+				+ "entre os contêineres, tome a ponte de comando, corte as máquinas e segure a proa " \
+				+ "até a lancha da Marinha.\n\nFOCO: combate a curta distância."},
+			{"id": "m1_intel", "title": "Pacote Silencioso", "scene": "res://scenes/levels/missions/m1_intel.tscn",
+				"brief": "Infiltração no porto de San Lázaro: colete manifestos, celulares e o HD do " \
+				+ "capitão, fixe um rastreador GPS no cargueiro e exfiltre pela lancha.\n\n" \
+				+ "FOCO: furtividade — sem alarme, sem reforços."},
 		],
 	},
 	{
 		"id": "phase_2",
 		"title": "FASE 2 — BLOQUEIO E PRESSÃO",
 		"missions": [
-			{"id": "m2_blockade", "title": "Linha Vermelha", "scene": "",
-				"brief": "Bloqueio naval. Escoltar o grupo de interdição e conter a fuga de embarcações."},
-			{"id": "m2_sabotage", "title": "Céu Cego", "scene": "",
-				"brief": "Sabotar o radar costeiro de Punta Herrera e a subestação que o alimenta."},
-			{"id": "m2_defector", "title": "Voz de Dentro", "scene": "",
-				"brief": "Extrair o Coronel Ibarra, desertor que conhece a rotina do General."},
+			{"id": "m2_blockade", "title": "Linha Vermelha", "scene": "res://scenes/levels/missions/m2_blockade.tscn",
+				"brief": "Bloqueio naval de Puerto Cardón. Retome o posto de interdição no píer, segure-o " \
+				+ "contra ondas vindas por terra e por mar, sabote as lanchas de fuga e limpe o porto.\n\n" \
+				+ "FOCO: defesa de posição e apoio aéreo."},
+			{"id": "m2_sabotage", "title": "Céu Cego", "scene": "res://scenes/levels/missions/m2_sabotage.tscn",
+				"brief": "Sabotagem noturna em Punta Herrera. Exploda os transformadores da subestação " \
+				+ "(a base fica às escuras), desligue o radar na sala de controle e fuja.\n\n" \
+				+ "FOCO: sabotagem e visão noturna."},
+			{"id": "m2_defector", "title": "Voz de Dentro", "scene": "res://scenes/levels/missions/m2_defector.tscn",
+				"brief": "Extraia o Coronel Ibarra, desertor que conhece a rotina do General, de um " \
+				+ "esconderijo em San Isidro e escolte-o até o carro sob emboscada.\n\n" \
+				+ "REGRA: Ibarra não pode morrer."},
 		],
 	},
 	{
@@ -56,9 +66,10 @@ const PHASES := [
 		"id": "phase_4",
 		"title": "FASE 4 — CONSEQUÊNCIAS",
 		"missions": [
-			{"id": "m4_remnants", "title": "Brasas", "scene": "",
-				"brief": "Combate a remanescentes da Guarda Negra e células do Cartel del Mar " \
-				+ "que tentam preencher o vácuo de poder."},
+			{"id": "m4_remnants", "title": "Brasas", "scene": "res://scenes/levels/missions/m4_remnants.tscn",
+				"brief": "O Cartel del Mar tenta ocupar o vácuo de poder. Destrua os laboratórios de " \
+				+ "Las Cenizas, elimine o chefe \"El Tiburón\" e segure a zona de pouso.\n\n" \
+				+ "FOCO: assalto e defesa."},
 		],
 	},
 ]

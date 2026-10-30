@@ -5,8 +5,8 @@ O país é governado há mais de uma década pelo **General Rodrigo Salcedo**, a
 a nação em um hub do narcotráfico. Você integra a **Força-Tarefa TRIDENT**, uma unidade multinacional
 de operações especiais encarregada de capturá-lo **vivo**.
 
-O protótipo inclui a missão principal jogável **Fase 3 — "Absolute Resolve"**. As outras fases
-aparecem no menu de campanha com briefing, marcadas como "em desenvolvimento".
+A campanha tem **8 missões jogáveis** em 4 fases (veja "Campanha" abaixo), com checkpoints,
+progresso salvo (✓ no menu) e o botão "Próxima missão" ao final de cada uma.
 
 ---
 
@@ -42,6 +42,14 @@ Ele percorre a missão inteira chamando os sistemas reais (intro, movimento, aga
 recarga, troca de arma, ADS, detecção/alarme, apoio aéreo, objetivos, captura do HVT,
 recarga de checkpoint, HVT seguindo pela navmesh, extração) e imprime `SMOKE TEST PASSED`.
 
+As outras 7 missões têm um teste próprio que conclui cada objetivo de cada missão (alvos e
+detonações, eliminação, defesa, resgate e escolta), testa a recarga de checkpoint e confere a vitória:
+
+```bash
+godot --headless --path operation-black-tide res://tests/missions_test.tscn            # todas
+godot --headless --path operation-black-tide res://tests/missions_test.tscn -- m2_defector   # uma
+```
+
 ---
 
 ## Controles
@@ -66,7 +74,20 @@ recarga de checkpoint, HVT seguindo pela navmesh, extração) e imprime `SMOKE T
 
 ---
 
-## A missão: Absolute Resolve
+## Campanha
+
+| Fase | Missão | Clima | Resumo |
+|---|---|---|---|
+| 1 — Sombra no Caribe | **Olhos no Horizonte** | Entardecer | Infiltração pela costa, marcar lanchas com laser, destruir o repetidor de rádio, extrair pela enseada |
+| 1 | **Maré Baixa** | Noite | Abordagem a um cargueiro: limpar o convés entre contêineres, tomar a ponte, cortar as máquinas, segurar a proa |
+| 1 | **Pacote Silencioso** | Noite | Porto de San Lázaro: coletar manifestos, celulares e HD (furtivo), fixar rastreador GPS, exfiltrar |
+| 2 — Bloqueio e Pressão | **Linha Vermelha** | Amanhecer | Retomar o posto no píer, defender 2 min contra ondas por terra e mar, sabotar lanchas, limpar o porto |
+| 2 | **Céu Cego** | Noite | Explodir a subestação (a base apaga), desligar o radar, fugir; torre com holofote |
+| 2 | **Voz de Dentro** | Entardecer | Resgatar o desertor Coronel Ibarra num vilarejo e escoltá-lo até o carro sob emboscadas |
+| 3 — Absolute Resolve | **Absolute Resolve** | Noite | A missão principal (abaixo) |
+| 4 — Consequências | **Brasas** | Nublado | Destruir 3 laboratórios, eliminar o chefe "El Tiburón", segurar a zona de pouso |
+
+## A missão principal: Absolute Resolve
 
 1. **Infiltração** – helicóptero voando baixo sobre o mar até a zona de pouso. Daí você segue a pé
    pela selva até a **Hacienda El Mirador**. Duas torres com **holofotes** varrem a aproximação;
@@ -107,6 +128,7 @@ operation-black-tide/
 │   ├── enemies/    enemy.tscn             # CharacterBody3D + NavigationAgent3D + indicador ?/!
 │   ├── characters/ hvt.tscn               # General Salcedo
 │   ├── levels/     absolute_resolve.tscn  # Ambiente, navmesh, player, HUD, pausa, objetivos
+│   │               missions/*.tscn        # As outras 7 missões da campanha
 │   └── ui/         hud.tscn, pause_menu.tscn
 ├── scripts/
 │   ├── autoload/   game_manager.gd        # Estado global, input map, checkpoints, stats, cenas
@@ -118,7 +140,8 @@ operation-black-tide/
 │   ├── weapons/    weapon_data.gd (Resource), weapon.gd, weapon_manager.gd
 │   ├── enemies/    enemy.gd (IA), enemy_profile.gd (Resource), cover_point.gd
 │   ├── characters/ hvt.gd
-│   ├── levels/     level_builder.gd, absolute_resolve.gd
+│   ├── levels/     level_builder.gd, absolute_resolve.gd,
+│   │               mission_level.gd (base data-driven) + missions/ (7 missões)
 │   ├── objectives/ objective_manager.gd
 │   ├── support/    air_support.gd, helicopter.gd, searchlight.gd, pickups.gd
 │   ├── fx/         fx.gd                  # Impacto, sangue, decals, traçantes, explosões
@@ -128,7 +151,7 @@ operation-black-tide/
 │   ├── weapons/    m4a1.tres, p226_sd.tres
 │   └── enemies/    guard.tres, elite.tres, militia.tres
 ├── shaders/        nvg.gdshader, damage_vignette.gdshader, menu_background.gdshader
-└── tests/          smoke_test.tscn/.gd
+└── tests/          smoke_test.tscn/.gd, missions_test.tscn/.gd
 ```
 
 O protótipo **não usa assets externos**: geometria (greybox), armas em primeira pessoa, personagens,
@@ -195,9 +218,12 @@ rotor de helicóptero, sirene, rádio.
   Para um modelo novo, adicione um `model_type` em `Weapon._build_model()` ou troque por uma cena `.glb`.
 - **Novo tipo de inimigo**: novo `.tres` de `EnemyProfile` em `resources/enemies/` e registre no
   dicionário `PROFILES` do nível.
-- **Nova missão**: crie uma cena com a mesma estrutura de `absolute_resolve.tscn` (o script do nível
-  monta a geometria com o `LevelBuilder`, ou monte à mão no editor — a navmesh é rebakeada em runtime)
-  e preencha o campo `"scene"` da missão em `scripts/data/campaign.gd`.
+- **Nova missão**: crie um script que estende `MissionLevel` (`scripts/levels/mission_level.gd`) e
+  sobrescreva `build_world()`, `define_objectives()` e `spawn_enemies()` — os objetivos são dados
+  (`reach`, `kill`, `interact` com cargas/terminais, `defend`, `rescue`, `escort`); checkpoints,
+  ondas de reforço, explosões, alarme e vitória/derrota já vêm prontos. Copie uma cena de
+  `scenes/levels/missions/`, troque o script e preencha `"scene"` em `scripts/data/campaign.gd`.
+  Use `scripts/levels/missions/m1_recon.gd` como exemplo.
 - **Sons reais**: `AudioManager.register("rifle_shot", load("res://audio/m4.ogg"))` substitui o som
   procedural mantendo todas as chamadas.
 - **Objetivos**: `ObjectiveManager.setup([...])` + `complete("id")` a partir de qualquer gatilho;
@@ -210,4 +236,3 @@ rotor de helicóptero, sirene, rádio.
 - Visual "greybox" procedural (sem modelos/texturas artísticas nem animações esqueletais).
 - Checkpoints recriam o nível e só fazem nascer os inimigos das etapas ainda não superadas.
 - Um único andar na residência; sem inclinação lateral (lean) ou granadas.
-- As fases 1, 2 e 4 existem apenas como dados de campanha/briefing.

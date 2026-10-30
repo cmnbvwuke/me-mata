@@ -94,7 +94,8 @@ func _show_campaign() -> void:
 		for mission in phase["missions"]:
 			var playable := String(mission["scene"]) != ""
 			var id := String(mission["id"])
-			var b := UIStyle.button("   " + String(mission["title"]), func() -> void: _select_mission(id))
+			var done := "   ✓" if GameManager.is_mission_completed(id) else ""
+			var b := UIStyle.button("   " + String(mission["title"]) + done, func() -> void: _select_mission(id))
 			b.custom_minimum_size = Vector2(0, 40)
 			if not playable:
 				b.add_theme_color_override("font_color", UIStyle.DIM)
