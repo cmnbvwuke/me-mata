@@ -59,7 +59,7 @@ godot --headless --path operation-black-tide res://tests/missions_test.tscn -- m
 | W A S D / mouse | Mover / olhar |
 | Shift (segurar) | Correr (só para frente; não atira correndo) |
 | C ou Ctrl | Agachar (alternar) — mais silencioso e menos visível |
-| Espaço | Pular |
+| Espaço | Pular — diante de uma janela ou obstáculo baixo (sacos de areia, mesas, caixotes), **salta por cima/através** |
 | Botão esquerdo | Atirar |
 | Botão direito (segurar) | Mirar (ADS) |
 | R | Recarregar (tática ou com a arma vazia, tempos diferentes) |

@@ -1,7 +1,7 @@
 class_name Helicopter
 extends Node3D
 ## Helicóptero de transporte/ataque (MH-60 estilizado), totalmente procedural.
-## Sem colisão: é usado em sequências (infiltração, órbita e extração).
+## Fuselagem e cauda têm colisão (AnimatableBody3D, acompanha o voo); rotores não.
 
 signal flight_finished
 
@@ -112,6 +112,7 @@ func _build() -> void:
 		remove_child(tb)
 		tb.rotation.x = i * PI * 0.5
 		_tail_rotor.add_child(tb)
+	_build_collision()
 	# Luz vermelha de cabine (operações noturnas) e luzes de navegação
 	var cabin := OmniLight3D.new()
 	cabin.light_color = Color(1.0, 0.1, 0.05)
@@ -126,8 +127,24 @@ func _build() -> void:
 	nav_l.position = Vector3(1.3, 0.5, -1.5)
 	add_child(nav_l)
 	seat = Marker3D.new()
-	seat.position = Vector3(1.45, -1.0, 0.6)
+	seat.position = Vector3(1.7, -1.0, 0.6)
 	add_child(seat)
+
+
+func _build_collision() -> void:
+	var body := AnimatableBody3D.new()
+	body.collision_layer = Layers.WORLD
+	body.collision_mask = 0
+	body.sync_to_physics = false
+	for part in [[Vector3(2.3, 2.0, 7.6), Vector3(0, 0, -0.8)], [Vector3(0.8, 0.7, 6.5), Vector3(0, 0.45, 6.0)],
+			[Vector3(2.2, 0.3, 4.0), Vector3(0, -1.2, 0)]]:
+		var cs := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = part[0]
+		cs.shape = shape
+		cs.position = part[1]
+		body.add_child(cs)
+	add_child(body)
 
 
 func _mat(c: Color, metallic: float, roughness: float) -> StandardMaterial3D:

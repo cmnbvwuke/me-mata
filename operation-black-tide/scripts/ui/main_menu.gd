@@ -143,7 +143,7 @@ func _show_controls() -> void:
 	_content.add_child(UIStyle.label("CONTROLES", 22, UIStyle.AMBER))
 	var rows := [
 		["W A S D", "Mover"], ["Mouse", "Olhar"], ["Shift (segurar)", "Correr"],
-		["C / Ctrl", "Agachar (alternar)"], ["Espaço", "Pular"],
+		["C / Ctrl", "Agachar (alternar)"], ["Espaço", "Pular / saltar janelas e obstáculos baixos"],
 		["Botão esquerdo", "Atirar"], ["Botão direito (segurar)", "Mirar (ADS)"],
 		["R", "Recarregar"], ["B", "Modo de disparo AUTO/SEMI"],
 		["1 / 2 / Q / Roda", "Trocar arma (M4A1 / P226 SD)"],

@@ -49,6 +49,32 @@ func _run() -> void:
 	await _physics(30)
 	_check(not player.is_crouching, "levantar não funcionou")
 
+	# Saltar pela janela do escritório (parede oeste, janela em z = -31)
+	player.global_position = Vector3(-15.0, 0.05, -31)
+	player.set_view_yaw(-PI * 0.5)
+	await _physics(10)
+	await _tap("jump")
+	await _physics(50)
+	print("  janela: x=%.2f (dentro se > -13.6)" % player.global_position.x)
+	_check(player.global_position.x > -13.6 and not player.is_vaulting, "não saltou pela janela")
+	# Parede sem janela: não pode atravessar
+	player.global_position = Vector3(-15.0, 0.05, -25)
+	player.set_view_yaw(-PI * 0.5)
+	await _physics(10)
+	await _tap("jump")
+	await _physics(50)
+	_check(player.global_position.x < -14.2, "atravessou uma parede sem janela")
+	# Sacos de areia do pátio
+	player.global_position = Vector3(-4, 0.05, -7.9)
+	player.set_view_yaw(0.0)
+	await _physics(10)
+	await _tap("jump")
+	await _physics(50)
+	print("  sacos de areia: z=%.2f (saltou se < -9.5)" % player.global_position.z)
+	_check(player.global_position.z < -9.5, "não saltou os sacos de areia")
+	player.global_position = Vector3(-8, 0.1, 50)
+	await _physics(10)
+
 	# Tiro automático + recarga
 	var rifle := player.weapons.current
 	await _physics(40)  # termina de equipar
@@ -130,12 +156,22 @@ func _run() -> void:
 	await _physics(240)
 	print("  HVT andou %.1f m" % hvt.global_position.distance_to(hvt_start))
 	_check(hvt.global_position.distance_to(hvt_start) > 2.0, "HVT não seguiu o jogador")
+	# Caminho longo: da sala segura até a varanda, passando por vários cômodos
+	player.global_position = Vector3(0, 0.1, -10.5)
+	var arrived := false
+	for i in 1500:
+		await get_tree().physics_frame
+		if hvt.global_position.distance_to(player.global_position) < 4.0:
+			arrived = true
+			print("  HVT chegou à varanda em %.1f s" % (i / 60.0))
+			break
+	_check(arrived, "HVT não chegou da sala segura até a varanda")
 
 	# Extração
 	await _physics(300)  # reforços chegam e combatem
 	level.call("_on_heli_landed")
-	player.global_position = Vector3(-20, 0.1, -4)
-	hvt.global_position = Vector3(-21, 0.1, -4)
+	player.global_position = Vector3(-14.5, 0.1, -4)
+	hvt.global_position = Vector3(-15, 0.1, -6.5)
 	await _physics(30)
 	await _wait_for_scene("MissionEnd")
 	_check(bool(GameManager.last_result.get("success", false)), "missão não terminou com sucesso")

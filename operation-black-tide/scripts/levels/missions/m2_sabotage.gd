@@ -48,7 +48,7 @@ func build_world() -> void:
 	builder.box(Vector3(0.15, 2.2, 8), SUBSTATION + Vector3(-7, 1.1, 0), fence)
 	builder.box(Vector3(0.15, 2.2, 8), SUBSTATION + Vector3(7, 1.1, 0), fence)
 	for x in [-5.0, 0.0, 5.0]:
-		builder.box(Vector3(0.3, 6, 0.3), SUBSTATION + Vector3(x, 3, -3), builder.material("metal", Color(0.12, 0.13, 0.12), 0.6, 0.4), false)
+		builder.box(Vector3(0.3, 6, 0.3), SUBSTATION + Vector3(x, 3, -3), builder.material("metal", Color(0.12, 0.13, 0.12), 0.6, 0.4))
 	builder.box(Vector3(14, 0.2, 0.2), SUBSTATION + Vector3(0, 5.8, -3), builder.material("metal", Color()), false)
 	# Prédio de controle e antena do radar
 	house(CONTROL, Vector2(12, 10), 3.5, ["s", "w"], Color(0.62, 0.62, 0.6))

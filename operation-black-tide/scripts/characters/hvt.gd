@@ -27,6 +27,9 @@ var is_dead: bool = false
 var follow_target: Node3D = null
 var _board_position := Vector3.ZERO
 var _last_target := Vector3(INF, INF, INF)
+var _stuck_time := 0.0
+var _stuck_sample := 0.0
+var _stuck_check_pos := Vector3.ZERO
 var _visual: Node3D
 var _arms: Node3D
 
@@ -66,6 +69,7 @@ func _physics_process(delta: float) -> void:
 				dir = dir.normalized()
 				var dist := global_position.distance_to(target)
 				speed = clampf(dist * 1.3, 2.0, 6.0)
+	_update_stuck(delta, has_target, target)
 	var horizontal := Vector3(velocity.x, 0, velocity.z).lerp(dir * speed, clampf(delta * 8.0, 0.0, 1.0))
 	velocity.x = horizontal.x
 	velocity.z = horizontal.z
@@ -73,6 +77,37 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if dir.length() > 0.1:
 		rotation.y = lerp_angle(rotation.y, atan2(-dir.x, -dir.z), clampf(delta * 6.0, 0.0, 1.0))
+
+
+## Recuperação de travamento: se ele quer andar mas não sai do lugar,
+## recalcula a rota; se continuar preso, reaparece atrás do jogador
+## (fora da linha de visão, sobre o navmesh).
+func _update_stuck(delta: float, wants_to_move: bool, target: Vector3) -> void:
+	if not wants_to_move:
+		_stuck_time = 0.0
+		_stuck_sample = 0.0
+		_stuck_check_pos = global_position
+		return
+	_stuck_sample += delta
+	if _stuck_sample < 1.0:
+		return
+	# Amostra a cada 1 s: quanto ele andou nesse intervalo?
+	_stuck_sample = 0.0
+	var moved := global_position.distance_to(_stuck_check_pos)
+	_stuck_check_pos = global_position
+	if moved > 0.4:
+		_stuck_time = 0.0
+		return
+	_stuck_time += 1.0
+	# Preso: força novo caminho
+	_last_target = Vector3(INF, INF, INF)
+	agent.target_position = target
+	if _stuck_time >= 3.0 and global_position.distance_to(target) > 5.0 and follow_target != null:
+		var behind := follow_target.global_position + follow_target.global_basis.z * 2.0
+		var map := agent.get_navigation_map()
+		global_position = NavigationServer3D.map_get_closest_point(map, behind) + Vector3.UP * 0.1
+		velocity = Vector3.ZERO
+		_stuck_time = 0.0
 
 
 # --- Interação (contrato usado pelo Player) ----------------------------------

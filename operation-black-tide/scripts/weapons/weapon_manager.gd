@@ -96,7 +96,7 @@ func get_sensitivity_multiplier() -> float:
 
 
 func _can_act() -> bool:
-	return player != null and not player.is_dead and not player.cinematic_mode
+	return player != null and not player.is_dead and not player.cinematic_mode and not player.is_vaulting
 
 
 # =========================================================================

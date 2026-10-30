@@ -10,11 +10,11 @@
 [sub_resource type="NavigationMesh" id="NavigationMesh_level"]
 geometry_parsed_geometry_type = 1
 geometry_collision_mask = 1
-cell_size = 0.25
-cell_height = 0.25
-agent_height = 2.0
-agent_radius = 0.5
-agent_max_climb = 0.5
+cell_size = 0.2
+cell_height = 0.2
+agent_height = 1.8
+agent_radius = 0.4
+agent_max_climb = 0.4
 filter_baking_aabb = AABB(-62, -2, -72, 124, 14, 152)
 
 [node name="M1Recon" type="Node3D"]

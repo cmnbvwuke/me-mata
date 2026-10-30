@@ -36,6 +36,13 @@ signal nvg_toggled(enabled: bool)
 @export_group("Câmera")
 @export var base_mouse_sensitivity: float = 0.0022
 
+@export_group("Saltar obstáculos (vault)")
+## Distância máxima até o obstáculo/janela para saltar.
+@export var vault_reach: float = 1.1
+## Altura mínima e máxima (a partir dos pés) do topo do obstáculo ou do peitoril.
+@export var vault_min_height: float = 0.45
+@export var vault_max_height: float = 1.35
+
 @export_group("Furtividade (raio de ruído em metros)")
 @export var noise_walk: float = 5.0
 @export var noise_sprint: float = 14.0
@@ -55,6 +62,8 @@ var is_sprinting: bool = false
 ## Em modo cinemático o jogador só olha ao redor (ex.: dentro do helicóptero).
 var cinematic_mode: bool = false
 var nvg_enabled: bool = false
+## Durante o salto sobre obstáculo o movimento é controlado por um tween.
+var is_vaulting: bool = false
 
 var _gravity: float = 9.8
 var _capsule: CapsuleShape3D
@@ -72,6 +81,8 @@ var _fall_speed := 0.0
 var _current_eye := 1.62
 var _interact_target: Object = null
 var _interact_progress := 0.0
+var _vault_hint := false
+var _vault_hint_timer := 0.0
 
 
 func _ready() -> void:
@@ -125,9 +136,11 @@ func _physics_process(delta: float) -> void:
 	_update_health(delta)
 	if is_dead:
 		return
-	if cinematic_mode:
+	if cinematic_mode or is_vaulting:
 		velocity = Vector3.ZERO
 		is_sprinting = false
+		if is_vaulting:
+			_current_eye = lerpf(_current_eye, crouch_eye + 0.2, clampf(delta * 12.0, 0.0, 1.0))
 		head.position = Vector3(0, _current_eye, 0)
 		interaction_changed.emit("", 0.0)
 		return
@@ -172,6 +185,10 @@ func _update_movement(delta: float) -> void:
 	velocity.z = horizontal.z
 
 	if Input.is_action_just_pressed("jump") and is_on_floor():
+		var vault := _find_vault()
+		if not vault.is_empty():
+			_start_vault(vault)
+			return
 		if is_crouching:
 			_try_stand()
 		else:
@@ -333,7 +350,12 @@ func _update_interaction(delta: float) -> void:
 		_interact_target = target
 		_interact_progress = 0.0
 	if target == null:
-		interaction_changed.emit("", 0.0)
+		# Sem interativo à frente: avisa se dá para saltar o obstáculo/janela
+		_vault_hint_timer -= delta
+		if _vault_hint_timer <= 0.0:
+			_vault_hint_timer = 0.15
+			_vault_hint = is_on_floor() and not _find_vault().is_empty()
+		interaction_changed.emit("[Espaço] Saltar" if _vault_hint else "", 0.0)
 		return
 	var hold: float = target.get_interact_hold_time()
 	if Input.is_action_pressed("interact"):
@@ -345,6 +367,103 @@ func _update_interaction(delta: float) -> void:
 	else:
 		_interact_progress = 0.0
 	interaction_changed.emit(String(target.get_interact_prompt()), _interact_progress)
+
+
+# =========================================================================
+# Saltar obstáculos e janelas (vault)
+# =========================================================================
+
+## Procura um obstáculo baixo ou janela à frente que possa ser transposto.
+## Retorna {} se não houver, ou {"top": altura, "landing": ponto, "crouch": bool}.
+func _find_vault() -> Dictionary:
+	var space := get_world_3d().direct_space_state
+	var fwd := -global_basis.z
+	fwd.y = 0.0
+	if fwd.length() < 0.01:
+		return {}
+	fwd = fwd.normalized()
+	var feet := global_position
+	# 1) Há algo sólido à frente, na altura da cintura?
+	var low := _ray(space, feet + Vector3.UP * 0.6, feet + Vector3.UP * 0.6 + fwd * (vault_reach + 0.35))
+	if low.is_empty():
+		return {}
+	var face: Vector3 = low["position"]
+	var hit_dist := Vector2(face.x - feet.x, face.z - feet.z).length()
+	# 2) Topo do obstáculo / peitoril da janela (raio descendo logo depois da face)
+	var probe := face + fwd * 0.12
+	var top_hit := _ray(space, Vector3(probe.x, feet.y + vault_max_height + 0.6, probe.z), Vector3(probe.x, feet.y + 0.2, probe.z))
+	if top_hit.is_empty():
+		return {}
+	var top: float = (top_hit["position"] as Vector3).y - feet.y
+	if top < vault_min_height or top > vault_max_height:
+		return {}
+	# 3) A passagem acima do topo precisa estar livre (abertura da janela)
+	for h in [top + 0.2, top + 0.95]:
+		var from := Vector3(feet.x, feet.y + h, feet.z)
+		if not _ray(space, from, from + fwd * (hit_dist + 1.4)).is_empty():
+			return {}
+	# 4) Ponto de aterrissagem do outro lado, com espaço para o corpo
+	for extra in [0.55, 0.85, 1.15, 1.45]:
+		var p: Vector3 = feet + fwd * (hit_dist + float(extra))
+		var ground := _ray(space, Vector3(p.x, feet.y + top + 0.3, p.z), Vector3(p.x, feet.y - 2.5, p.z))
+		if ground.is_empty():
+			continue
+		var land: Vector3 = ground["position"]
+		if land.y > feet.y + top - 0.3:
+			continue  # ainda em cima do obstáculo (ex.: mesa funda)
+		if _body_fits(space, land, stand_height):
+			return {"top": top, "landing": land, "crouch": false}
+		if _body_fits(space, land, crouch_height):
+			return {"top": top, "landing": land, "crouch": true}
+	return {}
+
+
+func _start_vault(v: Dictionary) -> void:
+	is_vaulting = true
+	is_sprinting = false
+	velocity = Vector3.ZERO
+	collision.disabled = true  # atravessa a abertura sem enroscar no batente
+	var start := global_position
+	var landing: Vector3 = v["landing"]
+	var peak_y := start.y + float(v["top"]) + 0.1
+	var over := start.lerp(landing, 0.5)
+	over.y = peak_y
+	AudioManager.play_2d("footstep", -4.0, 0.1)
+	StealthSystem.emit_noise(global_position, 6.0, self)
+	add_shake(0.1)
+	var tw := create_tween()
+	tw.tween_property(self, "global_position", Vector3(start.x, peak_y, start.z).lerp(over, 0.25), 0.16)
+	tw.tween_property(self, "global_position", over, 0.12)
+	tw.tween_property(self, "global_position", landing + Vector3.UP * 0.05, 0.18)
+	tw.tween_callback(_end_vault.bind(bool(v["crouch"]), (landing - start).normalized()))
+
+
+func _end_vault(crouch: bool, dir: Vector3) -> void:
+	collision.disabled = false
+	is_vaulting = false
+	is_crouching = crouch
+	_capsule.height = crouch_height if crouch else stand_height
+	collision.position.y = _capsule.height * 0.5
+	velocity = Vector3(dir.x, 0.0, dir.z) * 2.0
+	AudioManager.play_2d("footstep", -2.0, 0.1)
+	add_shake(0.15)
+
+
+func _ray(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3) -> Dictionary:
+	var q := PhysicsRayQueryParameters3D.create(from, to, Layers.WORLD, [get_rid()])
+	return space.intersect_ray(q)
+
+
+func _body_fits(space: PhysicsDirectSpaceState3D, feet: Vector3, height: float) -> bool:
+	var shape := CapsuleShape3D.new()
+	shape.radius = _capsule.radius
+	shape.height = height
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = shape
+	q.transform = Transform3D(Basis(), feet + Vector3.UP * (height * 0.5 + 0.08))
+	q.collision_mask = Layers.WORLD | Layers.ENEMY
+	q.exclude = [get_rid()]
+	return space.intersect_shape(q, 1).is_empty()
 
 
 func _find_interactable() -> Object:

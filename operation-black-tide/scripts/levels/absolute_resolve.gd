@@ -256,7 +256,7 @@ func _build_outer_area() -> void:
 	# Posto de controle na estrada
 	builder.cover_obstacle(Vector3(2.6, 1.1, 0.6), Vector3(4.2, 0.55, 31), sandbag)
 	builder.cover_obstacle(Vector3(2.6, 1.1, 0.6), Vector3(11.8, 0.55, 31), sandbag)
-	builder.box(Vector3(6, 0.12, 0.12), Vector3(8, 1.0, 31), builder.material("barrier", Color(0.6, 0.1, 0.08)), false)
+	builder.box(Vector3(6, 0.12, 0.12), Vector3(8, 1.0, 31), builder.material("barrier", Color(0.6, 0.1, 0.08)))
 	builder.cover_obstacle(Vector3(1.6, 2.5, 1.6), Vector3(13.6, 1.25, 33.5), concrete)
 
 	# Tambores de combustível e pedras (cobertura no caminho)
@@ -312,7 +312,7 @@ func _build_watchtower(base: Vector3) -> void:
 	builder.box(Vector3(0.1, 0.95, 3.4), base + Vector3(1.65, 6.1, 0), wood)
 	builder.box(Vector3(0.1, 0.95, 3.4), base + Vector3(-1.65, 6.1, 0), wood)
 	builder.box(Vector3(3.8, 0.2, 3.8), base + Vector3.UP * 8.3, builder.material("metal", Color()), false)
-	builder.box(Vector3(0.5, 5.4, 0.08), base + Vector3(0, 2.7, -1.7), wood, false)  # escada (visual)
+	builder.box(Vector3(0.5, 5.4, 0.08), base + Vector3(0, 2.7, -1.7), wood)  # escada
 
 
 func _build_courtyard() -> void:
@@ -325,8 +325,8 @@ func _build_courtyard() -> void:
 
 	# Chafariz com a estátua do General
 	builder.cylinder(2.3, 0.8, Vector3(0, 0, -2), concrete, true, 24)
-	builder.cylinder(0.5, 1.2, Vector3(0, 0.8, -2), concrete, false, 12)
-	builder.box(Vector3(0.7, 1.6, 0.5), Vector3(0, 2.8, -2), builder.material("bronze", Color(0.25, 0.2, 0.12), 0.5, 0.6), false)
+	builder.cylinder(0.5, 1.2, Vector3(0, 0.8, -2), concrete, true, 12)
+	builder.box(Vector3(0.7, 1.6, 0.5), Vector3(0, 2.8, -2), builder.material("bronze", Color(0.25, 0.2, 0.12), 0.5, 0.6))
 	for a in 8:
 		var ang := a * TAU / 8.0
 		builder.add_cover_point(Vector3(0, 0, -2) + Vector3(cos(ang), 0, sin(ang)) * 2.9)
@@ -337,7 +337,7 @@ func _build_courtyard() -> void:
 		var rot: float = car[1]
 		builder.cover_obstacle(Vector3(2.0, 1.4, 4.8), pos + Vector3.UP * 0.7, metal, rot, true)
 		builder.box(Vector3(1.9, 0.6, 2.6), pos + Vector3(0, 1.7, 0) + Basis(Vector3.UP, rot) * Vector3(0, 0, 0.4),
-			builder.material("glass_dark", Color(0.02, 0.03, 0.04), 0.1, 0.5, false), false, rot)
+			builder.material("glass_dark", Color(0.02, 0.03, 0.04), 0.1, 0.5, false), true, rot)
 
 	# Sacos de areia
 	builder.cover_obstacle(Vector3(4, 1.1, 0.6), Vector3(-4, 0.55, -9), sandbag)
@@ -686,7 +686,7 @@ func _play_intro() -> void:
 	_intro_active = true
 	player.cinematic_mode = true
 	pause_menu.set_enabled(false)
-	var path: Array[Vector3] = [Vector3(-55, 6, 150), Vector3(-30, 5, 110), Vector3(-14, 4, 78), LZ_POS + Vector3(0, 2.4, 1.0)]
+	var path: Array[Vector3] = [Vector3(-55, 6, 150), Vector3(-30, 5, 110), Vector3(-14, 4, 78), LZ_POS + Vector3(0, 4.5, 1.0)]
 	var times: Array[float] = [5.0, 6.0, 5.5, 4.5]
 	heli.fly_path(path, times)
 	heli.flight_finished.connect(_end_intro, CONNECT_ONE_SHOT)
@@ -708,7 +708,7 @@ func _end_intro() -> void:
 	heli.stop_flight()
 	if heli.flight_finished.is_connected(_end_intro):
 		heli.flight_finished.disconnect(_end_intro)
-	heli.global_position = LZ_POS + Vector3(0, 2.4, 1.0)
+	heli.global_position = LZ_POS + Vector3(0, 4.5, 1.0)
 	player.cinematic_mode = false
 	pause_menu.set_enabled(true)
 	player.global_position = LZ_POS
