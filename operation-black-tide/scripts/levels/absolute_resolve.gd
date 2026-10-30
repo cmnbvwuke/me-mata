@@ -789,9 +789,9 @@ func _on_hvt_captured() -> void:
 
 func _start_extraction() -> void:
 	_extraction_started = true
-	hud.show_radio("OVERLORD", "Copiado Jackpot. Viper 2-1 a caminho do heliponto — ETA 30 segundos.", 4.5)
+	hud.show_radio("OVERLORD", "Copiado Jackpot. Viper 2-1 a caminho do heliponto — ETA 45 segundos.", 4.5)
 	hud.show_radio("OVERLORD", "Múltiplos veículos do cartel chegando pelo portão sul!", 4.0)
-	_heli_eta = 28.0
+	_heli_eta = 45.0
 	_set_extract_marker(heli)  # o marcador acompanha o helicóptero até o pouso
 	# Reforços em duas ondas
 	_spawn_reinforcements(0)
@@ -800,7 +800,7 @@ func _start_extraction() -> void:
 	tw.tween_callback(_spawn_reinforcements.bind(1))
 	# Aproximação do helicóptero
 	var approach: Array[Vector3] = [HELIPAD_POS + Vector3(30, 30, 40), HELIPAD_POS + Vector3(0, 14, 0), HELIPAD_POS + Vector3(0, 1.4, 0)]
-	var times: Array[float] = [12.0, 10.0, 6.0]
+	var times: Array[float] = [22.0, 16.0, 7.0]
 	heli.fly_path(approach, times)
 	heli.flight_finished.connect(_on_heli_landed, CONNECT_ONE_SHOT)
 
