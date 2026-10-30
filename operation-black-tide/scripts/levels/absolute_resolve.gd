@@ -62,6 +62,9 @@ var _mission_over := false
 var _intro_active := false
 var _heli_landed := false
 var _extraction_started := false
+## Segundos até o helicóptero pousar (contagem mostrada no objetivo)
+var _heli_eta := -1.0
+var _eta_refresh := 0.0
 var _time := 0.0
 var _hvt_warned := false
 var _rng := RandomNumberGenerator.new()
@@ -109,6 +112,7 @@ func _process(delta: float) -> void:
 	if _mission_over:
 		return
 	if objectives.is_current("extract"):
+		_update_heli_eta(delta)
 		_check_extraction()
 	if hvt and hvt.state == HVTCharacter.State.FOLLOWING and not _hvt_warned:
 		if hvt.global_position.distance_to(player.global_position) > 25.0:
@@ -785,9 +789,10 @@ func _on_hvt_captured() -> void:
 
 func _start_extraction() -> void:
 	_extraction_started = true
-	hud.show_radio("OVERLORD", "Copiado Jackpot. Viper 2-1 a caminho do heliponto — ETA 45 segundos.", 4.5)
+	hud.show_radio("OVERLORD", "Copiado Jackpot. Viper 2-1 a caminho do heliponto — ETA 30 segundos.", 4.5)
 	hud.show_radio("OVERLORD", "Múltiplos veículos do cartel chegando pelo portão sul!", 4.0)
-	objectives.set_progress("extract", "Aguarde o helicóptero e proteja o HVT.")
+	_heli_eta = 28.0
+	_set_extract_marker(heli)  # o marcador acompanha o helicóptero até o pouso
 	# Reforços em duas ondas
 	_spawn_reinforcements(0)
 	var tw := create_tween()
@@ -795,12 +800,9 @@ func _start_extraction() -> void:
 	tw.tween_callback(_spawn_reinforcements.bind(1))
 	# Aproximação do helicóptero
 	var approach: Array[Vector3] = [HELIPAD_POS + Vector3(30, 30, 40), HELIPAD_POS + Vector3(0, 14, 0), HELIPAD_POS + Vector3(0, 1.4, 0)]
-	var times: Array[float] = [22.0, 16.0, 7.0]
-	var heli_tw := create_tween()
-	heli_tw.tween_interval(1.0)
-	heli_tw.tween_callback(func() -> void:
-		heli.fly_path(approach, times)
-		heli.flight_finished.connect(_on_heli_landed, CONNECT_ONE_SHOT))
+	var times: Array[float] = [12.0, 10.0, 6.0]
+	heli.fly_path(approach, times)
+	heli.flight_finished.connect(_on_heli_landed, CONNECT_ONE_SHOT)
 
 
 func _spawn_reinforcements(wave: int) -> void:
@@ -820,8 +822,36 @@ func _spawn_reinforcements(wave: int) -> void:
 	hud.show_toast("Reforços inimigos chegando!")
 
 
+func _set_extract_marker(node: Node3D) -> void:
+	for o in objectives.objectives:
+		if o["id"] == "extract":
+			o["marker"] = node
+
+
+## Contagem regressiva da chegada + garantia de pouso se o voo atrasar.
+func _update_heli_eta(delta: float) -> void:
+	if not _extraction_started or _heli_landed:
+		return
+	_heli_eta -= delta
+	_eta_refresh -= delta
+	if _eta_refresh <= 0.0:
+		_eta_refresh = 0.5
+		var left := maxf(_heli_eta, 0.0)
+		objectives.set_progress("extract", "Viper 2-1 chegando em 0:%02d — proteja o HVT!" % int(ceil(left)))
+	if _heli_eta < -6.0:
+		heli.stop_flight()
+		heli.global_position = HELIPAD_POS + Vector3(0, 1.4, 0)
+		_on_heli_landed()
+
+
 func _on_heli_landed() -> void:
+	if _heli_landed:
+		return
 	_heli_landed = true
+	_heli_eta = 0.0
+	_set_extract_marker(_helipad_marker)
+	if heli.flight_finished.is_connected(_on_heli_landed):
+		heli.flight_finished.disconnect(_on_heli_landed)
 	hud.show_radio("PILOTO", "Viper 2-1 no solo! Embarquem, embarquem!", 4.0)
 	objectives.set_progress("extract", "Helicóptero no solo — leve o HVT até o heliponto!")
 

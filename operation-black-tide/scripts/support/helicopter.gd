@@ -21,6 +21,8 @@ var _orbit_height := 45.0
 var _orbit_angle := 0.0
 var _orbit_speed := 0.08
 var _prev_position := Vector3.ZERO
+var _strobe: OmniLight3D
+var _strobe_time := 0.0
 
 
 func _ready() -> void:
@@ -33,6 +35,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_rotor.rotate_y(rotor_speed * delta)
 	_tail_rotor.rotate_x(rotor_speed * 1.6 * delta)
+	_strobe_time += delta
+	_strobe.light_energy = 4.0 if fmod(_strobe_time, 1.2) < 0.08 else 0.0
 	if mode == Mode.ORBIT:
 		_orbit_angle += _orbit_speed * delta
 		var p := _orbit_center + Vector3(cos(_orbit_angle) * _orbit_radius, _orbit_height,
@@ -126,6 +130,24 @@ func _build() -> void:
 	nav_l.omni_range = 2.0
 	nav_l.position = Vector3(1.3, 0.5, -1.5)
 	add_child(nav_l)
+	# Holofote de pouso apontado para baixo e luz anticolisão piscante:
+	# deixam o helicóptero visível de longe à noite
+	var landing := SpotLight3D.new()
+	landing.light_color = Color(0.95, 0.97, 1.0)
+	landing.light_energy = 6.0
+	landing.spot_range = 70.0
+	landing.spot_angle = 22.0
+	landing.light_volumetric_fog_energy = 2.0
+	landing.shadow_enabled = GraphicsQuality.positional_shadows_allowed(true)
+	landing.position = Vector3(0, -1.1, -2.6)
+	landing.rotation.x = -deg_to_rad(70.0)
+	add_child(landing)
+	_strobe = OmniLight3D.new()
+	_strobe.light_color = Color(1.0, 0.15, 0.1)
+	_strobe.light_energy = 0.0
+	_strobe.omni_range = 9.0
+	_strobe.position = Vector3(0, 1.3, 3.5)
+	add_child(_strobe)
 	seat = Marker3D.new()
 	seat.position = Vector3(1.7, -1.0, 0.6)
 	add_child(seat)

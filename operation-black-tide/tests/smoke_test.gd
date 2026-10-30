@@ -178,7 +178,15 @@ func _run() -> void:
 
 	# Extração
 	await _physics(300)  # reforços chegam e combatem
-	level.call("_on_heli_landed")
+	# Espera o pouso real do helicóptero (sem atalho)
+	var landed := false
+	for i in 60 * 45:
+		await get_tree().physics_frame
+		if bool(level.get("_heli_landed")):
+			landed = true
+			print("  helicóptero pousou após %.1f s" % (i / 60.0))
+			break
+	_check(landed, "helicóptero não pousou na extração")
 	player.global_position = Vector3(-14.5, 0.1, -4)
 	hvt.global_position = Vector3(-15, 0.1, -6.5)
 	await _physics(30)
