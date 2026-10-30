@@ -14,6 +14,9 @@ const SETTINGS_PATH := "user://settings.cfg"
 var mouse_sensitivity: float = 1.0
 var master_volume: float = 0.8
 var field_of_view: float = 75.0
+## 0 = Baixo, 1 = Médio, 2 = Alto (ver GraphicsQuality). -1 = detectar na 1ª execução.
+var graphics_quality: int = -1
+var show_fps: bool = false
 
 # --- Estado da missão -----------------------------------------------------
 var current_mission_id: String = ""
@@ -138,6 +141,10 @@ func load_settings() -> void:
 		master_volume = float(cfg.get_value("audio", "master_volume", master_volume))
 		field_of_view = float(cfg.get_value("video", "field_of_view", field_of_view))
 		completed_missions = PackedStringArray(cfg.get_value("progress", "completed_missions", PackedStringArray()))
+		graphics_quality = int(cfg.get_value("video", "graphics_quality", -1))
+		show_fps = bool(cfg.get_value("video", "show_fps", false))
+	if graphics_quality < 0:
+		graphics_quality = GraphicsQuality.detect_default()
 	apply_settings()
 
 
@@ -147,6 +154,8 @@ func save_settings() -> void:
 	cfg.set_value("audio", "master_volume", master_volume)
 	cfg.set_value("video", "field_of_view", field_of_view)
 	cfg.set_value("progress", "completed_missions", completed_missions)
+	cfg.set_value("video", "graphics_quality", graphics_quality)
+	cfg.set_value("video", "show_fps", show_fps)
 	cfg.save(SETTINGS_PATH)
 
 

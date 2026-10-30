@@ -110,6 +110,7 @@ func _ready() -> void:
 	nav_region.navigation_mesh = nav_region.navigation_mesh.duplicate()
 	nav_region.navigation_mesh.filter_baking_aabb = nav_bounds()
 	nav_region.bake_navigation_mesh(false)
+	MeshMerger.merge(geometry)  # milhares de peças estáticas -> poucas malhas
 	objective_defs = define_objectives()
 	start_stage = clampi(start_stage, 0, maxi(objective_defs.size() - 1, 0))
 	spawn_enemies()
@@ -125,6 +126,8 @@ func _ready() -> void:
 	player.died.connect(func() -> void: fail("KIA — o operador foi abatido em combate."))
 	StealthSystem.alarm_raised.connect(_on_alarm)
 	NavigationServer3D.map_changed.connect(_on_nav_map_changed)
+	GraphicsQuality.apply(self, world_env.environment, sun)
+	GameManager.settings_changed.connect(func() -> void: GraphicsQuality.apply(self, world_env.environment, sun))
 	_begin()
 
 

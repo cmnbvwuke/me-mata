@@ -27,7 +27,7 @@ func _ready() -> void:
 	light.spot_range = light_range
 	light.spot_angle = cone_deg
 	light.spot_attenuation = 0.5
-	light.shadow_enabled = not OS.has_feature("web")
+	light.shadow_enabled = GraphicsQuality.positional_shadows_allowed(true)
 	add_child(light)
 	var housing := MeshInstance3D.new()
 	var cyl := CylinderMesh.new()

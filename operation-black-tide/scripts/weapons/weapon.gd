@@ -234,6 +234,7 @@ func _build_model() -> void:
 	_flash_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_flash_mesh.visible = false
 	muzzle.add_child(_flash_mesh)
+	MeshMerger.merge(self, false, 1000.0)
 
 
 func _mat(color: Color, metallic: float, roughness: float) -> StandardMaterial3D:

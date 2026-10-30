@@ -80,6 +80,7 @@ func _ready() -> void:
 	_build_residence()
 	_build_boundaries()
 	nav_region.bake_navigation_mesh(false)
+	MeshMerger.merge(geometry)  # milhares de peças estáticas -> poucas malhas
 	_build_lights()
 	_spawn_enemies()
 	_spawn_hvt()
@@ -93,6 +94,8 @@ func _ready() -> void:
 	NavigationServer3D.map_changed.connect(_on_nav_map_changed)
 	if OS.has_feature("web"):
 		_apply_web_quality()
+	GraphicsQuality.apply(self, world_env.environment, moon)
+	GameManager.settings_changed.connect(func() -> void: GraphicsQuality.apply(self, world_env.environment, moon))
 	_begin()
 
 

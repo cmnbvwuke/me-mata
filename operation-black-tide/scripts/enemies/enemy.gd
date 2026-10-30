@@ -784,6 +784,10 @@ func _build_visual() -> void:
 	BodyParts.rifle(_visual, gun)
 	BodyParts.arm(_visual, Vector3(0.21, 1.43, 0.0), Vector3(0.27, 1.2, -0.06), gun + Vector3(0.01, -0.08, 0.07), cloth, glove)
 	BodyParts.arm(_visual, Vector3(-0.21, 1.43, 0.0), Vector3(-0.13, 1.21, -0.3), gun + Vector3(-0.025, -0.05, -0.36), cloth, glove)
+	# ~45 peças -> 1 malha por material (pernas separadas por causa da animação)
+	MeshMerger.merge(_visual, false, 1000.0)
+	MeshMerger.merge(_leg_l, false, 1000.0)
+	MeshMerger.merge(_leg_r, false, 1000.0)
 
 	_eyes = Marker3D.new()
 	_eyes.position = Vector3(0, 1.66, -0.11)
@@ -799,7 +803,7 @@ func _build_visual() -> void:
 		_flashlight.light_volumetric_fog_energy = 1.5
 		_flashlight.spot_range = 20.0
 		_flashlight.spot_angle = 20.0
-		_flashlight.shadow_enabled = not OS.has_feature("web")
+		_flashlight.shadow_enabled = GraphicsQuality.positional_shadows_allowed(true)
 		_flashlight.position = Vector3(0.11, 1.31, -0.62)
 		_visual.add_child(_flashlight)
 

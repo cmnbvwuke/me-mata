@@ -19,6 +19,9 @@ progresso salvo (✓ no menu) e o botão "Próxima missão" ao final de cada uma
 4. Pressione **F5** (ou o botão ▶). O jogo abre no menu principal.
 5. **Campanha → Absolute Resolve → Iniciar missão**.
 
+> **Qualidade gráfica** (Configurações): Baixo / Médio / Alto. Na primeira execução o jogo
+> escolhe sozinho (GPU integrada → Baixo). Também dá para ligar o contador de FPS.
+>
 > Renderizador: **Forward+** (precisa de GPU com Vulkan). Se a máquina for fraca, desligue a
 > névoa volumétrica em `scripts/levels/absolute_resolve.gd` → `_setup_environment()`
 > (`env.volumetric_fog_enabled = false`).

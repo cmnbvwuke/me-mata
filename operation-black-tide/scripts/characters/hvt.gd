@@ -205,6 +205,7 @@ func _build_visual() -> void:
 		pivot.position = Vector3(x, 0.92, 0)
 		_visual.add_child(pivot)
 		BodyParts.leg(pivot, uniform, boot)
+		MeshMerger.merge(pivot, false, 1000.0)
 	BodyParts.box(_visual, Vector3(0.36, 0.16, 0.24), Vector3(0, 0.96, 0), uniform)
 	BodyParts.box(_visual, Vector3(0.38, 0.05, 0.26), Vector3(0, 1.03, 0), boot)                       # cinto
 	BodyParts.box(_visual, Vector3(0.07, 0.05, 0.02), Vector3(0, 1.03, -0.135), gold)                   # fivela
@@ -226,6 +227,8 @@ func _build_visual() -> void:
 	_visual.add_child(_arms)
 	for side in [-1.0, 1.0]:
 		BodyParts.arm(_arms, Vector3(side * 0.22, 0, 0), Vector3(side * 0.25, -0.28, 0.02), Vector3(side * 0.22, -0.55, 0.0), uniform, skin)
+	MeshMerger.merge(_visual, false, 1000.0)
+	MeshMerger.merge(_arms, false, 1000.0)
 
 
 # --- Modelo com esqueleto (Mixamo) ------------------------------------------

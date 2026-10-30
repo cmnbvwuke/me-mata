@@ -40,6 +40,7 @@ var _banner_sub: Label
 var _toast: Label
 var _equipment_label: Label
 var _ammo_hint: Label
+var _fps_label: Label
 
 var _subtitle_queue: Array[Dictionary] = []
 var _subtitle_timer := 0.0
@@ -166,6 +167,9 @@ func _process(delta: float) -> void:
 	_update_subtitles(delta)
 	_update_timers(delta)
 	_update_stealth()
+	_fps_label.visible = GameManager.show_fps
+	if _fps_label.visible:
+		_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 	_damage_flash = maxf(_damage_flash - delta * 1.4, 0.0)
 	var low := clampf((0.55 - _health_ratio) / 0.55, 0.0, 1.0)
 	(_vignette.material as ShaderMaterial).set_shader_parameter("intensity", maxf(_damage_flash, low * 0.85))
@@ -495,6 +499,14 @@ func _build() -> void:
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_hint_label.visible = false
 	_root.add_child(_hint_label)
+
+	_fps_label = UIStyle.label("", 16, UIStyle.GOOD)
+	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_fps_label.offset_left = -140
+	_fps_label.offset_right = -24
+	_fps_label.offset_top = 20
+	_fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_root.add_child(_fps_label)
 
 	# 11) Fade (por cima de tudo)
 	_fade = ColorRect.new()
