@@ -101,7 +101,7 @@ static func explosion(ctx: Node, pos: Vector3, radius: float) -> void:
 	light.light_color = Color(1.0, 0.6, 0.25)
 	light.light_energy = 14.0
 	light.omni_range = radius * 5.0
-	light.shadow_enabled = true
+	light.shadow_enabled = not OS.has_feature("web")
 	root.add_child(light)
 	light.global_position = pos + Vector3.UP * 1.5
 	var tw := light.create_tween()

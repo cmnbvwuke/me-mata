@@ -1,0 +1,71 @@
+{
+  "name": "operation-black-tide",
+  "productName": "Operation Black Tide",
+  "version": "0.1.0",
+  "description": "Operation Black Tide — instalador e launcher (Electron) do protótipo de FPS tático feito em Godot 4",
+  "author": "Forca-Tarefa TRIDENT",
+  "license": "UNLICENSED",
+  "main": "main.js",
+  "scripts": {
+    "export-game": "node scripts/export-game.js",
+    "start": "electron .",
+    "dist": "npm run export-game && electron-builder --win nsis --linux AppImage --publish never",
+    "dist:win": "node scripts/export-game.js win && electron-builder --win nsis --publish never",
+    "dist:linux": "node scripts/export-game.js linux && electron-builder --linux AppImage --publish never"
+  },
+  "build": {
+    "appId": "com.trident.operationblacktide",
+    "productName": "Operation Black Tide",
+    "files": [
+      "main.js",
+      "preload.js",
+      "launcher/**/*",
+      "build/icon.png"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false,
+      "extraResources": [
+        {
+          "from": "game/win",
+          "to": "game"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Operation Black Tide",
+      "artifactName": "OperationBlackTide-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "build/icon.png",
+      "artifactName": "OperationBlackTide-${version}.${ext}",
+      "extraResources": [
+        {
+          "from": "game/linux",
+          "to": "game"
+        }
+      ]
+    },
+    "publish": []
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  }
+}

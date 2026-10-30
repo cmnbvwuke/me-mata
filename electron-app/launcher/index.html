@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+  <title>Operation Black Tide</title>
+  <link rel="stylesheet" href="launcher.css">
+</head>
+<body>
+  <div class="scan"></div>
+  <div class="beam"></div>
+  <main>
+    <section class="brand">
+      <p class="eyebrow">FORÇA-TAREFA TRIDENT</p>
+      <p class="op">OPERATION</p>
+      <h1>BLACK TIDE</h1>
+      <p class="sub">República de Valderrama</p>
+
+      <button id="play" class="play" type="button">JOGAR</button>
+
+      <div class="options">
+        <label><input id="fullscreen" type="checkbox"> Tela cheia</label>
+        <label title="Use se o jogo não abrir ou ficar lento: troca Vulkan por OpenGL">
+          <input id="compat" type="checkbox"> Modo compatibilidade (GPUs antigas)
+        </label>
+      </div>
+      <p id="status" class="status" role="status"></p>
+
+      <div class="footer">
+        <button id="quit" class="link" type="button">Sair</button>
+        <span id="version"></span>
+      </div>
+    </section>
+
+    <aside class="brief">
+      <h2>Missão disponível</h2>
+      <p class="mission">FASE 3 — ABSOLUTE RESOLVE</p>
+      <p>Infiltração noturna de helicóptero na Hacienda El Mirador. Capture o General Salcedo <strong>vivo</strong> e escolte-o até a extração.</p>
+      <h2>Controles</h2>
+      <dl>
+        <dt>WASD / Mouse</dt><dd>Mover / olhar</dd>
+        <dt>Shift · C · Espaço</dt><dd>Correr · agachar · pular</dd>
+        <dt>Mouse esq. / dir.</dt><dd>Atirar / mirar</dd>
+        <dt>R · B · 1/2</dt><dd>Recarregar · modo de tiro · armas</dd>
+        <dt>E (segurar)</dt><dd>Interagir / capturar</dd>
+        <dt>F · N · T</dt><dd>Lanterna · visão noturna · apoio aéreo</dd>
+        <dt>Esc</dt><dd>Pausa</dd>
+      </dl>
+    </aside>
+  </main>
+  <script src="launcher.js"></script>
+</body>
+</html>

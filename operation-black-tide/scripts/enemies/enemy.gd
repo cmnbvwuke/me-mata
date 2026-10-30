@@ -781,7 +781,7 @@ func _build_visual() -> void:
 		_flashlight.light_volumetric_fog_energy = 1.5
 		_flashlight.spot_range = 20.0
 		_flashlight.spot_angle = 20.0
-		_flashlight.shadow_enabled = true
+		_flashlight.shadow_enabled = not OS.has_feature("web")
 		_flashlight.position = Vector3(0.1, 1.33, -0.7)
 		_visual.add_child(_flashlight)
 

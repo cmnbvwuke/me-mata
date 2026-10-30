@@ -1,0 +1,65 @@
+:root {
+  --bg: #05070a;
+  --panel: rgba(8, 11, 15, 0.82);
+  --line: #2a2f33;
+  --text: #dde2dc;
+  --dim: #8b918b;
+  --amber: #ffb840;
+  --amber-deep: #8a5a12;
+  --danger: #f2543f;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(ellipse at 70% 110%, #0d1622 0%, var(--bg) 60%);
+  color: var(--text);
+  font-family: "Rajdhani", "Bahnschrift", "Segoe UI", "DejaVu Sans Condensed", sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+.scan {
+  position: fixed; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
+}
+.beam {
+  position: fixed; top: -20%; left: 55%; width: 120px; height: 140%; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(220, 230, 255, 0.06), transparent);
+  transform-origin: 50% 100%;
+  animation: sweep 9s ease-in-out infinite alternate;
+}
+@keyframes sweep { from { transform: rotate(-18deg); } to { transform: rotate(14deg); } }
+@media (prefers-reduced-motion: reduce) { .beam { animation: none; } }
+
+main { position: relative; display: grid; grid-template-columns: 1fr 380px; gap: 36px; height: 100%; padding: 44px 48px; }
+.eyebrow { color: var(--amber); letter-spacing: 0.12em; font-size: 14px; margin: 0 0 18px; }
+.op { color: var(--dim); font-size: 30px; letter-spacing: 0.08em; margin: 0; }
+h1 { font-size: 66px; line-height: 1; margin: 2px 0 6px; letter-spacing: 0.04em; }
+.sub { color: var(--dim); font-size: 17px; margin: 0 0 40px; }
+
+.play {
+  display: block; width: 280px; padding: 14px 22px; text-align: left;
+  font: inherit; font-size: 26px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--bg); background: var(--amber); border: 0; cursor: pointer;
+  clip-path: polygon(0 0, 94% 0, 100% 30%, 100% 100%, 6% 100%, 0 70%);
+}
+.play:hover { background: #ffc865; }
+.play:focus-visible { outline: 2px solid var(--text); outline-offset: 4px; }
+.play:disabled { background: #3a3d3f; color: var(--dim); cursor: default; }
+
+.options { margin-top: 22px; display: grid; gap: 8px; font-size: 16px; color: var(--dim); }
+.options input { accent-color: var(--amber); margin-right: 8px; }
+.status { min-height: 22px; margin: 14px 0 0; font-size: 15px; color: var(--amber); }
+.status.error { color: var(--danger); }
+
+.footer { position: absolute; bottom: 36px; left: 48px; display: flex; gap: 20px; align-items: center; color: var(--dim); font-size: 13px; }
+.link { background: none; border: 0; padding: 0; color: var(--dim); font: inherit; font-size: 15px; cursor: pointer; }
+.link:hover { color: var(--text); }
+
+.brief { background: var(--panel); border: 1px solid var(--line); padding: 22px 24px; font-size: 15px; line-height: 1.45; align-self: start; }
+.brief h2 { font-size: 13px; letter-spacing: 0.14em; color: var(--amber); margin: 0 0 8px; font-weight: 600; text-transform: uppercase; }
+.brief h2:not(:first-child) { margin-top: 20px; }
+.brief p { margin: 0 0 6px; }
+.mission { font-weight: 600; letter-spacing: 0.06em; }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 14px; }
+dt { color: var(--amber); white-space: nowrap; }
+dd { margin: 0; color: var(--text); }

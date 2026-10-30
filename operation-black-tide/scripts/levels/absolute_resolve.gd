@@ -90,6 +90,8 @@ func _ready() -> void:
 	hud.bind_objectives(objectives)
 	hud.bind_air_support(air_support)
 	NavigationServer3D.map_changed.connect(_on_nav_map_changed)
+	if OS.has_feature("web"):
+		_apply_web_quality()
 	_begin()
 
 
@@ -150,6 +152,15 @@ func _setup_environment() -> void:
 	moon.light_energy = 0.28
 	moon.shadow_enabled = true
 	moon.directional_shadow_max_distance = 90.0
+
+
+## Perfil para o export Web/Electron (WebGL 2): sem sombras de luzes pontuais,
+## que são caras e instáveis em alguns drivers WebGL.
+func _apply_web_quality() -> void:
+	for node in find_children("*", "Light3D", true, false):
+		if node is OmniLight3D or node is SpotLight3D:
+			(node as Light3D).shadow_enabled = false
+	moon.light_energy *= 1.3
 
 
 # =========================================================================

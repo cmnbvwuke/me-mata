@@ -48,7 +48,7 @@ func _ready() -> void:
 	left.add_child(UIStyle.button("CAMPANHA", _show_campaign))
 	left.add_child(UIStyle.button("CONFIGURAÇÕES", _show_settings))
 	left.add_child(UIStyle.button("CONTROLES", _show_controls))
-	left.add_child(UIStyle.button("SAIR", func() -> void: get_tree().quit()))
+	left.add_child(UIStyle.button("SAIR", _quit))
 	var filler := Control.new()
 	filler.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(filler)
@@ -78,30 +78,44 @@ func _show_campaign() -> void:
 	var setting := UIStyle.label(Campaign.SETTING, 16, UIStyle.DIM)
 	setting.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_content.add_child(setting)
+	# Lista de missões à esquerda, briefing + botão de início sempre visíveis à direita
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 28)
+	_content.add_child(columns)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.size_flags_stretch_ratio = 0.9
+	columns.add_child(list)
 	for phase in Campaign.PHASES:
 		var gap := Control.new()
-		gap.custom_minimum_size.y = 10
-		_content.add_child(gap)
-		_content.add_child(UIStyle.label(String(phase["title"]), 20, UIStyle.AMBER))
+		gap.custom_minimum_size.y = 8
+		list.add_child(gap)
+		list.add_child(UIStyle.label(String(phase["title"]), 18, UIStyle.AMBER))
 		for mission in phase["missions"]:
 			var playable := String(mission["scene"]) != ""
-			var tag := "" if playable else "   [em desenvolvimento]"
 			var id := String(mission["id"])
-			var b := UIStyle.button("   " + String(mission["title"]) + tag, func() -> void: _select_mission(id))
+			var b := UIStyle.button("   " + String(mission["title"]), func() -> void: _select_mission(id))
+			b.custom_minimum_size = Vector2(0, 40)
 			if not playable:
 				b.add_theme_color_override("font_color", UIStyle.DIM)
-			_content.add_child(b)
+				b.tooltip_text = "Em desenvolvimento"
+			list.add_child(b)
+	var brief := VBoxContainer.new()
+	brief.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	brief.add_theme_constant_override("separation", 10)
+	columns.add_child(brief)
 	var gap2 := Control.new()
-	gap2.custom_minimum_size.y = 16
-	_content.add_child(gap2)
-	_briefing_title = UIStyle.label("", 24, UIStyle.TEXT)
-	_content.add_child(_briefing_title)
-	_briefing_text = UIStyle.label("", 16, UIStyle.TEXT)
-	_briefing_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_content.add_child(_briefing_text)
+	gap2.custom_minimum_size.y = 8
+	brief.add_child(gap2)
+	_briefing_title = UIStyle.label("", 22, UIStyle.TEXT)
+	_briefing_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	brief.add_child(_briefing_title)
 	_start_button = UIStyle.button("INICIAR MISSÃO", func() -> void: GameManager.start_mission(_selected_mission))
 	_start_button.visible = false
-	_content.add_child(_start_button)
+	brief.add_child(_start_button)
+	_briefing_text = UIStyle.label("", 15, UIStyle.TEXT)
+	_briefing_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	brief.add_child(_briefing_text)
 	_select_mission("absolute_resolve")
 
 
@@ -115,7 +129,7 @@ func _select_mission(id: String) -> void:
 	var playable := String(m["scene"]) != ""
 	_start_button.visible = true
 	_start_button.disabled = not playable
-	_start_button.text = "INICIAR MISSÃO" if playable else "MISSÃO AINDA NÃO DISPONÍVEL NO PROTÓTIPO"
+	_start_button.text = "INICIAR MISSÃO" if playable else "EM DESENVOLVIMENTO"
 
 
 func _show_settings() -> void:
@@ -152,3 +166,11 @@ func _show_controls() -> void:
 		+ "• Um guarda que te vê leva ~3 s para avisar pelo rádio — elimine-o antes.\n" \
 		+ "• Corpos encontrados por outros guardas disparam o alarme.", 16, UIStyle.DIM)
 	_content.add_child(tips)
+
+
+func _quit() -> void:
+	# No export Web (ex.: dentro do Electron) get_tree().quit() não fecha a janela
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.close()")
+	else:
+		get_tree().quit()

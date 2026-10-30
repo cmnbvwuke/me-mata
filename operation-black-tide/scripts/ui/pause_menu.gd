@@ -5,6 +5,8 @@ var _panel: Control
 var _main_box: VBoxContainer
 var _settings: SettingsPanel
 var _enabled := true
+var _had_capture := false
+var _lost_capture_time := 0.0
 
 
 func _ready() -> void:
@@ -46,6 +48,22 @@ func _ready() -> void:
 ## O nível pode bloquear a pausa (ex.: durante a tela de morte).
 func set_enabled(v: bool) -> void:
 	_enabled = v
+
+
+func _process(delta: float) -> void:
+	# Na versão Web o Esc é consumido pelo navegador (libera o mouse sem enviar a tecla).
+	# Se o mouse foi solto durante o jogo, abre a pausa automaticamente.
+	if not OS.has_feature("web") or visible or not _enabled:
+		_lost_capture_time = 0.0
+		return
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and _had_capture:
+		_lost_capture_time += delta
+		if _lost_capture_time > 0.25:
+			pause()
+	else:
+		_lost_capture_time = 0.0
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		_had_capture = true
 
 
 func _unhandled_input(event: InputEvent) -> void:

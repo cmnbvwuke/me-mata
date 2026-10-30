@@ -95,6 +95,12 @@ func _apply_settings() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
+	# Navegador/Electron só captura o mouse após um clique: recaptura ao clicar na tela
+	if event is InputEventMouseButton and event.is_pressed() and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED \
+			and not get_tree().paused:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var motion := event as InputEventMouseMotion
 		var sens := base_mouse_sensitivity * GameManager.mouse_sensitivity * weapons.get_sensitivity_multiplier()

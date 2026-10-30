@@ -1,4 +1,3 @@
 # Cache/import do Godot 4
 .godot/
 *.import
-export_presets.cfg

@@ -25,6 +25,12 @@ aparecem no menu de campanha com briefing, marcadas como "em desenvolvimento".
 
 Para testar só o nível: abra `scenes/levels/absolute_resolve.tscn` e pressione **F6**.
 
+### Instalador para Windows/Linux (Electron)
+
+A pasta [`../electron-app`](../electron-app/README.md) gera um instalador `.exe` (Windows) e um
+`.AppImage` (Linux). O Electron cuida do instalador e de um launcher, e o jogo roda como executável
+nativo do Godot. Os presets de exportação estão em `export_presets.cfg`.
+
 ### Teste automatizado (headless)
 
 ```bash
