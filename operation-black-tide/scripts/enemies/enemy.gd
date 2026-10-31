@@ -833,6 +833,7 @@ func _build_visual() -> void:
 ## Guarda com o modelo animado do soldado raso.
 func _build_soldier_visual() -> void:
 	_soldier = SoldierModel.new()
+	_soldier.tint = profile.model_tint
 	_visual.add_child(_soldier)
 	_muzzle = _soldier.muzzle
 	_eyes = Marker3D.new()

@@ -18,6 +18,9 @@ const SHOOT_STRIDE := 0.914 / 0.9333
 ## Altura do pescoço (fração da altura) — acima disso o tiro conta como na cabeça.
 const NECK_FRACTION := 0.735
 
+## Tom multiplicado na textura da farda (diferencia guarda/elite/milícia).
+## Definir antes de adicionar à árvore.
+var tint := Color.WHITE
 ## 0 = em pé, 1 = totalmente agachado.
 var crouch := 0.0
 var muzzle: Marker3D
@@ -35,6 +38,9 @@ var _turning := 0.0
 var _recoil := 0.0
 var _dead := false
 
+## Um material por tom, compartilhado entre todos os soldados.
+static var _tinted: Dictionary = {}
+
 
 func _ready() -> void:
 	_model = MODEL.instantiate() as Node3D
@@ -49,6 +55,8 @@ func _ready() -> void:
 	_bone_lhand = _skeleton.find_bone("mixamorig_LeftHand")
 	for mi in _model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).lod_bias = 0.6
+		if tint != Color.WHITE:
+			_apply_tint(mi as MeshInstance3D)
 
 	_crouch_mod = _CrouchModifier.new()
 	_crouch_mod.setup(_skeleton)
@@ -72,6 +80,19 @@ func _ready() -> void:
 	notifier.screen_exited.connect(func() -> void: _ap.active = _dead)
 	add_child(notifier)
 	_play("idle")
+
+
+func _apply_tint(mi: MeshInstance3D) -> void:
+	for i in mi.mesh.get_surface_count():
+		var base := mi.mesh.surface_get_material(i) as BaseMaterial3D
+		if base == null:
+			continue
+		var key := "%s/%d/%s" % [mi.mesh.resource_path, i, tint.to_html()]
+		if not _tinted.has(key):
+			var m := base.duplicate() as BaseMaterial3D
+			m.albedo_color = base.albedo_color * tint
+			_tinted[key] = m
+		mi.set_surface_override_material(i, _tinted[key])
 
 
 ## Altura (relativa aos pés) acima da qual um impacto é tiro na cabeça.

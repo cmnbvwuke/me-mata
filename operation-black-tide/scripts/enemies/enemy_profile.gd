@@ -12,6 +12,8 @@ extends Resource
 @export var weapon_sound: String = "enemy_rifle"
 ## Usa o modelo animado do soldado raso (SoldierModel) em vez do boneco procedural.
 @export var use_soldier_model: bool = false
+## Tom aplicado à textura do modelo (branco = cores originais).
+@export var model_tint: Color = Color.WHITE
 
 @export_group("Atributos")
 @export var max_health: float = 100.0
