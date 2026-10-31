@@ -40,6 +40,15 @@ var _skeleton: Skeleton3D
 ## importada — a "rest pose" de FBX do Mixamo pode vir deslocada (personagem
 ## enterrado no chão), enquanto a animação tem o posicionamento correto.
 var _base_pose: Array = []
+## Modo com animações do próprio modelo (Meshy/Mixamo): ajoelhado quando
+## encontrado, andando algemado quando segue o jogador.
+var _anim: AnimationPlayer
+var _anim_kneel := ""
+var _anim_cuffed := ""
+## Deslocamento por segundo da animação "andando algemado" (para sincronizar o passo)
+var _cuffed_stride := 0.6
+const CUFFED_MAX_SPEED := 2.0
+var _idle_freeze := 0.0
 var _hands_up := true
 var _walk_phase := 0.0
 var _arms: Node3D
@@ -84,6 +93,8 @@ func _physics_process(delta: float) -> void:
 				dir = dir.normalized()
 				var dist := global_position.distance_to(target)
 				speed = clampf(dist * 1.3, 2.0, 6.0)
+				if _anim:
+					speed = minf(speed, CUFFED_MAX_SPEED)  # algemado não corre
 	_update_stuck(delta, has_target, target)
 	var horizontal := Vector3(velocity.x, 0, velocity.z).lerp(dir * speed, clampf(delta * 8.0, 0.0, 1.0))
 	velocity.x = horizontal.x
@@ -92,7 +103,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if dir.length() > 0.1:
 		rotation.y = lerp_angle(rotation.y, atan2(-dir.x, -dir.z), clampf(delta * 6.0, 0.0, 1.0))
-	if _skeleton:
+	if _anim:
+		_update_animation(horizontal.length(), delta)
+	elif _skeleton:
 		_animate_model(delta, horizontal.length())
 
 
@@ -178,6 +191,8 @@ func take_damage(info: DamageInfo) -> void:
 	if health <= 0.0:
 		is_dead = true
 		collision_layer = 0
+		if _anim:
+			_anim.pause()
 		var tw := create_tween()
 		tw.tween_property(_visual, "rotation:x", deg_to_rad(-86.0), 0.6)
 		killed.emit()
@@ -186,6 +201,10 @@ func take_damage(info: DamageInfo) -> void:
 # --- Visual ---------------------------------------------------------------------
 
 func _set_pose_hiding(hiding: bool) -> void:
+	if _anim:
+		_hands_up = hiding
+		_update_animation(0.0, 0.0)
+		return
 	if _skeleton:
 		_hands_up = hiding
 		_animate_model(0.0, 0.0)
@@ -245,7 +264,12 @@ func _build_model() -> void:
 	model.rotation.y = PI  # modelos Mixamo olham para +Z; no Godot a frente é -Z
 	var skeletons := model.find_children("*", "Skeleton3D", true, false)
 	_skeleton = skeletons[0] if not skeletons.is_empty() else null
-	for node in model.find_children("*", "AnimationPlayer", true, false):
+	var players := model.find_children("*", "AnimationPlayer", true, false)
+	if _skeleton and not players.is_empty() and _setup_animations(players[0] as AnimationPlayer, model):
+		_arms = Node3D.new()
+		_visual.add_child(_arms)
+		return
+	for node in players:
 		var ap := node as AnimationPlayer
 		var anims := ap.get_animation_list()
 		if _skeleton and not anims.is_empty():
@@ -268,6 +292,80 @@ func _build_model() -> void:
 		model.scale = Vector3.ONE * (model_height / (top - bottom))
 	_arms = Node3D.new()  # compatibilidade com o código do boneco procedural
 	_visual.add_child(_arms)
+
+
+## Prepara as animações do modelo. Retorna false se não houver as necessárias.
+## Identifica "ajoelhado" e "andando algemado" entre as animações sem nome pela
+## altura do quadril (a mais baixa é a ajoelhada); deixa todas em loop e no lugar
+## (o deslocamento real vem da física do personagem).
+func _setup_animations(ap: AnimationPlayer, model: Node3D) -> bool:
+	var candidates: Array = []
+	for name in ap.get_animation_list():
+		var anim := ap.get_animation(name)
+		anim.loop_mode = Animation.LOOP_LINEAR
+		var hips_track := -1
+		for t in anim.get_track_count():
+			if anim.track_get_type(t) == Animation.TYPE_POSITION_3D and str(anim.track_get_path(t)).ends_with(":mixamorig_Hips"):
+				hips_track = t
+		if hips_track < 0 or anim.track_get_key_count(hips_track) < 1:
+			continue  # sem trilha do quadril (1 chave = quadril parado, ex.: ajoelhado)
+		var first: Vector3 = anim.track_get_key_value(hips_track, 0)
+		var last: Vector3 = anim.track_get_key_value(hips_track, anim.track_get_key_count(hips_track) - 1)
+		var travel := Vector2(last.x - first.x, last.z - first.z).length() / maxf(anim.length, 0.01)
+		var mid: Vector3 = anim.track_get_key_value(hips_track, anim.track_get_key_count(hips_track) / 2)
+		for k in anim.track_get_key_count(hips_track):
+			var v: Vector3 = anim.track_get_key_value(hips_track, k)
+			anim.track_set_key_value(hips_track, k, Vector3(first.x, v.y, first.z))
+		if name in ["Walking", "Running"]:
+			continue
+		candidates.append({"name": name, "hips_y": mid.y, "travel": travel})
+	if candidates.size() < 2:
+		return false
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["hips_y"] < b["hips_y"])
+	_anim_kneel = candidates[0]["name"]
+	_anim_cuffed = candidates[1]["name"]
+	_anim = ap
+	# Escala pelo topo da cabeça na pose "algemado" (a pose de descanso pode vir deslocada)
+	ap.play(_anim_cuffed)
+	ap.seek(0.0, true)
+	ap.advance(0.0)
+	_skeleton.force_update_all_bone_transforms()
+	var top := _skeleton.find_bone("mixamorig_HeadTop_End")
+	if top >= 0:
+		# Medido no espaço do mundo: considera escala/rotação de nós intermediários do FBX
+		var h := (_skeleton.global_transform * _skeleton.get_bone_global_pose(top).origin).y - model.global_position.y
+		if h > 0.01:
+			model.scale = Vector3.ONE * (model_height / h)
+	# Passo da animação em m/s no mundo: deslocamento original do quadril (unidades
+	# do esqueleto) convertido pela razão altura-do-quadril mundo / esqueleto
+	_skeleton.force_update_all_bone_transforms()
+	var hips := _skeleton.find_bone("mixamorig_Hips")
+	var hips_world := (_skeleton.global_transform * _skeleton.get_bone_global_pose(hips).origin).y - model.global_position.y
+	var hips_local: float = candidates[1]["hips_y"]
+	if absf(hips_local) > 0.0001:
+		_cuffed_stride = float(candidates[1]["travel"]) * absf(hips_world / hips_local)
+	_cuffed_stride = clampf(_cuffed_stride, 0.3, 1.5)
+	return true
+
+
+func _update_animation(speed: float, delta: float) -> void:
+	if _hands_up:
+		_play(_anim_kneel, 1.0)
+	elif speed > 0.15:
+		_idle_freeze = 0.4
+		_play(_anim_cuffed, clampf(speed / _cuffed_stride, 0.5, 3.5))
+	else:
+		# Parado e algemado: termina a transição e então congela a pose
+		_play(_anim_cuffed, 1.0 if _idle_freeze > 0.0 else 0.0)
+		_idle_freeze -= delta
+
+
+func _play(name: String, speed_scale: float) -> void:
+	if _anim.current_animation != name:
+		_anim.play(name, 0.3)
+		_idle_freeze = 0.4
+		speed_scale = maxf(speed_scale, 1.0)
+	_anim.speed_scale = speed_scale
 
 
 ## Monta a pose a partir da pose de repouso: braços (rendido/capturado) e passada.

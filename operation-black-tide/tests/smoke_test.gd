@@ -134,7 +134,10 @@ func _run() -> void:
 	var hvt: HVTCharacter = level.get("hvt")
 	player.global_position = Vector3(11.5, 0.1, -32.5)
 	await _physics(10)
-	# O modelo do General precisa estar de pé sobre o chão (não enterrado)
+	hvt.interact(player)
+	await _physics(10)
+	await _physics(30)
+	# Capturado, o General fica de pé (andando algemado) sobre o chão
 	var sk: Skeleton3D = hvt._skeleton
 	_check(sk != null, "General sem esqueleto")
 	if sk:
@@ -143,8 +146,6 @@ func _run() -> void:
 		print("  General: pé a %.2f m, cabeça a %.2f m do chão" % [foot.y - hvt.global_position.y, head.y - hvt.global_position.y])
 		_check(foot.y - hvt.global_position.y > -0.05 and foot.y - hvt.global_position.y < 0.4, "pés do General fora do chão")
 		_check(head.y - hvt.global_position.y > 1.2, "General enterrado/deitado")
-	hvt.interact(player)
-	await _physics(10)
 	_check(objectives.is_current("extract"), "captura do HVT não concluiu")
 	_check(hvt.state == HVTCharacter.State.FOLLOWING, "HVT não está seguindo")
 
