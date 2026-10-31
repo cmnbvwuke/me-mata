@@ -24,6 +24,21 @@ const VARIANTS := {
 		"shoot_stride": 0.914 / 0.9333,
 		"neck": 0.735,
 	},
+	# Elite: malha riggada no Mixamo sem textura; o material PBR é montado aqui
+	"elite": {
+		"model": "res://assets/characters/elite.fbx",
+		"anims": "res://assets/characters/elite_anims.res",
+		"head_top": 1.7862,
+		"walk_stride": 0.9907,
+		"shoot_stride": 1.7306,
+		"neck": 0.737,
+		"textures": {
+			"albedo": "res://assets/characters/elite_cor.png",
+			"normal": "res://assets/characters/elite_normal.png",
+			"roughness": "res://assets/characters/elite_rugosidade.png",
+			"metallic": "res://assets/characters/elite_metal.png",
+		},
+	},
 }
 
 ## Chave de VARIANTS. Definir antes de adicionar à árvore.
@@ -52,6 +67,8 @@ var _v: Dictionary
 
 ## Um material por tom, compartilhado entre todos os soldados.
 static var _tinted: Dictionary = {}
+## Materiais PBR montados a partir de VARIANTS[...]["textures"].
+static var _built: Dictionary = {}
 
 
 func _ready() -> void:
@@ -68,6 +85,9 @@ func _ready() -> void:
 	_bone_lhand = _skeleton.find_bone("mixamorig_LeftHand")
 	for mi in _model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).lod_bias = 0.6
+		if _v.has("textures"):
+			for i in (mi as MeshInstance3D).mesh.get_surface_count():
+				(mi as MeshInstance3D).set_surface_override_material(i, _variant_material())
 		if tint != Color.WHITE:
 			_apply_tint(mi as MeshInstance3D)
 
@@ -95,9 +115,29 @@ func _ready() -> void:
 	_play("idle")
 
 
+func _variant_material() -> StandardMaterial3D:
+	if not _built.has(variant):
+		var tex: Dictionary = _v["textures"]
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = load(tex["albedo"])
+		if tex.has("normal"):
+			m.normal_enabled = true
+			m.normal_texture = load(tex["normal"])
+		if tex.has("roughness"):
+			m.roughness = 1.0
+			m.roughness_texture = load(tex["roughness"])
+		if tex.has("metallic"):
+			m.metallic = 1.0
+			m.metallic_texture = load(tex["metallic"])
+		_built[variant] = m
+	return _built[variant]
+
+
 func _apply_tint(mi: MeshInstance3D) -> void:
 	for i in mi.mesh.get_surface_count():
-		var base := mi.mesh.surface_get_material(i) as BaseMaterial3D
+		var base := mi.get_surface_override_material(i) as BaseMaterial3D
+		if base == null:
+			base = mi.mesh.surface_get_material(i) as BaseMaterial3D
 		if base == null:
 			continue
 		var key := "%s/%d/%s" % [mi.mesh.resource_path, i, tint.to_html()]

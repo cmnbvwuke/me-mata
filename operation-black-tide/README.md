@@ -164,7 +164,10 @@ e sons. Os únicos assets externos são personagens animados em `assets/characte
   perfil `guard.tres`; lógica em `scripts/characters/soldier_model.gd`). Animações Mixamo:
   andar com fuzil, atirar andando, girar 45° para cada lado, morrer; pose parada/mira e
   agachamento (procedural, `SkeletonModifier3D`) derivados delas. O fuzil é preso às mãos em código.
-Todos os inimigos usam esse modelo; elite e milícia se diferenciam pelo tom da farda (`model_tint`).
+- `elite.fbx` + `elite_anims.res` + `elite_cor/normal/rugosidade/metal.png` — soldado de elite
+  (variante `"elite"` em `SoldierModel.VARIANTS`, material PBR montado em código).
+A milícia usa o soldado raso com tom de farda diferente (`model_tint`). Para um modelo novo:
+`tools/extract_character_anims.gd` gera as animações e imprime os valores da variante.
 
 ---
 
@@ -241,6 +244,6 @@ rotor de helicóptero, sirene, rádio.
 
 ## Limitações conhecidas do protótipo
 
-- Cenários "greybox" procedurais; elite e milícia usam o mesmo modelo do soldado (só muda o tom).
+- Cenários "greybox" procedurais; milícia ainda usa o modelo do soldado raso (só muda o tom).
 - Checkpoints recriam o nível e só fazem nascer os inimigos das etapas ainda não superadas.
 - Um único andar na residência; sem inclinação lateral (lean) ou granadas.
