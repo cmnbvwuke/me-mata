@@ -8,15 +8,26 @@ extends Node3D
 ## mão direita (empunhadura) e a esquerda (guarda-mão). O agachamento é feito
 ## por um SkeletonModifier3D que dobra joelhos/quadril por cima da animação.
 
-const MODEL := preload("res://assets/characters/soldier.fbx")
-const ANIMS := preload("res://assets/characters/soldier_anims.res")
 const HEIGHT := 1.78
-## Altura do topo da cabeça e passada das animações, em unidades do modelo.
-const MODEL_HEAD_TOP := 0.9923
-const WALK_STRIDE := 0.7288 / 1.3
-const SHOOT_STRIDE := 0.914 / 0.9333
-## Altura do pescoço (fração da altura) — acima disso o tiro conta como na cabeça.
-const NECK_FRACTION := 0.735
+## Modelos disponíveis (EnemyProfile.soldier_variant). Para um modelo novo, rode
+## tools/extract_character_anims.gd e copie aqui os valores que ele imprime:
+##   head_top     — topo da cabeça em unidades do modelo
+##   walk_stride  — m/s (em unidades do modelo) da animação "walk"
+##   shoot_stride — idem para "shoot"
+##   neck         — altura do pescoço / altura (acima disso = tiro na cabeça)
+const VARIANTS := {
+	"soldier": {
+		"model": "res://assets/characters/soldier.fbx",
+		"anims": "res://assets/characters/soldier_anims.res",
+		"head_top": 0.9923,
+		"walk_stride": 0.7288 / 1.3,
+		"shoot_stride": 0.914 / 0.9333,
+		"neck": 0.735,
+	},
+}
+
+## Chave de VARIANTS. Definir antes de adicionar à árvore.
+var variant := "soldier"
 
 ## Tom multiplicado na textura da farda (diferencia guarda/elite/milícia).
 ## Definir antes de adicionar à árvore.
@@ -37,20 +48,22 @@ var _current := ""
 var _turning := 0.0
 var _recoil := 0.0
 var _dead := false
+var _v: Dictionary
 
 ## Um material por tom, compartilhado entre todos os soldados.
 static var _tinted: Dictionary = {}
 
 
 func _ready() -> void:
-	_model = MODEL.instantiate() as Node3D
-	_scale = HEIGHT / MODEL_HEAD_TOP
+	_v = VARIANTS.get(variant, VARIANTS["soldier"])
+	_model = (load(_v["model"]) as PackedScene).instantiate() as Node3D
+	_scale = HEIGHT / float(_v["head_top"])
 	_model.scale = Vector3.ONE * _scale
 	_model.rotation.y = PI  # o modelo olha para +Z; o jogo usa -Z como frente
 	add_child(_model)
 	_ap = _model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	_skeleton = _model.find_child("Skeleton3D", true, false) as Skeleton3D
-	_ap.add_animation_library("s", ANIMS)
+	_ap.add_animation_library("s", load(_v["anims"]) as AnimationLibrary)
 	_bone_rhand = _skeleton.find_bone("mixamorig_RightHand")
 	_bone_lhand = _skeleton.find_bone("mixamorig_LeftHand")
 	for mi in _model.find_children("*", "MeshInstance3D", true, false):
@@ -97,7 +110,7 @@ func _apply_tint(mi: MeshInstance3D) -> void:
 
 ## Altura (relativa aos pés) acima da qual um impacto é tiro na cabeça.
 func headshot_height() -> float:
-	return HEIGHT * NECK_FRACTION * lerpf(1.0, 0.72, crouch)
+	return HEIGHT * float(_v["neck"]) * lerpf(1.0, 0.72, crouch)
 
 
 ## Atualiza a animação conforme o movimento.
@@ -113,9 +126,9 @@ func update_animation(delta: float, speed: float, yaw_rate: float, aiming: bool,
 	if speed > 0.15:
 		_turning = 0.0
 		if aiming and firing:
-			_play("shoot", clampf(speed / (SHOOT_STRIDE * _scale), 0.6, 2.2))
+			_play("shoot", clampf(speed / (float(_v["shoot_stride"]) * _scale), 0.6, 2.2))
 		else:
-			_play("walk", clampf(speed / (WALK_STRIDE * _scale), 0.6, 2.6))
+			_play("walk", clampf(speed / (float(_v["walk_stride"]) * _scale), 0.6, 2.6))
 	elif absf(yaw_rate) > 1.2 and crouch < 0.3:
 		if _turning <= 0.0 or (_current != "turn_l" and _current != "turn_r"):
 			_play("turn_l" if yaw_rate > 0.0 else "turn_r", clampf(absf(yaw_rate) / 1.2, 1.0, 2.2))

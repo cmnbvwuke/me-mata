@@ -14,6 +14,8 @@ extends Resource
 @export var use_soldier_model: bool = false
 ## Tom aplicado à textura do modelo (branco = cores originais).
 @export var model_tint: Color = Color.WHITE
+## Qual modelo usar (chave de SoldierModel.VARIANTS).
+@export var soldier_variant: String = "soldier"
 
 @export_group("Atributos")
 @export var max_health: float = 100.0

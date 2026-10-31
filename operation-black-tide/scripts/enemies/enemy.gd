@@ -834,6 +834,7 @@ func _build_visual() -> void:
 func _build_soldier_visual() -> void:
 	_soldier = SoldierModel.new()
 	_soldier.tint = profile.model_tint
+	_soldier.variant = profile.soldier_variant
 	_visual.add_child(_soldier)
 	_muzzle = _soldier.muzzle
 	_eyes = Marker3D.new()
