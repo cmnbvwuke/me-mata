@@ -170,6 +170,8 @@ e sons. Os únicos assets externos são personagens animados em `assets/characte
   foi recortada de um "Rifle Walk To Stop".
 - `assets/weapons/ak47.glb` — AK-47 nas mãos de todos os inimigos (Blend Swap #94134, licença CC0;
   convertida no Blender 4.0, reduzida para ~6 mil triângulos e 88 cm).
+- `ibarra.fbx` + `ibarra_cor/normal/rugosidade/metal.png` — Coronel Ibarra (boina vermelha), na missão
+  "Voz de Dentro". Só tem a animação de andar: parado ele usa o quadro da caminhada com os pés juntos.
 Para um modelo novo:
 `tools/extract_character_anims.gd` gera as animações e imprime os valores da variante.
 

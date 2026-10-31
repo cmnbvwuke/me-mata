@@ -22,6 +22,8 @@ enum State { HIDING, FOLLOWING, BOARDING }
 ## As poses (rendido, capturado) e a caminhada são aplicadas nos ossos por código.
 @export var model_scene: PackedScene
 @export var model_height: float = 1.78
+## Material aplicado à malha do modelo (para modelos riggados sem textura).
+@export var model_material: Material
 ## Som ao interagir ("zip_tie" = algemas; "radio_beep" = resgate amigável)
 @export var interact_sound: String = "zip_tie"
 
@@ -45,6 +47,9 @@ var _base_pose: Array = []
 var _anim: AnimationPlayer
 var _anim_kneel := ""
 var _anim_cuffed := ""
+## Modelo só com caminhada (ex.: Ibarra): parado = quadro com os pés juntos.
+var _walk_only := false
+var _idle_time := 0.0
 ## Deslocamento por segundo da animação "andando algemado" (para sincronizar o passo)
 var _cuffed_stride := 0.6
 const CUFFED_MAX_SPEED := 2.0
@@ -262,6 +267,10 @@ func _build_model() -> void:
 	var model := model_scene.instantiate() as Node3D
 	_visual.add_child(model)
 	model.rotation.y = PI  # modelos Mixamo olham para +Z; no Godot a frente é -Z
+	if model_material:
+		for mi in model.find_children("*", "MeshInstance3D", true, false):
+			for i in (mi as MeshInstance3D).mesh.get_surface_count():
+				(mi as MeshInstance3D).set_surface_override_material(i, model_material)
 	var skeletons := model.find_children("*", "Skeleton3D", true, false)
 	_skeleton = skeletons[0] if not skeletons.is_empty() else null
 	var players := model.find_children("*", "AnimationPlayer", true, false)
@@ -319,12 +328,18 @@ func _setup_animations(ap: AnimationPlayer, model: Node3D) -> bool:
 		if name in ["Walking", "Running"]:
 			continue
 		candidates.append({"name": name, "hips_y": mid.y, "travel": travel})
-	if candidates.size() < 2:
+	if candidates.is_empty():
 		return false
+	if candidates.size() == 1:
+		# Só a caminhada: ela serve para andar e (congelada) para ficar parado
+		_walk_only = true
+		candidates.push_front(candidates[0])
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["hips_y"] < b["hips_y"])
 	_anim_kneel = candidates[0]["name"]
 	_anim_cuffed = candidates[1]["name"]
 	_anim = ap
+	if _walk_only:
+		_idle_time = _feet_together_time(ap, _anim_cuffed)
 	# Escala pelo topo da cabeça na pose "algemado" (a pose de descanso pode vir deslocada)
 	ap.play(_anim_cuffed)
 	ap.seek(0.0, true)
@@ -348,7 +363,38 @@ func _setup_animations(ap: AnimationPlayer, model: Node3D) -> bool:
 	return true
 
 
+## Instante da animação de caminhada em que os pés estão mais juntos.
+func _feet_together_time(ap: AnimationPlayer, anim: String) -> float:
+	var left := _skeleton.find_bone("mixamorig_LeftFoot")
+	var right := _skeleton.find_bone("mixamorig_RightFoot")
+	if left < 0 or right < 0:
+		return 0.0
+	var best := 0.0
+	var best_d := INF
+	var length := ap.get_animation(anim).length
+	var t := 0.0
+	ap.play(anim)
+	while t < length:
+		ap.seek(t, true)
+		_skeleton.force_update_all_bone_transforms()
+		var d := absf(_skeleton.get_bone_global_pose(left).origin.z - _skeleton.get_bone_global_pose(right).origin.z)
+		if d < best_d:
+			best_d = d
+			best = t
+		t += 1.0 / 30.0
+	return best
+
+
 func _update_animation(speed: float, delta: float) -> void:
+	if _walk_only:
+		if _anim.current_animation != _anim_cuffed:
+			_anim.play(_anim_cuffed)
+		if speed > 0.15:
+			_anim.speed_scale = clampf(speed / _cuffed_stride, 0.5, 3.5)
+		else:
+			_anim.speed_scale = 0.0
+			_anim.seek(lerpf(_anim.current_animation_position, _idle_time, clampf(delta * 8.0, 0.0, 1.0)), true)
+		return
 	if _hands_up:
 		_play(_anim_kneel, 1.0)
 	elif speed > 0.15:

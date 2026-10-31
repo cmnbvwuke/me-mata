@@ -8,6 +8,7 @@ const START := Vector3(-40, 0, 40)
 const SAFEHOUSE := Vector3(26, 0, -26)   # casa 10 x 8, porta a oeste
 const EXFIL := Vector3(-40, 0, 40)
 
+const IBARRA_MODEL := preload("res://assets/characters/ibarra.fbx")
 var ibarra: HVTCharacter
 
 
@@ -65,7 +66,20 @@ func build_world() -> void:
 	ammo_crate(SAFEHOUSE + Vector3(-3, 0, 2.8))
 	boundary(Vector2(-52, -52), Vector2(52, 52))
 	ibarra = spawn_npc(SAFEHOUSE + Vector3(2.5, 0, 1.5), "IBARRA", "Segure [E] para resgatar o Coronel Ibarra",
-		Color(0.2, 0.28, 0.2), Color(0.12, 0.3, 0.12), 90.0)
+		Color(0.2, 0.28, 0.2), Color(0.12, 0.3, 0.12), 90.0, IBARRA_MODEL, _ibarra_material())
+
+
+## Modelo do Coronel Ibarra (boina vermelha), riggado no Mixamo sem textura.
+func _ibarra_material() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = load("res://assets/characters/ibarra_cor.png")
+	m.normal_enabled = true
+	m.normal_texture = load("res://assets/characters/ibarra_normal.png")
+	m.roughness = 1.0
+	m.roughness_texture = load("res://assets/characters/ibarra_rugosidade.png")
+	m.metallic = 1.0
+	m.metallic_texture = load("res://assets/characters/ibarra_metal.png")
+	return m
 
 
 func define_objectives() -> Array[Dictionary]:

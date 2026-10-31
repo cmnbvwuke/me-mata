@@ -362,8 +362,11 @@ func spawn_wave(wave: Dictionary, stage: int) -> void:
 			e.notify_contact.call_deferred(player.global_position)
 
 
-func spawn_npc(pos: Vector3, tag: String, prompt: String, uniform: Color, beret: Color, yaw_deg: float = 0.0) -> HVTCharacter:
+func spawn_npc(pos: Vector3, tag: String, prompt: String, uniform: Color, beret: Color, yaw_deg: float = 0.0,
+		model: PackedScene = null, material: Material = null) -> HVTCharacter:
 	var npc := NPC_SCENE.instantiate() as HVTCharacter
+	npc.model_scene = model
+	npc.model_material = material
 	npc.tag_text = tag
 	npc.interact_prompt = prompt
 	npc.uniform_color = uniform
