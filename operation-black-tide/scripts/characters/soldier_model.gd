@@ -39,7 +39,22 @@ const VARIANTS := {
 			"metallic": "res://assets/characters/elite_metal.png",
 		},
 	},
+	# Milícia: caminhada recortada do "Rifle Walk To Stop"
+	"militia": {
+		"model": "res://assets/characters/militia.fbx",
+		"anims": "res://assets/characters/militia_anims.res",
+		"head_top": 1.7888,
+		"walk_stride": 0.9599,
+		"shoot_stride": 1.7286,
+		"neck": 0.749,
+		"textures": {
+			"albedo": "res://assets/characters/militia_cor.jpg",
+		},
+	},
 }
+
+## AK-47 (Blend Swap #94134, CC0) — origem no receptor, cano para -Z.
+const AK47 := preload("res://assets/weapons/ak47.glb")
 
 ## Chave de VARIANTS. Definir antes de adicionar à árvore.
 var variant := "soldier"
@@ -99,10 +114,9 @@ func _ready() -> void:
 	rifle.name = "Rifle"
 	rifle.top_level = true
 	add_child(rifle)
-	BodyParts.rifle(rifle, Vector3.ZERO)
-	MeshMerger.merge(rifle, false, 1000.0)
+	rifle.add_child(AK47.instantiate())
 	muzzle = Marker3D.new()
-	muzzle.position = Vector3(0, 0.012, -0.7)
+	muzzle.position = Vector3(0, 0.006, -0.54)
 	rifle.add_child(muzzle)
 	# Depois dos modificadores (agachamento) a pose final dos ossos já vale
 	_skeleton.skeleton_updated.connect(_update_rifle)

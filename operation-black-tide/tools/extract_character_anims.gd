@@ -7,7 +7,8 @@ extends SceneTree
 ##       res://assets/characters/_src_elite res://assets/characters/elite_anims.res
 ##
 ## A pasta de origem deve ter, exportados do Mixamo (FBX Binary, 30 fps):
-##   walk.fbx    Rifle Walk      ("With Skin": é também a malha base)
+##   walk.fbx    Rifle Walk      ("With Skin": é também a malha base). Também aceita
+##               "Rifle Walk To Stop": o ciclo de passos é recortado e vira loop.
 ##   shoot.fbx   Shoot Rifle     (pode ser "Without Skin")
 ##   dying.fbx   Dying
 ##   turn_l.fbx  Turn Left 45 Degrees
@@ -38,6 +39,8 @@ func _init() -> void:
 	if walk == null or shoot == null or dying == null or tl == null or tr == null:
 		quit(1)
 		return
+	if walk.length > 2.0:
+		walk = _cut_walk_cycle(walk)
 	var walk_travel := _strip_xz(walk)
 	var shoot_travel := _strip_xz(shoot)
 	_strip_xz(tl)
@@ -120,6 +123,60 @@ func _anim(path: String) -> Animation:
 	var a := ap.get_animation(list[list.size() - 1]).duplicate(true) as Animation
 	r.free()
 	return a
+
+
+## "Walk To Stop": acha o ciclo completo (2 passos) no trecho de caminhada
+## constante e emenda o fim no começo com uma transição suave.
+func _cut_walk_cycle(src: Animation) -> Animation:
+	var rot: Array[int] = []
+	for t in src.get_track_count():
+		if src.track_get_type(t) == Animation.TYPE_ROTATION_3D:
+			rot.append(t)
+	var best_err := INF
+	var t0 := 0.0
+	var period := 1.0
+	var a := 0.0
+	while a <= 0.5:
+		var p := 0.8
+		while p <= 1.45 and a + p <= 1.45:
+			var e := 0.0
+			for t in rot:
+				e += src.rotation_track_interpolate(t, a).angle_to(src.rotation_track_interpolate(t, a + p))
+			if e < best_err:
+				best_err = e
+				t0 = a
+				period = p
+			p += 1.0 / 60.0
+		a += 1.0 / 60.0
+	print("ciclo de caminhada: início %.2f s, duração %.2f s (erro %.2f)" % [t0, period, best_err])
+	var fade := minf(0.3, period * 0.3)
+	var out := Animation.new()
+	out.length = period
+	for t in src.get_track_count():
+		var type := src.track_get_type(t)
+		var nt := out.add_track(type)
+		out.track_set_path(nt, src.track_get_path(t))
+		var time := 0.0
+		while time <= period + 0.0001:
+			var w := clampf((time - (period - fade)) / fade, 0.0, 1.0)
+			var at := t0 + time
+			var back := maxf(at - period, 0.0)
+			var v: Variant
+			match type:
+				Animation.TYPE_POSITION_3D:
+					var p1 := src.position_track_interpolate(t, at)
+					var p2 := src.position_track_interpolate(t, back)
+					# só a altura recebe a transição: o avanço horizontal é removido depois
+					v = Vector3(p1.x, lerpf(p1.y, p2.y, w), p1.z)
+				Animation.TYPE_ROTATION_3D:
+					v = src.rotation_track_interpolate(t, at).slerp(src.rotation_track_interpolate(t, back), w)
+				Animation.TYPE_SCALE_3D:
+					v = src.scale_track_interpolate(t, at)
+				_:
+					v = src.track_get_key_value(t, 0)
+			out.track_insert_key(nt, time, v)
+			time += 1.0 / 30.0
+	return out
 
 
 func _seek(ap: AnimationPlayer, sk: Skeleton3D, anim: String, time: float) -> void:

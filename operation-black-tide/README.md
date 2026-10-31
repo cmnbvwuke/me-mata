@@ -166,7 +166,11 @@ e sons. Os únicos assets externos são personagens animados em `assets/characte
   agachamento (procedural, `SkeletonModifier3D`) derivados delas. O fuzil é preso às mãos em código.
 - `elite.fbx` + `elite_anims.res` + `elite_cor/normal/rugosidade/metal.png` — soldado de elite
   (variante `"elite"` em `SoldierModel.VARIANTS`, material PBR montado em código).
-A milícia usa o soldado raso com tom de farda diferente (`model_tint`). Para um modelo novo:
+- `militia.fbx` + `militia_anims.res` + `militia_cor.jpg` — miliciano (bandana vermelha); a caminhada
+  foi recortada de um "Rifle Walk To Stop".
+- `assets/weapons/ak47.glb` — AK-47 nas mãos de todos os inimigos (Blend Swap #94134, licença CC0;
+  convertida no Blender 4.0, reduzida para ~6 mil triângulos e 88 cm).
+Para um modelo novo:
 `tools/extract_character_anims.gd` gera as animações e imprime os valores da variante.
 
 ---
@@ -244,6 +248,6 @@ rotor de helicóptero, sirene, rádio.
 
 ## Limitações conhecidas do protótipo
 
-- Cenários "greybox" procedurais; milícia ainda usa o modelo do soldado raso (só muda o tom).
+- Cenários "greybox" procedurais.
 - Checkpoints recriam o nível e só fazem nascer os inimigos das etapas ainda não superadas.
 - Um único andar na residência; sem inclinação lateral (lean) ou granadas.
