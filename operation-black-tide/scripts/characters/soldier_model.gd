@@ -48,7 +48,10 @@ const VARIANTS := {
 		"shoot_stride": 1.7286,
 		"neck": 0.749,
 		"textures": {
-			"albedo": "res://assets/characters/militia_cor.jpg",
+			"albedo": "res://assets/characters/militia_cor.png",
+			"normal": "res://assets/characters/militia_normal.png",
+			"roughness": "res://assets/characters/militia_rugosidade.png",
+			"metallic": "res://assets/characters/militia_metal.png",
 		},
 	},
 }

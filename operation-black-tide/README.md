@@ -166,7 +166,7 @@ e sons. Os únicos assets externos são personagens animados em `assets/characte
   agachamento (procedural, `SkeletonModifier3D`) derivados delas. O fuzil é preso às mãos em código.
 - `elite.fbx` + `elite_anims.res` + `elite_cor/normal/rugosidade/metal.png` — soldado de elite
   (variante `"elite"` em `SoldierModel.VARIANTS`, material PBR montado em código).
-- `militia.fbx` + `militia_anims.res` + `militia_cor.jpg` — miliciano (bandana vermelha); a caminhada
+- `militia.fbx` + `militia_anims.res` + `militia_cor/normal/rugosidade/metal.png` — miliciano (bandana vermelha); a caminhada
   foi recortada de um "Rifle Walk To Stop".
 - `assets/weapons/ak47.glb` — AK-47 nas mãos de todos os inimigos (Blend Swap #94134, licença CC0;
   convertida no Blender 4.0, reduzida para ~6 mil triângulos e 88 cm).
