@@ -10,6 +10,7 @@ vest_color = Color(0.11, 0.12, 0.09, 1)
 has_helmet = false
 has_flashlight = true
 weapon_sound = "enemy_rifle"
+use_soldier_model = true
 max_health = 100.0
 armor = 0.0
 walk_speed = 1.7

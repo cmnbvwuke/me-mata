@@ -157,9 +157,14 @@ operation-black-tide/
 └── tests/          smoke_test.tscn/.gd, missions_test.tscn/.gd
 ```
 
-O protótipo **não usa assets externos**: geometria (greybox), armas em primeira pessoa, personagens,
-helicóptero, efeitos e sons são todos gerados em código. Isso deixa o projeto leve e 100% versionável;
-trocar por modelos/sons reais é direto (veja abaixo).
+Quase tudo é gerado em código: geometria (greybox), armas em primeira pessoa, helicóptero, efeitos
+e sons. Os únicos assets externos são personagens animados em `assets/characters/`:
+- `general_salcedo.fbx` — General Salcedo (ajoelhado ao ser encontrado, andando algemado).
+- `soldier.fbx` + `soldier_anims.res` — soldado raso usado pelos guardas (`use_soldier_model` no
+  perfil `guard.tres`; lógica em `scripts/characters/soldier_model.gd`). Animações Mixamo:
+  andar com fuzil, atirar andando, girar 45° para cada lado, morrer; pose parada/mira e
+  agachamento (procedural, `SkeletonModifier3D`) derivados delas. O fuzil é preso às mãos em código.
+Elite e milícia continuam com o boneco procedural.
 
 ---
 
@@ -236,6 +241,6 @@ rotor de helicóptero, sirene, rádio.
 
 ## Limitações conhecidas do protótipo
 
-- Visual "greybox" procedural (sem modelos/texturas artísticas nem animações esqueletais).
+- Cenários "greybox" procedurais; elite e milícia ainda sem modelo animado.
 - Checkpoints recriam o nível e só fazem nascer os inimigos das etapas ainda não superadas.
 - Um único andar na residência; sem inclinação lateral (lean) ou granadas.

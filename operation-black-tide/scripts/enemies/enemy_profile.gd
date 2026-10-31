@@ -10,6 +10,8 @@ extends Resource
 @export var has_helmet: bool = false
 @export var has_flashlight: bool = true
 @export var weapon_sound: String = "enemy_rifle"
+## Usa o modelo animado do soldado raso (SoldierModel) em vez do boneco procedural.
+@export var use_soldier_model: bool = false
 
 @export_group("Atributos")
 @export var max_health: float = 100.0

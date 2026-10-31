@@ -74,6 +74,10 @@ var _muzzle: Marker3D
 var _leg_l: Node3D
 var _leg_r: Node3D
 var _flashlight: SpotLight3D
+## Modelo animado (soldado raso); null = boneco procedural.
+var _soldier: SoldierModel
+var _prev_yaw := 0.0
+var _last_shot_msec := -10000
 
 @onready var agent: NavigationAgent3D = $NavigationAgent3D
 @onready var body_shape: CollisionShape3D = $CollisionShape3D
@@ -538,6 +542,9 @@ func _tick_shooting(delta: float) -> void:
 	if _burst_left <= 0:
 		_burst_pause = _rng.randf_range(0.5, 1.3)
 	_fire_shot()
+	_last_shot_msec = Time.get_ticks_msec()
+	if _soldier:
+		_soldier.kick()
 
 
 func _fire_shot() -> void:
@@ -631,7 +638,13 @@ func _apply_movement(delta: float) -> void:
 		face_yaw = atan2(-dir.x, -dir.z)
 		_look_yaw = face_yaw
 	rotation.y = lerp_angle(rotation.y, face_yaw, clampf(delta * 7.0, 0.0, 1.0))
-	_animate_walk(delta, horizontal.length())
+	if _soldier:
+		var yaw_rate := angle_difference(_prev_yaw, rotation.y) / maxf(delta, 0.001)
+		var firing := Time.get_ticks_msec() - _last_shot_msec < 500
+		_soldier.update_animation(delta, horizontal.length(), yaw_rate, state == State.COMBAT, firing)
+	else:
+		_animate_walk(delta, horizontal.length())
+	_prev_yaw = rotation.y
 
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
@@ -643,6 +656,8 @@ func _flat_distance(a: Vector3, b: Vector3) -> float:
 # =========================================================================
 
 func is_headshot_point(point: Vector3) -> bool:
+	if _soldier:
+		return point.y - global_position.y > _soldier.headshot_height()
 	return point.y - global_position.y > 1.5 * _posture
 
 
@@ -682,6 +697,14 @@ func _die(info: DamageInfo) -> void:
 	remove_from_group("enemies")
 	add_to_group("corpses")
 	AudioManager.play_3d("death_thud", global_position, -4.0, 30.0, 4.0)
+	if _soldier:
+		_soldier.play_death()
+		get_tree().create_timer(1.6).timeout.connect(func() -> void:
+			if is_instance_valid(self):
+				FX.blood_pool(self, global_position))
+		died.emit(self)
+		set_physics_process(false)
+		return
 	var fall := -1.0 if _rng.randf() < 0.5 else 1.0
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(_visual, "rotation:x", fall * deg_to_rad(86.0), 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -697,7 +720,11 @@ func _die(info: DamageInfo) -> void:
 
 func _update_posture(delta: float) -> void:
 	_posture = move_toward(_posture, 0.62 if is_crouched else 1.0, delta * 3.0)
-	_visual.scale.y = _posture
+	if _soldier:
+		_soldier.crouch = (1.0 - _posture) / 0.38
+		_eyes.position.y = 1.55 * _posture
+	else:
+		_visual.scale.y = _posture
 	var shape := body_shape.shape as CapsuleShape3D
 	shape.height = 1.8 * _posture
 	body_shape.position.y = shape.height * 0.5
@@ -734,6 +761,9 @@ func _build_visual() -> void:
 	_visual = Node3D.new()
 	_visual.name = "Visual"
 	add_child(_visual)
+	if profile.use_soldier_model:
+		_build_soldier_visual()
+		return
 	var cloth := BodyParts.mat(profile.body_color, 0.95)
 	var vest := BodyParts.mat(profile.vest_color, 0.9)
 	var skin := BodyParts.mat(Color(0.42, 0.29, 0.21), 0.7)
@@ -797,15 +827,32 @@ func _build_visual() -> void:
 	_visual.add_child(_muzzle)
 
 	if profile.has_flashlight and use_flashlight:
-		_flashlight = SpotLight3D.new()
-		_flashlight.light_color = Color(1.0, 0.93, 0.8)
-		_flashlight.light_energy = 2.5
-		_flashlight.light_volumetric_fog_energy = 1.5
-		_flashlight.spot_range = 20.0
-		_flashlight.spot_angle = 20.0
-		_flashlight.shadow_enabled = GraphicsQuality.positional_shadows_allowed(true)
-		_flashlight.position = Vector3(0.11, 1.31, -0.62)
-		_visual.add_child(_flashlight)
+		_add_flashlight(Vector3(0.11, 1.31, -0.62))
+
+
+## Guarda com o modelo animado do soldado raso.
+func _build_soldier_visual() -> void:
+	_soldier = SoldierModel.new()
+	_visual.add_child(_soldier)
+	_muzzle = _soldier.muzzle
+	_eyes = Marker3D.new()
+	_eyes.position = Vector3(0, 1.55, -0.12)
+	_visual.add_child(_eyes)
+	_prev_yaw = rotation.y
+	if profile.has_flashlight and use_flashlight:
+		_add_flashlight(Vector3(0.12, 1.25, -0.32))
+
+
+func _add_flashlight(pos: Vector3) -> void:
+	_flashlight = SpotLight3D.new()
+	_flashlight.light_color = Color(1.0, 0.93, 0.8)
+	_flashlight.light_energy = 2.5
+	_flashlight.light_volumetric_fog_energy = 1.5
+	_flashlight.spot_range = 20.0
+	_flashlight.spot_angle = 20.0
+	_flashlight.shadow_enabled = GraphicsQuality.positional_shadows_allowed(true)
+	_flashlight.position = pos
+	_visual.add_child(_flashlight)
 
 
 func _mat(color: Color, metallic: float = 0.0) -> StandardMaterial3D:
