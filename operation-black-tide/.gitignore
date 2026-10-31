@@ -1,3 +1,5 @@
 # Cache/import do Godot 4
 .godot/
 *.import
+# Configurações de importação dos assets externos (compressão de textura etc.)
+!assets/**/*.import
