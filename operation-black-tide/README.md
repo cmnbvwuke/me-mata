@@ -179,6 +179,8 @@ e sons. Os únicos assets externos são personagens animados em `assets/characte
   no Blender 4.0: escala real, cano em -Z). O fuzil veio sem textura e foi pintado por região (metal preto,
   polímero coyote, carregador cinza, sujeira nas reentrâncias) e teve as lentes da mira removidas para ver
   através do tubo; a pistola ganhou um silenciador.
+- `assets/vehicles/blackhawk.glb` — helicóptero UH-60 Black Hawk (Blend Swap #25582, CC0), usado na infiltração,
+  apoio aéreo e extração. Convertido no Blender: escala real (~15 m), nariz em -Z, rotores como nós separados.
 Para um modelo novo:
 `tools/extract_character_anims.gd` gera as animações e imprime os valores da variante.
 

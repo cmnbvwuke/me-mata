@@ -9,6 +9,8 @@ enum Mode { IDLE, PATH, ORBIT }
 
 @export var rotor_speed: float = 24.0
 
+const BLACKHAWK := preload("res://assets/vehicles/blackhawk.glb")
+
 var seat: Marker3D        ## Onde o jogador "senta" (porta lateral direita)
 var mode: Mode = Mode.IDLE
 var _rotor: Node3D
@@ -86,36 +88,14 @@ func orbit(center: Vector3, radius: float, height: float, speed: float = 0.08) -
 
 
 func _build() -> void:
-	var body := _mat(Color(0.13, 0.14, 0.13), 0.3, 0.6)
-	var dark := _mat(Color(0.04, 0.04, 0.045), 0.5, 0.5)
-	var glass := _mat(Color(0.05, 0.08, 0.1), 0.6, 0.1)
-	_box(Vector3(2.3, 2.0, 6.0), Vector3(0, 0, 0), body)            # fuselagem
-	_box(Vector3(2.1, 1.4, 1.6), Vector3(0, 0.15, -3.6), glass)       # cabine
-	_box(Vector3(0.8, 0.7, 6.5), Vector3(0, 0.45, 6.0), body)         # cauda
-	_box(Vector3(0.15, 1.8, 1.2), Vector3(0, 1.3, 9.0), body)         # deriva
-	_box(Vector3(2.6, 0.08, 0.6), Vector3(0, 0.5, 8.6), body)         # estabilizador
-	_box(Vector3(1.2, 0.5, 2.2), Vector3(0, 1.2, -0.3), body)         # motores
-	_box(Vector3(0.1, 0.1, 4.0), Vector3(1.0, -1.3, 0), dark)          # esquis
-	_box(Vector3(0.1, 0.1, 4.0), Vector3(-1.0, -1.3, 0), dark)
-	_box(Vector3(0.6, 0.15, 0.15), Vector3(1.15, 0.6, 0.6), dark)      # metralhadora de porta
-	_rotor = Node3D.new()
-	_rotor.position = Vector3(0, 1.55, -0.3)
-	add_child(_rotor)
-	for i in 4:
-		var blade := _box(Vector3(0.35, 0.05, 7.8), Vector3(0, 0, 3.9), dark)
-		remove_child(blade)
-		var arm := Node3D.new()
-		arm.rotation.y = i * PI * 0.5
-		_rotor.add_child(arm)
-		arm.add_child(blade)
-	_tail_rotor = Node3D.new()
-	_tail_rotor.position = Vector3(0.25, 1.2, 9.0)
-	add_child(_tail_rotor)
-	for i in 2:
-		var tb := _box(Vector3(0.05, 1.6, 0.18), Vector3.ZERO, dark)
-		remove_child(tb)
-		tb.rotation.x = i * PI * 0.5
-		_tail_rotor.add_child(tb)
+	# UH-60 Black Hawk (Blend Swap #25582, CC0), convertido no Blender: nariz em
+	# -Z, rotores como nós separados com o pivô no cubo (giram em _process)
+	var model := BLACKHAWK.instantiate() as Node3D
+	add_child(model)
+	_rotor = model.find_child("MainRotor", true, false) as Node3D
+	_tail_rotor = model.find_child("TailRotor", true, false) as Node3D
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		(mi as MeshInstance3D).lod_bias = 0.5
 	_build_collision()
 	# Luz vermelha de cabine (operações noturnas) e luzes de navegação
 	var cabin := OmniLight3D.new()
@@ -139,14 +119,14 @@ func _build() -> void:
 	landing.spot_angle = 22.0
 	landing.light_volumetric_fog_energy = 2.0
 	landing.shadow_enabled = GraphicsQuality.positional_shadows_allowed(true)
-	landing.position = Vector3(0, -1.1, -2.6)
+	landing.position = Vector3(0, -0.9, -3.8)
 	landing.rotation.x = -deg_to_rad(70.0)
 	add_child(landing)
 	_strobe = OmniLight3D.new()
 	_strobe.light_color = Color(1.0, 0.15, 0.1)
 	_strobe.light_energy = 0.0
 	_strobe.omni_range = 9.0
-	_strobe.position = Vector3(0, 1.3, 3.5)
+	_strobe.position = Vector3(0, 2.0, 4.0)
 	add_child(_strobe)
 	seat = Marker3D.new()
 	seat.position = Vector3(1.7, -1.0, 0.6)
@@ -158,8 +138,8 @@ func _build_collision() -> void:
 	body.collision_layer = Layers.WORLD
 	body.collision_mask = 0
 	body.sync_to_physics = false
-	for part in [[Vector3(2.3, 2.0, 7.6), Vector3(0, 0, -0.8)], [Vector3(0.8, 0.7, 6.5), Vector3(0, 0.45, 6.0)],
-			[Vector3(2.2, 0.3, 4.0), Vector3(0, -1.2, 0)]]:
+	for part in [[Vector3(2.4, 2.7, 8.6), Vector3(0, 0.15, -0.6)], [Vector3(1.0, 1.2, 6.6), Vector3(0, 0.75, 6.4)],
+			[Vector3(2.6, 0.4, 3.0), Vector3(0, -1.15, -1.0)]]:
 		var cs := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
 		shape.size = part[0]
@@ -167,22 +147,3 @@ func _build_collision() -> void:
 		cs.position = part[1]
 		body.add_child(cs)
 	add_child(body)
-
-
-func _mat(c: Color, metallic: float, roughness: float) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.metallic = metallic
-	m.roughness = roughness
-	return m
-
-
-func _box(size: Vector3, pos: Vector3, mat: Material) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var b := BoxMesh.new()
-	b.size = size
-	mi.mesh = b
-	mi.material_override = mat
-	mi.position = pos
-	add_child(mi)
-	return mi
