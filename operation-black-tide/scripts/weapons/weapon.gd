@@ -35,6 +35,12 @@ const HAND_MODEL := preload("res://assets/characters/hand.glb")
 ## Modelos das armas (convertidos no Blender: escala real, cano em -Z; ver README).
 const M4A1_MODEL := preload("res://assets/weapons/m4a1.glb")
 const P226_MODEL := preload("res://assets/weapons/p226.glb")
+const MODELS := {
+	"m4a1": M4A1_MODEL,
+	"ak47": preload("res://assets/weapons/ak47.glb"),
+	"p226_sd": P226_MODEL,
+	"p226": preload("res://assets/weapons/p226_bare.glb"),
+}
 ## Altura do eixo da mira do fuzil (= -ads_position.y do M4A1).
 const RIFLE_SIGHT_Y := 0.0927
 ## Miras altas da pistola (de silenciador), feitas em código: as do modelo são
@@ -199,18 +205,26 @@ func _build_model() -> void:
 	muzzle.name = "Muzzle"
 	add_child(muzzle)
 
-	var model := (P226_MODEL if data.model_type == "pistol" else M4A1_MODEL).instantiate() as Node3D
+	var model := (MODELS.get(data.model_type, M4A1_MODEL) as PackedScene).instantiate() as Node3D
 	add_child(model)
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	if data.model_type == "pistol":
+	if data.model_type in ["p226_sd", "p226"]:
 		_pistol_sights(-data.ads_position.y, -data.ads_position.z)
 		# Direita na empunhadura; esquerda envolve a direita pelo lado esquerdo
 		_arm(Vector3(0.027, -0.062, 0.05), Vector3(0, -0.25, -1), Vector3(-1, 0, 0), true, 1.0,
 			Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove)
 		_arm(Vector3(-0.032, -0.075, 0.045), Vector3(0, -0.4, -1), Vector3(1, 0, 0), false, 0.85,
 			Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true)
-		muzzle.position = Vector3(0, 0.01, -0.291)
+		# com silenciador a boca fica na ponta dele; sem, na frente do ferrolho
+		muzzle.position = Vector3(0, 0.01, -0.291) if data.suppressed else Vector3(0, 0.01, -0.128)
+	elif data.model_type == "ak47":
+		# Miras de ferro: alça no receptor e maça na ponta do cano (já no modelo)
+		_arm(Vector3(0.024, -0.085, 0.06), Vector3(0, -0.3, -1), Vector3(-1, 0, 0), true, 1.0,
+			Vector3(0.1, -0.24, 0.26), Vector3(0.15, -0.42, 0.46), sleeve, cuff, glove)
+		_arm(Vector3(-0.008, -0.04, -0.33), Vector3(1, 0, -0.3), Vector3(0, 1, 0), false, 0.8,
+			Vector3(-0.2, -0.22, -0.1), Vector3(-0.48, -0.42, 0.4), sleeve, cuff, glove, true)
+		muzzle.position = Vector3(0, 0.006, -0.54)
 	else:
 		# Tubo da mira: luva interna circular por cima da parede irregular do
 		# modelo, com anéis lisos nas pontas; o ponto vermelho fica na frente

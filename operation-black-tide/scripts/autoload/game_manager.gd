@@ -17,6 +17,15 @@ var field_of_view: float = 75.0
 ## 0 = Baixo, 1 = Médio, 2 = Alto (ver GraphicsQuality). -1 = detectar na 1ª execução.
 var graphics_quality: int = -1
 var show_fps: bool = false
+## Equipamento escolhido no briefing (caminhos dos WeaponData).
+const WEAPONS := [
+	"res://resources/weapons/m4a1.tres",
+	"res://resources/weapons/ak47.tres",
+	"res://resources/weapons/p226_sd.tres",
+	"res://resources/weapons/p226.tres",
+]
+var primary_weapon: String = "res://resources/weapons/m4a1.tres"
+var secondary_weapon: String = "res://resources/weapons/p226_sd.tres"
 ## Cor das mãos em primeira pessoa (índice de HAND_STYLES).
 var hand_style: int = 0
 const HAND_STYLES := [
@@ -154,6 +163,8 @@ func load_settings() -> void:
 		graphics_quality = int(cfg.get_value("video", "graphics_quality", -1))
 		show_fps = bool(cfg.get_value("video", "show_fps", false))
 		hand_style = clampi(int(cfg.get_value("video", "hand_style", 0)), 0, HAND_STYLES.size() - 1)
+		primary_weapon = _valid_weapon(String(cfg.get_value("loadout", "primary", primary_weapon)), "primary")
+		secondary_weapon = _valid_weapon(String(cfg.get_value("loadout", "secondary", secondary_weapon)), "secondary")
 	if graphics_quality < 0:
 		graphics_quality = GraphicsQuality.detect_default()
 	apply_settings()
@@ -168,7 +179,25 @@ func save_settings() -> void:
 	cfg.set_value("video", "graphics_quality", graphics_quality)
 	cfg.set_value("video", "show_fps", show_fps)
 	cfg.set_value("video", "hand_style", hand_style)
+	cfg.set_value("loadout", "primary", primary_weapon)
+	cfg.set_value("loadout", "secondary", secondary_weapon)
 	cfg.save(SETTINGS_PATH)
+
+
+## Armas disponíveis para um slot ("primary" / "secondary").
+func weapons_for_slot(slot: String) -> Array[WeaponData]:
+	var list: Array[WeaponData] = []
+	for path in WEAPONS:
+		var d := load(path) as WeaponData
+		if d and d.slot == slot:
+			list.append(d)
+	return list
+
+
+func _valid_weapon(path: String, slot: String) -> String:
+	if path in WEAPONS and (load(path) as WeaponData).slot == slot:
+		return path
+	return weapons_for_slot(slot)[0].resource_path
 
 
 func hand_color() -> Color:

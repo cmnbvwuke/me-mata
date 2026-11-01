@@ -117,7 +117,47 @@ func _show_campaign() -> void:
 	_briefing_text = UIStyle.label("", 15, UIStyle.TEXT)
 	_briefing_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	brief.add_child(_briefing_text)
+	_add_loadout(brief)
 	_select_mission("absolute_resolve")
+
+
+## Escolha de equipamento: arma principal e secundária (salvas nas configurações).
+func _add_loadout(parent: Control) -> void:
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 6
+	parent.add_child(gap)
+	parent.add_child(UIStyle.label("EQUIPAMENTO", 18, UIStyle.AMBER))
+	for slot in ["primary", "secondary"]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		parent.add_child(row)
+		var title := UIStyle.label("Principal" if slot == "primary" else "Secundária", 16)
+		title.custom_minimum_size.x = 110
+		row.add_child(title)
+		var option := OptionButton.new()
+		option.custom_minimum_size = Vector2(220, 32)
+		row.add_child(option)
+		var info := UIStyle.label("", 13, UIStyle.DIM)
+		info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		parent.add_child(info)
+		var list := GameManager.weapons_for_slot(slot)
+		var current := GameManager.primary_weapon if slot == "primary" else GameManager.secondary_weapon
+		for i in list.size():
+			option.add_item(list[i].weapon_name, i)
+			if list[i].resource_path == current:
+				option.selected = i
+		var show := func(i: int) -> void:
+			var d := list[i]
+			info.text = "%s\nDano %d · %d tiros/min · carregador %d%s" % [d.description, int(d.damage), int(d.fire_rate),
+				d.magazine_size, " · automática" if d.allows_auto else ""]
+		show.call(option.selected)
+		option.item_selected.connect(func(i: int) -> void:
+			if slot == "primary":
+				GameManager.primary_weapon = list[i].resource_path
+			else:
+				GameManager.secondary_weapon = list[i].resource_path
+			GameManager.save_settings()
+			show.call(i))
 
 
 func _select_mission(id: String) -> void:

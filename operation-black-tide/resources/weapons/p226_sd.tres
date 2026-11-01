@@ -5,7 +5,9 @@
 [resource]
 script = ExtResource("1_wd")
 weapon_name = "P226 SD (suprimida)"
-model_type = "pistol"
+model_type = "p226_sd"
+slot = "secondary"
+description = "Pistola com silenciador: tiros quase não alertam os inimigos. Ideal para furtividade."
 sound_name = "pistol_suppressed"
 shot_volume_db = -8.0
 suppressed = true

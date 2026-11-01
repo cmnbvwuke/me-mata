@@ -5,7 +5,9 @@
 [resource]
 script = ExtResource("1_wd")
 weapon_name = "M4A1 SOPMOD"
-model_type = "rifle"
+model_type = "m4a1"
+slot = "primary"
+description = "Carabina das forças especiais com mira red dot. Cadência alta, recuo controlável."
 sound_name = "rifle_shot"
 shot_volume_db = -3.0
 suppressed = false

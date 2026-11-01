@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+weapon_name = "P226"
+model_type = "p226"
+slot = "secondary"
+description = "A mesma pistola sem silenciador: mais dano e alcance, mas cada tiro é ouvido de longe."
+sound_name = "pistol"
+shot_volume_db = -4.0
+suppressed = false
+damage = 36.0
+headshot_multiplier = 4.5
+fire_rate = 400.0
+max_range = 120.0
+allows_auto = false
+default_auto = false
+magazine_size = 15
+reserve_ammo = 60
+reload_time = 1.5
+empty_reload_time = 1.9
+equip_time = 0.35
+hip_spread = 2.2
+ads_spread = 0.35
+move_spread = 1.8
+spread_per_shot = 0.9
+spread_recovery = 5.0
+ads_fov = 62.0
+ads_time = 0.15
+hip_position = Vector3(0.15, -0.16, -0.36)
+ads_position = Vector3(0, -0.0335, -0.3)
+noise_radius = 45.0
+recoil_vertical = 1.45
+recoil_horizontal = 0.3
+recoil_horizontal_bias = -0.1
+recoil_first_shot = 1.0
+recoil_climb = 0.1
+recoil_climb_max = 0.4
+recoil_reset_time = 0.12
+recoil_ads_mult = 0.75
+recoil_crouch_mult = 0.85
+recoil_snap = 26.0
+recoil_recovery = 10.0
+recoil_shake = 0.025
+kick_back = 0.03
+kick_pitch = 0.19
+kick_yaw = 0.02
+kick_roll = 0.05
+kick_recovery = 10.0
+recoil_return = 0.85

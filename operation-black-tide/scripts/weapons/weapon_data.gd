@@ -5,8 +5,12 @@ extends Resource
 
 @export_group("Identidade")
 @export var weapon_name: String = "Arma"
-## Tipo do modelo procedural da viewmodel: "rifle" ou "pistol".
-@export var model_type: String = "rifle"
+## Modelo da viewmodel (ver Weapon._build_model): "m4a1", "ak47", "p226_sd", "p226".
+@export var model_type: String = "m4a1"
+## Slot no equipamento: "primary" ou "secondary".
+@export_enum("primary", "secondary") var slot: String = "primary"
+## Texto curto mostrado na escolha de equipamento.
+@export_multiline var description: String = ""
 @export var sound_name: String = "rifle_shot"
 @export var shot_volume_db: float = 0.0
 @export var suppressed: bool = false

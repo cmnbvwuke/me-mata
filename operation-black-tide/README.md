@@ -195,6 +195,9 @@ Para um modelo novo:
   tendência lateral, primeiro tiro mais controlado, redução ao mirar/agachar e coice do modelo.
   Fuzil: ~18° numa rajada de 30 tiros no quadril (~6° mirando), puxa para a direita, devolve 40%.
   Pistola: salto forte por tiro, devolve 85%.
+- **Equipamento** (briefing no menu): arma principal (M4A1 SOPMOD ou AK-47) e secundária (P226 com ou sem
+  silenciador), salvas nas configurações. Nova arma = novo `.tres` com `slot`/`description`/`model_type`, entrada
+  em `GameManager.WEAPONS` e o modelo em `Weapon.MODELS` (mãos e mira em `Weapon._build_model`).
 - **Caixas de munição de uso único**: reabastecem tudo e somem; não são gastas com a munição cheia.
 - Movimento com aceleração, sprint, agachar (com checagem de teto antes de levantar), pulo,
   balanço de câmera, aterrissagem com tremor.

@@ -82,6 +82,7 @@ func _generate_library() -> void:
 	# Armas
 	_streams["rifle_shot"] = _wav(_echo(_gunshot(0.42, 16.0, 0.55, 70.0, 0.9, 0.9), 0.085, 0.28))
 	_streams["pistol_suppressed"] = _wav(_gunshot(0.16, 38.0, 0.12, 120.0, 0.35, 0.15))
+	_streams["pistol"] = _wav(_echo(_gunshot(0.26, 26.0, 0.42, 95.0, 0.75, 0.6), 0.07, 0.22))
 	_streams["enemy_rifle"] = _wav(_echo(_gunshot(0.45, 14.0, 0.42, 60.0, 1.0, 0.7), 0.11, 0.3))
 	_streams["dry_fire"] = _wav(_click(0.035, 2600.0, 0.6))
 	_streams["mag_out"] = _wav(_click(0.09, 900.0, 0.9))

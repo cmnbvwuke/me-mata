@@ -10,10 +10,8 @@ signal ammo_changed(in_mag: int, reserve: int)
 signal fire_mode_changed(is_auto: bool)
 signal hit_confirmed(killed: bool, headshot: bool)
 
-@export var loadout: Array[String] = [
-	"res://resources/weapons/m4a1.tres",
-	"res://resources/weapons/p226_sd.tres",
-]
+## Vazio = usa o equipamento escolhido no briefing (GameManager).
+@export var loadout: Array[String] = []
 
 var weapons: Array[Weapon] = []
 var current: Weapon
@@ -41,6 +39,8 @@ var _bob_time := 0.0
 func _ready() -> void:
 	camera = get_parent() as Camera3D
 	player = owner as Player
+	if loadout.is_empty():
+		loadout = [GameManager.primary_weapon, GameManager.secondary_weapon]
 	for path in loadout:
 		var data := load(path) as WeaponData
 		if data == null:
