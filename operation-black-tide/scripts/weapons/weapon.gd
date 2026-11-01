@@ -35,6 +35,10 @@ const HAND_MODEL := preload("res://assets/characters/hand.glb")
 ## Modelos das armas (convertidos no Blender: escala real, cano em -Z; ver README).
 const M4A1_MODEL := preload("res://assets/weapons/m4a1.glb")
 const P226_MODEL := preload("res://assets/weapons/p226.glb")
+## Altura do eixo da mira do fuzil (= -ads_position.y do M4A1).
+const RIFLE_SIGHT_Y := 0.0927
+## Topo da alça de mira da pistola (pivô da correção de inclinação).
+const PISTOL_REAR_SIGHT := Vector3(0, 0.0357, 0.027)
 const HAND_SCALE := 0.05
 
 
@@ -191,23 +195,47 @@ func _build_model() -> void:
 	add_child(muzzle)
 
 	var model := (P226_MODEL if data.model_type == "pistol" else M4A1_MODEL).instantiate() as Node3D
-	add_child(model)
+	if data.model_type == "pistol":
+		# A maça de mira do modelo é ~4° mais baixa que a alça: inclina a pistola
+		# em torno da alça para nivelar a linha de visada com o olho (o silenciador
+		# foi exportado com a inclinação contrária e fica abaixo dessa linha)
+		var pivot := Node3D.new()
+		pivot.position = PISTOL_REAR_SIGHT
+		pivot.rotation.x = 0.066
+		add_child(pivot)
+		pivot.add_child(model)
+		model.position = -PISTOL_REAR_SIGHT
+	else:
+		add_child(model)
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if data.model_type == "pistol":
-		# Pontos de trítio: maça e alça de mira
-		_emissive_dot(Vector3(0, 0.029, -0.113), Color(0.3, 1.0, 0.4), 0.0022)
-		_emissive_dot(Vector3(-0.009, 0.031, 0.021), Color(0.3, 1.0, 0.4), 0.0018)
-		_emissive_dot(Vector3(0.009, 0.031, 0.021), Color(0.3, 1.0, 0.4), 0.0018)
+		# Três pontos de trítio: o da frente na maça, os de trás nas lâminas da
+		# alça. Todos ficam no mesmo ângulo logo abaixo da linha do olho (assim
+		# aparecem alinhados e encostados nas miras), e os de trás, mais perto do
+		# olho, são proporcionalmente menores para parecerem do mesmo tamanho.
+		var tritium := Color(0.3, 1.0, 0.4)
+		var eye := Vector3(0, -data.ads_position.y, -data.ads_position.z)
+		var drop := 0.0055  # rad abaixo da linha de visada
+		var front := Vector3(0, 0, -0.11)
+		front.y = eye.y - drop * (eye.z - front.z)
+		var front_r := 0.0019
+		_emissive_dot(front, tritium, front_r)
+		for side in [-1.0, 1.0]:
+			var rear := Vector3(side * 0.0055, 0, 0.029)
+			rear.y = eye.y - drop * (eye.z - rear.z)
+			_emissive_dot(rear, tritium, front_r * (eye.z - rear.z) / (eye.z - front.z))
 		# Direita na empunhadura; esquerda envolve a direita pelo lado esquerdo
 		_arm(Vector3(0.027, -0.062, 0.05), Vector3(0, -0.25, -1), Vector3(-1, 0, 0), true, 1.0,
 			Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove)
 		_arm(Vector3(-0.032, -0.075, 0.045), Vector3(0, -0.4, -1), Vector3(1, 0, 0), false, 0.85,
 			Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true)
-		muzzle.position = Vector3(0, 0.01, -0.291)
+		muzzle.position = Vector3(0, 0.02, -0.291)
 	else:
-		# Ponto vermelho na lente dianteira da mira (o tubo é vazado)
-		_emissive_dot(Vector3(0, 0.0927, 0.04), Color(1.0, 0.1, 0.05), 0.0016)
+		# Tubo da mira: luva interna circular por cima da parede irregular do
+		# modelo, com anéis lisos nas pontas; o ponto vermelho fica na frente
+		_sight_tube(Vector3(0, RIFLE_SIGHT_Y, 0.036), Vector3(0, RIFLE_SIGHT_Y, 0.121), 0.0172, 0.0306)
+		_emissive_dot(Vector3(0, RIFLE_SIGHT_Y, 0.043), Color(1.0, 0.1, 0.05), 0.002)
 		# Direita na empunhadura; esquerda por baixo do guarda-mão, polegar no lado esquerdo
 		_arm(Vector3(0.026, -0.14, 0.155), Vector3(0, -0.3, -1), Vector3(-1, 0, 0), true, 1.0,
 			Vector3(0.1, -0.27, 0.32), Vector3(0.15, -0.42, 0.5), sleeve, cuff, glove)
@@ -334,6 +362,39 @@ func _basis_along(dir: Vector3) -> Basis:
 	var x := y.cross(ref).normalized()
 	var z := x.cross(y).normalized()
 	return Basis(x, y, z)
+
+
+## Tubo de paredes finas entre `front` e `back` (eixo Z): parede interna
+## circular e anéis nas duas pontas, preto fosco.
+func _sight_tube(front: Vector3, back: Vector3, r_in: float, r_out: float) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var seg := 48
+	for i in seg:
+		var a0 := TAU * i / seg
+		var a1 := TAU * (i + 1) / seg
+		var d0 := Vector3(cos(a0), sin(a0), 0)
+		var d1 := Vector3(cos(a1), sin(a1), 0)
+		# parede interna (normal para dentro)
+		var quad := [front + d0 * r_in, front + d1 * r_in, back + d1 * r_in, back + d0 * r_in]
+		var normals := [-d0, -d1, -d1, -d0]
+		for k in [0, 2, 1, 0, 3, 2]:
+			st.set_normal(normals[k])
+			st.add_vertex(quad[k])
+		# anéis da frente (normal -Z) e de trás (+Z)
+		for cap in [[front, Vector3.FORWARD, [0, 1, 2, 0, 2, 3]], [back, Vector3.BACK, [0, 2, 1, 0, 3, 2]]]:
+			var c: Vector3 = cap[0]
+			var ring := [c + d0 * r_in, c + d0 * r_out, c + d1 * r_out, c + d1 * r_in]
+			for k in cap[2]:
+				st.set_normal(cap[1])
+				st.add_vertex(ring[k])
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	var m := _mat(Color(0.035, 0.035, 0.038), 0.2, 0.7)
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
 
 
 func _emissive_dot(pos: Vector3, color: Color, radius: float) -> void:
