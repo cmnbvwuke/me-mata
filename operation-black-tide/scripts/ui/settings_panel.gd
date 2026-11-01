@@ -7,6 +7,7 @@ func _ready() -> void:
 	add_child(UIStyle.label("CONFIGURAÇÕES", 22, UIStyle.AMBER))
 	_add_quality_option()
 	_add_toggle("Mostrar FPS", GameManager.show_fps, func(v: bool) -> void: GameManager.show_fps = v)
+	_add_hand_option()
 	_add_slider("Sensibilidade do mouse", 0.2, 3.0, 0.05, GameManager.mouse_sensitivity,
 		func(v: float) -> void: GameManager.mouse_sensitivity = v, "%.2fx")
 	_add_slider("Volume geral", 0.0, 1.0, 0.01, GameManager.master_volume,
@@ -34,6 +35,25 @@ func _add_quality_option() -> void:
 	option.item_selected.connect(func(i: int) -> void:
 		GameManager.graphics_quality = i
 		hint.text = ["GPU integrada / notebook", "intermediário", "placa de vídeo dedicada"][i]
+		GameManager.apply_settings()
+		GameManager.save_settings())
+
+
+func _add_hand_option() -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	add_child(row)
+	var name_label := UIStyle.label("Cor das mãos", 17)
+	name_label.custom_minimum_size.x = 230
+	row.add_child(name_label)
+	var option := OptionButton.new()
+	for i in GameManager.HAND_STYLES.size():
+		option.add_item(GameManager.HAND_STYLES[i][0], i)
+	option.selected = GameManager.hand_style
+	option.custom_minimum_size = Vector2(220, 32)
+	row.add_child(option)
+	option.item_selected.connect(func(i: int) -> void:
+		GameManager.hand_style = i
 		GameManager.apply_settings()
 		GameManager.save_settings())
 

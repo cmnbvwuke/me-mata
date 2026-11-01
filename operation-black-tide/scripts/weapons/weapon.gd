@@ -27,6 +27,12 @@ var _equip_timer := 0.0
 var _flash_light: OmniLight3D
 var _flash_mesh: MeshInstance3D
 var _flash_timer := 0.0
+## Material das mãos (a cor muda ao vivo pelas configurações).
+var _hand_mat: StandardMaterial3D
+
+## Mão low-poly com cada falange separada (palma, polegar e 4 dedos em 3 partes).
+const HAND_MODEL := preload("res://assets/characters/hand.glb")
+const HAND_SCALE := 0.05
 
 
 func setup(p_data: WeaponData) -> void:
@@ -174,7 +180,9 @@ func refill() -> void:
 func _build_model() -> void:
 	var metal := _mat(Color(0.07, 0.07, 0.075), 0.1, 0.78)
 	var polymer := _mat(Color(0.16, 0.145, 0.115), 0.0, 0.85)
-	var glove := _mat(Color(0.075, 0.072, 0.065), 0.0, 0.8)
+	var glove := _mat(GameManager.hand_color(), 0.0, 0.8)
+	_hand_mat = glove
+	GameManager.settings_changed.connect(func() -> void: _hand_mat.albedo_color = GameManager.hand_color())
 	var sleeve := _mat(Color(0.22, 0.23, 0.17), 0.0, 1.0)
 	var cuff := _mat(Color(0.16, 0.17, 0.12), 0.0, 1.0)
 	muzzle = Marker3D.new()
@@ -191,8 +199,11 @@ func _build_model() -> void:
 		_box(Vector3(0.005, 0.012, 0.008), Vector3(0, 0.027, -0.1), metal)               # maça de mira
 		_emissive_dot(Vector3(0, 0.032, -0.1), Color(0.3, 1.0, 0.4), 0.0025)             # trítio
 		# Braços: saem da borda inferior da tela até as duas mãos na empunhadura
-		_arm(Vector3(0.0, -0.085, 0.06), Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove)
-		_arm(Vector3(-0.03, -0.1, 0.045), Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true)
+		# Direita na empunhadura; esquerda envolve a direita pelo lado esquerdo
+		_arm(Vector3(0.03, -0.07, 0.06), Vector3(0, -0.25, -1), Vector3(-1, 0, 0), true, 1.0,
+			Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove)
+		_arm(Vector3(-0.035, -0.085, 0.055), Vector3(0, -0.4, -1), Vector3(1, 0, 0), false, 0.85,
+			Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true)
 		muzzle.position = Vector3(0, 0, -0.29)
 	else:
 		_box(Vector3(0.062, 0.09, 0.42), Vector3(0, 0, -0.05), metal)                    # receptor
@@ -215,8 +226,11 @@ func _build_model() -> void:
 		_emissive_dot(Vector3(0, 0.088, -0.1), Color(1.0, 0.1, 0.05), 0.0018)
 		_box(Vector3(0.04, 0.035, 0.05), Vector3(0.03, -0.04, -0.3), metal)              # lanterna tática
 		# Braços contínuos: ombro (fora da tela) -> cotovelo -> mão na arma
-		_arm(Vector3(0.0, -0.105, 0.085), Vector3(0.1, -0.25, 0.25), Vector3(0.15, -0.42, 0.45), sleeve, cuff, glove)
-		_arm(Vector3(-0.015, -0.062, -0.34), Vector3(-0.2, -0.21, -0.1), Vector3(-0.48, -0.42, 0.4), sleeve, cuff, glove, true)
+		# Direita na empunhadura; esquerda por baixo do guarda-mão, polegar no lado esquerdo
+		_arm(Vector3(0.032, -0.095, 0.085), Vector3(0, -0.3, -1), Vector3(-1, 0, 0), true, 1.0,
+			Vector3(0.1, -0.25, 0.25), Vector3(0.15, -0.42, 0.45), sleeve, cuff, glove)
+		_arm(Vector3(-0.012, -0.058, -0.34), Vector3(1, 0, -0.3), Vector3(0, 1, 0), false, 0.8,
+			Vector3(-0.2, -0.21, -0.1), Vector3(-0.48, -0.42, 0.4), sleeve, cuff, glove, true)
 		muzzle.position = Vector3(0, 0, -0.69)
 
 	# Clarão do disparo
@@ -245,29 +259,61 @@ func _mat(color: Color, metallic: float, roughness: float) -> StandardMaterial3D
 	return m
 
 
-## Braço em dois segmentos afunilados (antebraço e braço), com punho e luva.
-func _arm(hand: Vector3, elbow: Vector3, shoulder: Vector3, sleeve: Material, cuff: Material,
-		glove: Material, watch: bool = false) -> void:
+## Braço em dois segmentos afunilados (antebraço e braço), punho e mão.
+##  palm_center: centro da palma; fingers: direção dos dedos esticados;
+##  palm: para onde a palma aponta (para a arma); curl: 0 = aberta, 1 = fechada.
+func _arm(palm_center: Vector3, fingers: Vector3, palm: Vector3, right: bool, curl: float,
+		elbow: Vector3, shoulder: Vector3, sleeve: Material, cuff: Material, glove: Material,
+		watch: bool = false) -> void:
+	fingers = fingers.normalized()
+	var wrist := palm_center - fingers * 0.05
+	var up_arm := (elbow - wrist).normalized()
 	_limb(elbow, shoulder, 0.043, 0.05, sleeve)
-	_limb(hand + (elbow - hand).normalized() * 0.07, elbow, 0.034, 0.044, sleeve)
+	_limb(wrist + up_arm * 0.04, elbow, 0.034, 0.044, sleeve)
 	_joint(elbow, 0.045, sleeve)
-	var wrist := hand + (elbow - hand).normalized() * 0.075
-	_limb(wrist, wrist + (elbow - hand).normalized() * 0.03, 0.037, 0.037, cuff)
-	# Luva: mão arredondada envolvendo a arma
-	var mi := MeshInstance3D.new()
-	var cap := CapsuleMesh.new()
-	cap.radius = 0.03
-	cap.height = 0.11
-	cap.radial_segments = 10
-	cap.rings = 4
-	mi.mesh = cap
-	mi.material_override = glove
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mi)
-	mi.transform = Transform3D(_basis_along(elbow - hand), hand + (elbow - hand).normalized() * 0.02)
+	_limb(wrist + up_arm * 0.01, wrist + up_arm * 0.045, 0.031, 0.034, cuff)
+	_hand(palm_center, fingers, palm, right, curl, glove)
 	if watch:
-		_limb(wrist + (elbow - hand).normalized() * 0.035, wrist + (elbow - hand).normalized() * 0.055, 0.04, 0.04,
-			_mat(Color(0.05, 0.05, 0.05), 0.3, 0.5))
+		_limb(wrist + up_arm * 0.045, wrist + up_arm * 0.062, 0.036, 0.036, _mat(Color(0.05, 0.05, 0.05), 0.3, 0.5))
+
+
+## Mão com os dedos dobrados em volta da arma, juntada numa única malha.
+## No modelo os dedos apontam para -Z, o polegar para +X e os dedos dobram
+## para +Y (mão direita com a palma para cima) ou -Y (mão esquerda).
+func _hand(pos: Vector3, fingers_dir: Vector3, palm: Vector3, right: bool, curl: float, mat: Material) -> void:
+	var model := HAND_MODEL.instantiate() as Node3D
+	var side := 1.0 if right else -1.0
+	for finger in ["index", "middle", "ring", "pinky"]:
+		var bend := [0.75, 1.15, 0.9]
+		for i in 3:
+			var node := model.find_child("%s_%d" % [finger, i], true, false) as Node3D
+			if node:
+				node.rotation.x = side * bend[i] * curl
+	var thumb := [Vector3(0.35, -0.25, 0.55), Vector3(0.0, 0.0, 0.35), Vector3(0.0, 0.0, 0.3)]
+	for i in 3:
+		var node := model.find_child("thumb_%d" % i, true, false) as Node3D
+		if node:
+			node.rotation = Vector3(thumb[i].x * side, thumb[i].y, thumb[i].z * side) * curl
+	var st := SurfaceTool.new()
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		if mi.name == "arm_lower":
+			continue  # o antebraço é a manga do uniforme
+		var xf := Transform3D.IDENTITY
+		var n: Node = mi
+		while n != model:
+			xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		st.append_from((mi as MeshInstance3D).mesh, 0, xf)
+	model.free()
+	var out := MeshInstance3D.new()
+	out.mesh = st.commit()
+	out.material_override = mat
+	out.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(out)
+	var z := -fingers_dir
+	var y := (palm.normalized() * side - z * z.dot(palm.normalized() * side)).normalized()
+	var b := Basis(y.cross(z), y, z).scaled(Vector3.ONE * HAND_SCALE)
+	out.transform = Transform3D(b, pos)
 
 
 func _limb(a: Vector3, b: Vector3, radius_a: float, radius_b: float, mat: Material) -> void:

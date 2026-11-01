@@ -17,6 +17,16 @@ var field_of_view: float = 75.0
 ## 0 = Baixo, 1 = Médio, 2 = Alto (ver GraphicsQuality). -1 = detectar na 1ª execução.
 var graphics_quality: int = -1
 var show_fps: bool = false
+## Cor das mãos em primeira pessoa (índice de HAND_STYLES).
+var hand_style: int = 0
+const HAND_STYLES := [
+	["Luva preta", Color(0.075, 0.072, 0.065)],
+	["Luva coyote", Color(0.42, 0.33, 0.22)],
+	["Luva verde", Color(0.2, 0.23, 0.15)],
+	["Pele clara", Color(0.86, 0.66, 0.53)],
+	["Pele morena", Color(0.6, 0.42, 0.3)],
+	["Pele escura", Color(0.32, 0.21, 0.15)],
+]
 
 # --- Estado da missão -----------------------------------------------------
 var current_mission_id: String = ""
@@ -143,6 +153,7 @@ func load_settings() -> void:
 		completed_missions = PackedStringArray(cfg.get_value("progress", "completed_missions", PackedStringArray()))
 		graphics_quality = int(cfg.get_value("video", "graphics_quality", -1))
 		show_fps = bool(cfg.get_value("video", "show_fps", false))
+		hand_style = clampi(int(cfg.get_value("video", "hand_style", 0)), 0, HAND_STYLES.size() - 1)
 	if graphics_quality < 0:
 		graphics_quality = GraphicsQuality.detect_default()
 	apply_settings()
@@ -156,7 +167,12 @@ func save_settings() -> void:
 	cfg.set_value("progress", "completed_missions", completed_missions)
 	cfg.set_value("video", "graphics_quality", graphics_quality)
 	cfg.set_value("video", "show_fps", show_fps)
+	cfg.set_value("video", "hand_style", hand_style)
 	cfg.save(SETTINGS_PATH)
+
+
+func hand_color() -> Color:
+	return HAND_STYLES[hand_style][1]
 
 
 func apply_settings() -> void:

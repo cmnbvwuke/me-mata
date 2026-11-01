@@ -172,6 +172,9 @@ e sons. Os únicos assets externos são personagens animados em `assets/characte
   convertida no Blender 4.0, reduzida para ~6 mil triângulos e 88 cm).
 - `ibarra.fbx` + `ibarra_cor/normal/rugosidade/metal.png` — Coronel Ibarra (boina vermelha), na missão
   "Voz de Dentro". Só tem a animação de andar: parado ele usa o quadro da caminhada com os pés juntos.
+- `hand.glb` — mão low-poly com falanges separadas, usada nos braços em primeira pessoa: os dedos são
+  dobrados em código em volta da empunhadura e tudo vira uma malha só. A cor vem de "Cor das mãos"
+  nas Configurações (luvas preta/coyote/verde ou três tons de pele).
 Para um modelo novo:
 `tools/extract_character_anims.gd` gera as animações e imprime os valores da variante.
 
