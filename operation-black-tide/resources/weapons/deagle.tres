@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+weapon_name = "Desert Eagle"
+model_type = "deagle"
+slot = "secondary"
+description = "Pistola .50 AE: mata com um tiro na cabeça e quase sempre com dois no corpo. Só 7 tiros, recuo enorme, cadência baixa e muito barulho."
+sound_name = "deagle"
+shot_volume_db = 0.0
+suppressed = false
+damage = 70.0
+headshot_multiplier = 3.0
+fire_rate = 160.0
+max_range = 120.0
+allows_auto = false
+default_auto = false
+magazine_size = 7
+reserve_ammo = 35
+reload_time = 2.2
+empty_reload_time = 2.6
+equip_time = 0.35
+hip_spread = 2.8
+ads_spread = 0.35
+move_spread = 1.8
+spread_per_shot = 1.4
+spread_recovery = 5.0
+ads_fov = 62.0
+ads_time = 0.15
+hip_position = Vector3(0.15, -0.16, -0.36)
+ads_position = Vector3(0, -0.0335, -0.3)
+noise_radius = 80.0
+recoil_vertical = 3.8
+recoil_horizontal = 0.9
+recoil_horizontal_bias = -0.1
+recoil_first_shot = 1.0
+recoil_climb = 0.15
+recoil_climb_max = 0.6
+recoil_reset_time = 0.12
+recoil_ads_mult = 0.75
+recoil_crouch_mult = 0.85
+recoil_snap = 26.0
+recoil_recovery = 10.0
+recoil_shake = 0.1
+kick_back = 0.05
+kick_pitch = 0.32
+kick_yaw = 0.02
+kick_roll = 0.06
+kick_recovery = 10.0
+recoil_return = 0.8
+move_speed_mult = 0.98

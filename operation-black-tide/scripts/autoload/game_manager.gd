@@ -23,6 +23,12 @@ const WEAPONS := [
 	"res://resources/weapons/ak47.tres",
 	"res://resources/weapons/p226_sd.tres",
 	"res://resources/weapons/p226.tres",
+	"res://resources/weapons/mp5sd.tres",
+	"res://resources/weapons/m4_shotgun.tres",
+	"res://resources/weapons/m24.tres",
+	"res://resources/weapons/m249.tres",
+	"res://resources/weapons/glock.tres",
+	"res://resources/weapons/deagle.tres",
 ]
 var primary_weapon: String = "res://resources/weapons/m4a1.tres"
 var secondary_weapon: String = "res://resources/weapons/p226_sd.tres"

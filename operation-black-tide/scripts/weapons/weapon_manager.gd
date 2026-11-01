@@ -104,7 +104,11 @@ func is_aiming() -> bool:
 
 
 func get_sensitivity_multiplier() -> float:
-	return lerpf(1.0, 0.55, aim_blend)
+	# Com zoom forte (luneta) a sensibilidade cai na proporção do FOV
+	var ads_mult := 0.55
+	if current:
+		ads_mult = minf(0.55, current.data.ads_fov / base_fov * 0.9)
+	return lerpf(1.0, ads_mult, aim_blend)
 
 
 func _can_act() -> bool:
@@ -136,6 +140,24 @@ func _process(delta: float) -> void:
 
 	_update_spread(delta)
 	_update_viewmodel(delta)
+	_update_scope(delta)
+
+
+## Luneta: esconde a arma e balança a mira (menos agachado, mais andando).
+var _scope_time := 0.0
+func _update_scope(delta: float) -> void:
+	var scoped := is_scoped()
+	current.visible = not scoped
+	if not scoped:
+		camera.rotation.x = lerpf(camera.rotation.x, 0.0, clampf(delta * 10.0, 0.0, 1.0))
+		camera.rotation.y = lerpf(camera.rotation.y, 0.0, clampf(delta * 10.0, 0.0, 1.0))
+		return
+	_scope_time += delta
+	var t := _scope_time
+	var moving := Vector2(player.velocity.x, player.velocity.z).length() > 0.5
+	var amt := deg_to_rad(current.data.scope_sway) * (0.4 if player.is_crouching else 1.0) * (2.0 if moving else 1.0)
+	camera.rotation.x = (sin(t * 1.1) * 0.7 + sin(t * 2.3 + 1.0) * 0.3) * amt
+	camera.rotation.y = (cos(t * 0.8) * 0.7 + sin(t * 1.9) * 0.3) * amt
 
 
 func _update_spread(delta: float) -> void:
@@ -158,40 +180,66 @@ func _update_spread(delta: float) -> void:
 
 func _fire_bullet() -> void:
 	var d := current.data
+	GameManager.add_stat("shots_fired")
+	var aim := _spread_direction(-camera.global_basis.z, current_spread)
+	var any_hit := false
+	for i in maxi(d.pellets, 1):
+		var dir := aim if d.pellets <= 1 else _spread_direction(aim, d.pellet_spread)
+		if _fire_ray(d, dir, i == 0):
+			any_hit = true
+	if any_hit:
+		GameManager.add_stat("shots_hit")
+	StealthSystem.emit_noise(player.global_position, d.noise_radius, player)
+
+	_apply_recoil(d)
+	_bloom += d.spread_per_shot
+
+
+## Um projétil: dano com queda pela distância; devolve true se acertou alguém.
+func _fire_ray(d: WeaponData, dir: Vector3, tracer: bool) -> bool:
 	var from := camera.global_position
-	var dir := _spread_direction(-camera.global_basis.z, current_spread)
 	var to := from + dir * d.max_range
 	var query := PhysicsRayQueryParameters3D.create(from, to, Layers.PLAYER_SHOT_MASK, [player.get_rid()])
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	GameManager.add_stat("shots_fired")
-
 	var end_point := to
+	var hit_target := false
 	if not hit.is_empty():
 		end_point = hit["position"]
 		var collider: Object = hit["collider"]
 		if collider != null and collider.has_method("take_damage"):
-			var info := DamageInfo.new(d.damage, player, from, hit["position"], hit["normal"])
+			var dist := from.distance_to(end_point)
+			var falloff := 1.0
+			if dist > d.falloff_start:
+				falloff = lerpf(1.0, d.falloff_min, clampf((dist - d.falloff_start) / maxf(d.falloff_end - d.falloff_start, 0.01), 0.0, 1.0))
+			var info := DamageInfo.new(d.damage * falloff, player, from, hit["position"], hit["normal"])
 			if collider.has_method("is_headshot_point"):
 				info.is_headshot = collider.is_headshot_point(hit["position"])
 			if info.is_headshot:
 				info.amount *= d.headshot_multiplier
 			var was_alive := not bool(collider.get("is_dead"))
 			collider.take_damage(info)
-			GameManager.add_stat("shots_hit")
+			hit_target = true
 			var killed := was_alive and bool(collider.get("is_dead"))
 			if killed and info.is_headshot:
 				GameManager.add_stat("headshots")
-			hit_confirmed.emit(killed, info.is_headshot)
+			if was_alive:
+				hit_confirmed.emit(killed, info.is_headshot)
 		else:
 			FX.impact(self, hit["position"], hit["normal"])
-
 	# Traçante ocasional (armas não suprimidas)
-	if not d.suppressed and randf() < 0.3:
+	if tracer and not d.suppressed and randf() < 0.3:
 		FX.tracer(self, current.muzzle.global_position, end_point, Color(1.0, 0.75, 0.4))
-	StealthSystem.emit_noise(player.global_position, d.noise_radius, player)
+	return hit_target
 
-	_apply_recoil(d)
-	_bloom += d.spread_per_shot
+
+## Com luneta e mirando: a arma some e a retícula aparece na tela.
+func is_scoped() -> bool:
+	return current != null and current.data.scope and aim_blend > 0.85
+
+
+## Multiplicador de velocidade do jogador pela arma em mãos.
+func get_move_multiplier() -> float:
+	return current.data.move_speed_mult if current else 1.0
 
 
 ## Recuo por arma: subida progressiva em rajada, tendência lateral, primeiro

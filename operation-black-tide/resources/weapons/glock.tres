@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+weapon_name = "Glock 17"
+model_type = "glock"
+slot = "secondary"
+description = "Pistola leve com 17 tiros e cadência rápida, recuo suave. Dano baixo e faz barulho."
+sound_name = "pistol"
+shot_volume_db = -4.0
+suppressed = false
+damage = 25.0
+headshot_multiplier = 4.0
+fire_rate = 600.0
+max_range = 120.0
+allows_auto = false
+default_auto = false
+magazine_size = 17
+reserve_ammo = 85
+reload_time = 1.6
+empty_reload_time = 2.0
+equip_time = 0.35
+hip_spread = 2.2
+ads_spread = 0.35
+move_spread = 1.8
+spread_per_shot = 0.9
+spread_recovery = 5.0
+ads_fov = 62.0
+ads_time = 0.15
+hip_position = Vector3(0.15, -0.16, -0.36)
+ads_position = Vector3(0, -0.0335, -0.3)
+noise_radius = 45.0
+recoil_vertical = 0.9
+recoil_horizontal = 0.25
+recoil_horizontal_bias = -0.1
+recoil_first_shot = 1.0
+recoil_climb = 0.08
+recoil_climb_max = 0.4
+recoil_reset_time = 0.12
+recoil_ads_mult = 0.75
+recoil_crouch_mult = 0.85
+recoil_snap = 26.0
+recoil_recovery = 10.0
+recoil_shake = 0.025
+kick_back = 0.03
+kick_pitch = 0.12
+kick_yaw = 0.02
+kick_roll = 0.05
+kick_recovery = 10.0
+recoil_return = 0.85
+falloff_start = 20.0
+falloff_end = 45.0
+falloff_min = 0.6
+move_speed_mult = 1.03

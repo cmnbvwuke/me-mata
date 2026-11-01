@@ -195,8 +195,21 @@ Para um modelo novo:
   tendência lateral, primeiro tiro mais controlado, redução ao mirar/agachar e coice do modelo.
   Fuzil: ~18° numa rajada de 30 tiros no quadril (~6° mirando), puxa para a direita, devolve 40%.
   Pistola: salto forte por tiro, devolve 85%.
-- **Equipamento** (briefing no menu): arma principal (M4A1 SOPMOD ou AK-47) e secundária (P226 com ou sem
-  silenciador), salvas nas configurações. Nova arma = novo `.tres` com `slot`/`description`/`model_type`, entrada
+- **Equipamento** (briefing no menu), salvo nas configurações. Cada arma tem vantagem e desvantagem:
+  | Arma | Vantagem | Desvantagem |
+  |---|---|---|
+  | M4A1 SOPMOD | equilibrada, red dot | — |
+  | AK-47 | mais dano por tiro | recuo forte, cadência menor |
+  | MP5SD | silenciosa, recuo baixo, +6% velocidade | dano baixo, cai de longe |
+  | Benelli M4 | 9 chumbos: mata de perto | inútil de longe, 7 tiros, recarga lenta, barulho |
+  | M24 | 1 tiro no corpo, luneta 5x | 1,5 s entre tiros, 5 tiros, imprecisa sem mirar, mira balança, -10% velocidade |
+  | M249 | 100 tiros | -18% velocidade, recarga 5,5 s, mira lenta, imprecisa no quadril |
+  | P226 SD / P226 | silenciosa / mais dano | — / barulho |
+  | Glock 17 | 17 tiros, rápida, recuo leve | dano baixo, barulho |
+  | Desert Eagle | dano altíssimo | 7 tiros, recuo enorme, lenta, barulho |
+  MP5SD, Benelli, M24, M249, Glock e Deagle usam modelos temporários (`WeaponModels`) até ganharem um .glb.
+  Mecânicas: chumbos (`pellets`), queda de dano com a distância (`falloff_*`), luneta (`scope`, retícula na
+  tela e balanço) e velocidade do jogador por arma (`move_speed_mult`). Nova arma = novo `.tres` com `slot`/`description`/`model_type`, entrada
   em `GameManager.WEAPONS` e o modelo em `Weapon.MODELS` (mãos e mira em `Weapon._build_model`).
 - **Caixas de munição de uso único**: reabastecem tudo e somem; não são gastas com a munição cheia.
 - Movimento com aceleração, sprint, agachar (com checagem de teto antes de levantar), pulo,

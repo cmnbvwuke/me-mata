@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+weapon_name = "M249 (metralhadora)"
+model_type = "m249"
+slot = "primary"
+description = "Metralhadora leve com 100 tiros por caixa: segura qualquer posição. Pesada: você anda 18% mais devagar, mira demora, é imprecisa no quadril e a recarga leva 5,5 s."
+sound_name = "lmg"
+shot_volume_db = -3.0
+suppressed = false
+damage = 30.0
+headshot_multiplier = 3.0
+fire_rate = 750.0
+max_range = 250.0
+allows_auto = true
+default_auto = true
+magazine_size = 100
+reserve_ammo = 200
+reload_time = 5.5
+empty_reload_time = 6.2
+equip_time = 0.9
+hip_spread = 4.8
+ads_spread = 0.6
+move_spread = 3.5
+spread_per_shot = 0.35
+spread_recovery = 6.0
+ads_fov = 54.0
+ads_time = 0.33
+hip_position = Vector3(0.19, -0.17, -0.38)
+ads_position = Vector3(0, -0.1, -0.36)
+noise_radius = 75.0
+recoil_vertical = 0.38
+recoil_horizontal = 0.22
+recoil_horizontal_bias = 0.2
+recoil_first_shot = 0.7
+recoil_climb = 0.04
+recoil_climb_max = 0.5
+recoil_reset_time = 0.15
+recoil_ads_mult = 0.6
+recoil_crouch_mult = 0.75
+recoil_snap = 25.0
+recoil_recovery = 7.0
+recoil_shake = 0.05
+kick_back = 0.04
+kick_pitch = 0.04
+kick_yaw = 0.015
+kick_roll = 0.03
+kick_recovery = 12.0
+recoil_return = 0.35
+move_speed_mult = 0.82

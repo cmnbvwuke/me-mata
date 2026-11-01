@@ -205,6 +205,30 @@ func _build_model() -> void:
 	muzzle.name = "Muzzle"
 	add_child(muzzle)
 
+	if data.model_type in WeaponModels.HANDS and not MODELS.has(data.model_type):
+		_build_temporary_model(sleeve, cuff, glove)
+	else:
+		_build_imported_model(sleeve, cuff, glove)
+	_build_flash()
+
+
+## Arma ainda sem modelo 3D: peças simples (WeaponModels) + mãos da tabela.
+func _build_temporary_model(sleeve: Material, cuff: Material, glove: Material) -> void:
+	var type := data.model_type
+	WeaponModels.build(type, self)
+	var h: Array = WeaponModels.HANDS[type]
+	_arm(h[0], h[1], Vector3(-1, 0, 0), true, 1.0, h[2], h[3], sleeve, cuff, glove)
+	_arm(h[4], h[5], h[6], false, h[7], h[8], h[9], sleeve, cuff, glove, true)
+	muzzle.position = h[10]
+	if type in WeaponModels.PISTOLS:
+		_pistol_sights(-data.ads_position.y, -data.ads_position.z)
+	elif type == "m249":
+		var eye_y := -data.ads_position.y
+		_sight_tube(Vector3(0, eye_y, -0.01), Vector3(0, eye_y, 0.05), 0.0165, 0.021)
+		_emissive_dot(Vector3(0, eye_y, -0.005), Color(1.0, 0.1, 0.05), 0.0015)
+
+
+func _build_imported_model(sleeve: Material, cuff: Material, glove: Material) -> void:
 	var model := (MODELS.get(data.model_type, M4A1_MODEL) as PackedScene).instantiate() as Node3D
 	add_child(model)
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
@@ -237,6 +261,8 @@ func _build_model() -> void:
 			Vector3(-0.2, -0.22, 0.0), Vector3(-0.48, -0.42, 0.4), sleeve, cuff, glove, true)
 		muzzle.position = Vector3(0, -0.003, -0.44)
 
+
+func _build_flash() -> void:
 	# Clarão do disparo
 	_flash_light = OmniLight3D.new()
 	_flash_light.light_color = Color(1.0, 0.72, 0.4)

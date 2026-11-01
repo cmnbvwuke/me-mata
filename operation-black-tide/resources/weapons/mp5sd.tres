@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+weapon_name = "MP5SD"
+model_type = "mp5sd"
+slot = "primary"
+description = "Submetralhadora com silenciador integrado. Silenciosa, recuo baixo e deixa você mais rápido, mas o dano é baixo e cai bastante de longe."
+sound_name = "smg_suppressed"
+shot_volume_db = -6.0
+suppressed = true
+damage = 24.0
+headshot_multiplier = 3.5
+fire_rate = 800.0
+max_range = 150.0
+allows_auto = true
+default_auto = true
+magazine_size = 30
+reserve_ammo = 150
+reload_time = 2.0
+empty_reload_time = 2.5
+equip_time = 0.5
+hip_spread = 2.4
+ads_spread = 0.5
+move_spread = 1.6
+spread_per_shot = 0.3
+spread_recovery = 6.0
+ads_fov = 58.0
+ads_time = 0.15
+hip_position = Vector3(0.17, -0.15, -0.34)
+ads_position = Vector3(0, -0.059, -0.32)
+noise_radius = 9.0
+recoil_vertical = 0.24
+recoil_horizontal = 0.12
+recoil_horizontal_bias = 0.1
+recoil_first_shot = 0.7
+recoil_climb = 0.03
+recoil_climb_max = 0.3
+recoil_reset_time = 0.15
+recoil_ads_mult = 0.6
+recoil_crouch_mult = 0.75
+recoil_snap = 25.0
+recoil_recovery = 7.0
+recoil_shake = 0.05
+kick_back = 0.03
+kick_pitch = 0.03
+kick_yaw = 0.015
+kick_roll = 0.03
+kick_recovery = 12.0
+recoil_return = 0.6
+falloff_start = 20.0
+falloff_end = 55.0
+falloff_min = 0.55
+move_speed_mult = 1.06

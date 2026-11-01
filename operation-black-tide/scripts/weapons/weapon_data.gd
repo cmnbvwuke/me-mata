@@ -16,7 +16,18 @@ extends Resource
 @export var suppressed: bool = false
 
 @export_group("Balística")
+## Dano por projétil (na espingarda, por chumbo).
 @export var damage: float = 34.0
+## Projéteis por disparo (espingarda) e a abertura extra de cada um (graus).
+@export var pellets: int = 1
+@export var pellet_spread: float = 0.0
+## Queda de dano com a distância: 100% até falloff_start, cai até falloff_min
+## (fração) em falloff_end.
+@export var falloff_start: float = 1000.0
+@export var falloff_end: float = 1000.0
+@export_range(0.0, 1.0) var falloff_min: float = 1.0
+## Velocidade do jogador carregando esta arma (1 = normal).
+@export var move_speed_mult: float = 1.0
 @export var headshot_multiplier: float = 3.6
 ## Cadência em disparos por minuto.
 @export var fire_rate: float = 750.0
@@ -79,6 +90,10 @@ extends Resource
 @export_group("Mira (ADS)")
 @export var ads_fov: float = 52.0
 @export var ads_time: float = 0.2
+## Luneta: ao mirar, esconde a arma e mostra a retícula na tela (zoom = ads_fov).
+@export var scope: bool = false
+## Balanço da mira com a luneta (graus); menor agachado, maior andando.
+@export var scope_sway: float = 0.0
 @export var hip_position: Vector3 = Vector3(0.18, -0.17, -0.38)
 @export var ads_position: Vector3 = Vector3(0.0, -0.088, -0.34)
 

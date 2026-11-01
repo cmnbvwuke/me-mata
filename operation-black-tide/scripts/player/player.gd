@@ -190,6 +190,7 @@ func _update_movement(delta: float) -> void:
 		speed = sprint_speed
 	if weapons.is_aiming():
 		speed *= ads_speed_multiplier
+	speed *= weapons.get_move_multiplier()
 
 	var accel := ground_accel if is_on_floor() else air_accel
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)

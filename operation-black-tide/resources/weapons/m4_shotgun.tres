@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+weapon_name = "Benelli M4"
+model_type = "m4_shotgun"
+slot = "primary"
+description = "Espingarda semiautomática: 9 chumbos por tiro derrubam quase tudo de perto. Inútil de longe, só 7 cartuchos, recarga lenta e muito barulho."
+sound_name = "shotgun"
+shot_volume_db = 0.0
+suppressed = false
+damage = 16.0
+headshot_multiplier = 2.0
+fire_rate = 150.0
+max_range = 60.0
+allows_auto = false
+default_auto = false
+magazine_size = 7
+reserve_ammo = 35
+reload_time = 3.2
+empty_reload_time = 3.8
+equip_time = 0.5
+hip_spread = 2.5
+ads_spread = 1.0
+move_spread = 1.5
+spread_per_shot = 0.8
+spread_recovery = 6.0
+ads_fov = 62.0
+ads_time = 0.22
+hip_position = Vector3(0.17, -0.15, -0.36)
+ads_position = Vector3(0, -0.045, -0.34)
+noise_radius = 75.0
+recoil_vertical = 3.0
+recoil_horizontal = 0.8
+recoil_horizontal_bias = 0.0
+recoil_first_shot = 1.0
+recoil_climb = 0.0
+recoil_climb_max = 0.0
+recoil_reset_time = 0.15
+recoil_ads_mult = 0.6
+recoil_crouch_mult = 0.75
+recoil_snap = 20.0
+recoil_recovery = 6.0
+recoil_shake = 0.12
+kick_back = 0.08
+kick_pitch = 0.18
+kick_yaw = 0.015
+kick_roll = 0.05
+kick_recovery = 12.0
+recoil_return = 0.75
+pellets = 9
+pellet_spread = 3.8
+falloff_start = 7.0
+falloff_end = 25.0
+falloff_min = 0.2
+move_speed_mult = 0.97

@@ -15,6 +15,7 @@ var _nvg: ColorRect
 var _vignette: ColorRect
 var _fade: ColorRect
 var _crosshair: Crosshair
+var _scope: ColorRect
 var _damage_indicator: DamageIndicator
 var _waypoint: WaypointMarker
 var _objectives: ObjectiveManager
@@ -175,6 +176,9 @@ func _process(delta: float) -> void:
 	(_vignette.material as ShaderMaterial).set_shader_parameter("intensity", maxf(_damage_flash, low * 0.85))
 	if player:
 		var w := player.weapons
+		_scope.visible = w.is_scoped()
+		if _scope.visible:
+			(_scope.material as ShaderMaterial).set_shader_parameter("screen_size", _scope.size)
 		_crosshair.spread_deg = w.current_spread
 		_crosshair.fov = player.camera.fov
 		var target_opacity := 1.0 - clampf(w.aim_blend * 2.0, 0.0, 1.0)
@@ -357,6 +361,15 @@ func _build() -> void:
 	_root.add_child(_damage_indicator)
 	_crosshair = Crosshair.new()
 	_root.add_child(_crosshair)
+	# Retícula da luneta (fuzil de precisão mirando)
+	_scope = ColorRect.new()
+	_scope.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_scope.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var scope_mat := ShaderMaterial.new()
+	scope_mat.shader = preload("res://shaders/scope_overlay.gdshader")
+	_scope.material = scope_mat
+	_scope.visible = false
+	_root.add_child(_scope)
 
 	# 4) Objetivo (canto superior esquerdo)
 	var obj_box := VBoxContainer.new()

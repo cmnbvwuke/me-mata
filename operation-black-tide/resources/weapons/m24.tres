@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+weapon_name = "M24 (precisão)"
+model_type = "m24"
+slot = "primary"
+description = "Fuzil de ferrolho com luneta 5x: derruba com um tiro no corpo e qualquer tiro na cabeça. Lento (1,5 s entre tiros), só 5 tiros, impreciso sem mirar, mira balança e você anda mais devagar."
+sound_name = "sniper"
+shot_volume_db = 1.0
+suppressed = false
+damage = 130.0
+headshot_multiplier = 2.5
+fire_rate = 40.0
+max_range = 400.0
+allows_auto = false
+default_auto = false
+magazine_size = 5
+reserve_ammo = 25
+reload_time = 3.0
+empty_reload_time = 3.4
+equip_time = 0.5
+hip_spread = 7.0
+ads_spread = 0.0
+move_spread = 5.0
+spread_per_shot = 2.0
+spread_recovery = 6.0
+ads_fov = 15.0
+ads_time = 0.35
+hip_position = Vector3(0.17, -0.15, -0.36)
+ads_position = Vector3(0, -0.075, -0.3)
+noise_radius = 110.0
+recoil_vertical = 4.2
+recoil_horizontal = 0.6
+recoil_horizontal_bias = 0.0
+recoil_first_shot = 1.0
+recoil_climb = 0.0
+recoil_climb_max = 0.0
+recoil_reset_time = 0.15
+recoil_ads_mult = 0.6
+recoil_crouch_mult = 0.75
+recoil_snap = 20.0
+recoil_recovery = 4.0
+recoil_shake = 0.14
+kick_back = 0.09
+kick_pitch = 0.12
+kick_yaw = 0.015
+kick_roll = 0.03
+kick_recovery = 12.0
+recoil_return = 0.85
+move_speed_mult = 0.9
+scope = true
+scope_sway = 0.35
