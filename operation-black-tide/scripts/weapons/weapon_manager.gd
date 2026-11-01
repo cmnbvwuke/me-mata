@@ -28,7 +28,12 @@ var player: Player
 var camera: Camera3D
 var _bloom := 0.0
 var _sprint_blend := 0.0
-var _kick := 0.0
+## Coice da arma: deslocamento (x lateral, z para trás) e rotação (pitch, yaw, roll)
+var _kick_pos := Vector3.ZERO
+var _kick_rot := Vector3.ZERO
+## Disparos seguidos (para a subida progressiva) e quando foi o último
+var _burst_shots := 0
+var _last_shot_msec := -100000
 var _sway := Vector2.ZERO
 var _bob_time := 0.0
 
@@ -178,12 +183,32 @@ func _fire_bullet() -> void:
 		FX.tracer(self, current.muzzle.global_position, end_point, Color(1.0, 0.75, 0.4))
 	StealthSystem.emit_noise(player.global_position, d.noise_radius, player)
 
-	# Recuo: câmera + coice da arma + abertura da dispersão
-	var factor := lerpf(1.0, 0.65, aim_blend) * (0.8 if player.is_crouching else 1.0)
-	player.add_recoil(d.recoil_vertical * factor, randf_range(-1.0, 1.0) * d.recoil_horizontal * factor)
-	player.add_shake(0.025 if d.suppressed else 0.05)
-	_kick = 1.0
+	_apply_recoil(d)
 	_bloom += d.spread_per_shot
+
+
+## Recuo por arma: subida progressiva em rajada, tendência lateral, primeiro
+## tiro mais controlado, redução ao mirar/agachar e coice do modelo.
+func _apply_recoil(d: WeaponData) -> void:
+	var now := Time.get_ticks_msec()
+	if now - _last_shot_msec > int(d.recoil_reset_time * 1000.0):
+		_burst_shots = 0
+	_last_shot_msec = now
+	var factor := lerpf(1.0, d.recoil_ads_mult, aim_blend) * (d.recoil_crouch_mult if player.is_crouching else 1.0)
+	var climb := 1.0 + minf(_burst_shots * d.recoil_climb, d.recoil_climb_max)
+	if _burst_shots == 0:
+		climb *= d.recoil_first_shot
+	_burst_shots += 1
+	var vertical := d.recoil_vertical * climb * factor * randf_range(0.9, 1.1)
+	var horizontal := (randf_range(-1.0, 1.0) + d.recoil_horizontal_bias) * d.recoil_horizontal * factor
+	player.add_recoil(vertical, horizontal, d.recoil_snap, d.recoil_recovery)
+	player.add_shake(d.recoil_shake * factor)
+	var vm := lerpf(1.0, 0.55, aim_blend)  # mirando, a arma coiceia menos na tela
+	_kick_pos += Vector3(randf_range(-0.004, 0.004), 0.0, d.kick_back * vm)
+	_kick_rot += Vector3(d.kick_pitch * vm * climb, randf_range(-1.0, 1.0) * d.kick_yaw * vm,
+		randf_range(-1.0, 1.0) * d.kick_roll * vm)
+	_kick_pos.z = minf(_kick_pos.z, d.kick_back * 2.0)
+	_kick_rot.x = minf(_kick_rot.x, d.kick_pitch * 3.0)
 
 
 func _spread_direction(forward: Vector3, spread_deg: float) -> Vector3:
@@ -225,10 +250,12 @@ func _update_viewmodel(delta: float) -> void:
 	var t := Time.get_ticks_msec() / 1000.0
 	pos.y += sin(t * 1.7) * 0.0025 * (1.0 - e * 0.8)
 
-	# Coice
-	_kick = move_toward(_kick, 0.0, delta * 11.0)
-	pos.z += 0.05 * _kick * (1.0 - e * 0.5)
-	rot.x += 0.07 * _kick
+	# Coice (volta à posição com decaimento exponencial)
+	var k := clampf(delta * d.kick_recovery, 0.0, 1.0)
+	_kick_pos = _kick_pos.lerp(Vector3.ZERO, k)
+	_kick_rot = _kick_rot.lerp(Vector3.ZERO, k)
+	pos += _kick_pos
+	rot += _kick_rot
 
 	# Recarga: arma inclina e desce
 	var rp := current.get_reload_progress()

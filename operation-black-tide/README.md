@@ -175,6 +175,10 @@ e sons. Os únicos assets externos são personagens animados em `assets/characte
 - `hand.glb` — mão low-poly com falanges separadas, usada nos braços em primeira pessoa: os dedos são
   dobrados em código em volta da empunhadura e tudo vira uma malha só. A cor vem de "Cor das mãos"
   nas Configurações (luvas preta/coyote/verde ou três tons de pele).
+- `assets/weapons/m4a1.glb` e `p226.glb` — armas do jogador em primeira pessoa (modelos enviados, convertidos
+  no Blender 4.0: escala real, cano em -Z). O fuzil veio sem textura e foi pintado por região (metal preto,
+  polímero coyote, carregador cinza, sujeira nas reentrâncias) e teve as lentes da mira removidas para ver
+  através do tubo; a pistola ganhou um silenciador.
 Para um modelo novo:
 `tools/extract_character_anims.gd` gera as animações e imprime os valores da variante.
 
@@ -183,6 +187,10 @@ Para um modelo novo:
 ## Sistemas implementados
 
 ### Jogador (`scripts/player/player.gd`, `scripts/weapons/`)
+- **Recuo por arma** (`WeaponData`, grupo "Recuo"): subida progressiva em rajada, tendência lateral,
+  primeiro tiro mais controlado, redução ao mirar/agachar, velocidade de subida/retorno da câmera e coice
+  do modelo (para trás, cano subindo, giro e rolagem). O fuzil sobe e puxa para a direita em rajadas;
+  a pistola dá um salto forte por tiro e volta rápido.
 - Movimento com aceleração, sprint, agachar (com checagem de teto antes de levantar), pulo,
   balanço de câmera, aterrissagem com tremor.
 - **Armas** definidas por `WeaponData` (.tres): dano, multiplicador de headshot, cadência, pente,

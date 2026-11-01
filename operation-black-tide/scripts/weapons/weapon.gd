@@ -32,6 +32,9 @@ var _hand_mat: StandardMaterial3D
 
 ## Mão low-poly com cada falange separada (palma, polegar e 4 dedos em 3 partes).
 const HAND_MODEL := preload("res://assets/characters/hand.glb")
+## Modelos das armas (convertidos no Blender: escala real, cano em -Z; ver README).
+const M4A1_MODEL := preload("res://assets/weapons/m4a1.glb")
+const P226_MODEL := preload("res://assets/weapons/p226.glb")
 const HAND_SCALE := 0.05
 
 
@@ -178,8 +181,6 @@ func refill() -> void:
 # =========================================================================
 
 func _build_model() -> void:
-	var metal := _mat(Color(0.07, 0.07, 0.075), 0.1, 0.78)
-	var polymer := _mat(Color(0.16, 0.145, 0.115), 0.0, 0.85)
 	var glove := _mat(GameManager.hand_color(), 0.0, 0.8)
 	_hand_mat = glove
 	GameManager.settings_changed.connect(func() -> void: _hand_mat.albedo_color = GameManager.hand_color())
@@ -189,49 +190,30 @@ func _build_model() -> void:
 	muzzle.name = "Muzzle"
 	add_child(muzzle)
 
+	var model := (P226_MODEL if data.model_type == "pistol" else M4A1_MODEL).instantiate() as Node3D
+	add_child(model)
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if data.model_type == "pistol":
-		_box(Vector3(0.034, 0.045, 0.19), Vector3(0, 0, -0.02), metal)                  # ferrolho
-		_box(Vector3(0.032, 0.11, 0.05), Vector3(0, -0.065, 0.045), polymer, -0.25)      # empunhadura
-		_box(Vector3(0.03, 0.02, 0.06), Vector3(0, -0.03, -0.03), metal)                 # guarda-mato
-		_cyl(0.018, 0.17, Vector3(0, 0.0, -0.195), metal)                                # supressor
-		_box(Vector3(0.006, 0.012, 0.01), Vector3(-0.009, 0.029, 0.065), metal)          # alça de mira
-		_box(Vector3(0.006, 0.012, 0.01), Vector3(0.009, 0.029, 0.065), metal)
-		_box(Vector3(0.005, 0.012, 0.008), Vector3(0, 0.027, -0.1), metal)               # maça de mira
-		_emissive_dot(Vector3(0, 0.032, -0.1), Color(0.3, 1.0, 0.4), 0.0025)             # trítio
-		# Braços: saem da borda inferior da tela até as duas mãos na empunhadura
+		# Pontos de trítio: maça e alça de mira
+		_emissive_dot(Vector3(0, 0.029, -0.113), Color(0.3, 1.0, 0.4), 0.0022)
+		_emissive_dot(Vector3(-0.009, 0.031, 0.021), Color(0.3, 1.0, 0.4), 0.0018)
+		_emissive_dot(Vector3(0.009, 0.031, 0.021), Color(0.3, 1.0, 0.4), 0.0018)
 		# Direita na empunhadura; esquerda envolve a direita pelo lado esquerdo
-		_arm(Vector3(0.03, -0.07, 0.06), Vector3(0, -0.25, -1), Vector3(-1, 0, 0), true, 1.0,
+		_arm(Vector3(0.027, -0.062, 0.05), Vector3(0, -0.25, -1), Vector3(-1, 0, 0), true, 1.0,
 			Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove)
-		_arm(Vector3(-0.035, -0.085, 0.055), Vector3(0, -0.4, -1), Vector3(1, 0, 0), false, 0.85,
+		_arm(Vector3(-0.032, -0.075, 0.045), Vector3(0, -0.4, -1), Vector3(1, 0, 0), false, 0.85,
 			Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true)
-		muzzle.position = Vector3(0, 0, -0.29)
+		muzzle.position = Vector3(0, 0.01, -0.291)
 	else:
-		_box(Vector3(0.062, 0.09, 0.42), Vector3(0, 0, -0.05), metal)                    # receptor
-		_box(Vector3(0.072, 0.075, 0.27), Vector3(0, -0.004, -0.37), polymer)            # guarda-mão
-		_cyl(0.011, 0.16, Vector3(0, 0.0, -0.58), metal)                                 # cano
-		_cyl(0.016, 0.05, Vector3(0, 0.0, -0.665), metal)                                # quebra-chamas
-		_box(Vector3(0.034, 0.17, 0.07), Vector3(0, -0.12, -0.12), metal, 0.2)           # carregador
-		_box(Vector3(0.036, 0.11, 0.045), Vector3(0, -0.09, 0.075), polymer, -0.3)       # empunhadura
-		_box(Vector3(0.055, 0.075, 0.2), Vector3(0, -0.02, 0.25), polymer)               # coronha
-		# Trilho Picatinny (ranhuras) e alavanca de manejo no topo do receptor
-		for i in 9:
-			_box(Vector3(0.05, 0.01, 0.014), Vector3(0, 0.05, 0.1 - i * 0.035), metal)
-		_box(Vector3(0.03, 0.02, 0.05), Vector3(0, 0.04, 0.14), metal)
-		_box(Vector3(0.05, 0.015, 0.02), Vector3(0, 0.04, 0.165), polymer)
-		# Mira red dot: moldura vazada com o ponto no centro da janela
-		_box(Vector3(0.05, 0.02, 0.07), Vector3(0, 0.055, -0.07), metal)                 # base
-		_box(Vector3(0.006, 0.05, 0.05), Vector3(-0.022, 0.088, -0.08), metal)           # laterais
-		_box(Vector3(0.006, 0.05, 0.05), Vector3(0.022, 0.088, -0.08), metal)
-		_box(Vector3(0.05, 0.008, 0.05), Vector3(0, 0.114, -0.08), metal)                # topo
-		_emissive_dot(Vector3(0, 0.088, -0.1), Color(1.0, 0.1, 0.05), 0.0018)
-		_box(Vector3(0.04, 0.035, 0.05), Vector3(0.03, -0.04, -0.3), metal)              # lanterna tática
-		# Braços contínuos: ombro (fora da tela) -> cotovelo -> mão na arma
+		# Ponto vermelho na lente dianteira da mira (o tubo é vazado)
+		_emissive_dot(Vector3(0, 0.0927, 0.04), Color(1.0, 0.1, 0.05), 0.0016)
 		# Direita na empunhadura; esquerda por baixo do guarda-mão, polegar no lado esquerdo
-		_arm(Vector3(0.032, -0.095, 0.085), Vector3(0, -0.3, -1), Vector3(-1, 0, 0), true, 1.0,
-			Vector3(0.1, -0.25, 0.25), Vector3(0.15, -0.42, 0.45), sleeve, cuff, glove)
-		_arm(Vector3(-0.012, -0.058, -0.34), Vector3(1, 0, -0.3), Vector3(0, 1, 0), false, 0.8,
-			Vector3(-0.2, -0.21, -0.1), Vector3(-0.48, -0.42, 0.4), sleeve, cuff, glove, true)
-		muzzle.position = Vector3(0, 0, -0.69)
+		_arm(Vector3(0.026, -0.14, 0.155), Vector3(0, -0.3, -1), Vector3(-1, 0, 0), true, 1.0,
+			Vector3(0.1, -0.27, 0.32), Vector3(0.15, -0.42, 0.5), sleeve, cuff, glove)
+		_arm(Vector3(-0.008, -0.068, -0.2), Vector3(1, 0, -0.3), Vector3(0, 1, 0), false, 0.8,
+			Vector3(-0.2, -0.22, 0.0), Vector3(-0.48, -0.42, 0.4), sleeve, cuff, glove, true)
+		muzzle.position = Vector3(0, -0.003, -0.44)
 
 	# Clarão do disparo
 	_flash_light = OmniLight3D.new()
@@ -352,33 +334,6 @@ func _basis_along(dir: Vector3) -> Basis:
 	var x := y.cross(ref).normalized()
 	var z := x.cross(y).normalized()
 	return Basis(x, y, z)
-
-
-func _box(size: Vector3, pos: Vector3, mat: Material, rot_x: float = 0.0, rot_y: float = 0.0) -> void:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	mi.mesh = mesh
-	mi.material_override = mat
-	mi.position = pos
-	mi.rotation = Vector3(rot_x, rot_y, 0.0)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mi)
-
-
-func _cyl(radius: float, length: float, pos: Vector3, mat: Material) -> void:
-	var mi := MeshInstance3D.new()
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = radius
-	mesh.bottom_radius = radius
-	mesh.height = length
-	mesh.radial_segments = 12
-	mi.mesh = mesh
-	mi.material_override = mat
-	mi.position = pos
-	mi.rotation.x = PI * 0.5
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mi)
 
 
 func _emissive_dot(pos: Vector3, color: Color, radius: float) -> void:

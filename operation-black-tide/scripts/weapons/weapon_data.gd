@@ -36,9 +36,37 @@ extends Resource
 @export var spread_per_shot: float = 0.45
 @export var spread_recovery: float = 6.0
 
-@export_group("Recuo (graus)")
+@export_group("Recuo da câmera (graus)")
+## Subida da mira por disparo.
 @export var recoil_vertical: float = 0.9
+## Desvio lateral aleatório por disparo (±).
 @export var recoil_horizontal: float = 0.35
+## Tendência do desvio lateral: -1 puxa para a esquerda, +1 para a direita.
+@export_range(-1.0, 1.0) var recoil_horizontal_bias: float = 0.0
+## Multiplicador do primeiro disparo de uma sequência (tiro inicial mais controlado).
+@export var recoil_first_shot: float = 1.0
+## Aumento da subida a cada disparo seguido (0.1 = +10% por tiro) e o limite.
+@export var recoil_climb: float = 0.0
+@export var recoil_climb_max: float = 0.0
+## Tempo sem atirar (s) para a sequência zerar.
+@export var recoil_reset_time: float = 0.25
+## Redução ao mirar e agachado.
+@export var recoil_ads_mult: float = 0.65
+@export var recoil_crouch_mult: float = 0.8
+## Rapidez com que a câmera sobe (snap) e volta ao lugar (recovery).
+@export var recoil_snap: float = 18.0
+@export var recoil_recovery: float = 5.0
+## Tremor da câmera por disparo.
+@export var recoil_shake: float = 0.05
+
+@export_group("Coice da arma (viewmodel)")
+## Recuo para trás (m), cano subindo (rad), giro lateral e rolagem aleatórios (rad).
+@export var kick_back: float = 0.05
+@export var kick_pitch: float = 0.07
+@export var kick_yaw: float = 0.0
+@export var kick_roll: float = 0.0
+## Rapidez com que a arma volta à posição.
+@export var kick_recovery: float = 11.0
 
 @export_group("Mira (ADS)")
 @export var ads_fov: float = 52.0

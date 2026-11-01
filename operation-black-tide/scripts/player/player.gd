@@ -72,6 +72,8 @@ var _mouse_delta := Vector2.ZERO
 var _time_since_damage := 999.0
 var _recoil_target := Vector2.ZERO
 var _recoil_current := Vector2.ZERO
+var _recoil_snap := 18.0
+var _recoil_recovery := 5.0
 var _shake := 0.0
 var _bob_time := 0.0
 var _bob_amount := 0.0
@@ -272,9 +274,11 @@ func _update_head_bob(delta: float) -> void:
 # Câmera: recuo e tremor
 # =========================================================================
 
-func add_recoil(pitch_deg: float, yaw_deg: float) -> void:
+func add_recoil(pitch_deg: float, yaw_deg: float, snap: float = 18.0, recovery: float = 5.0) -> void:
 	_recoil_target.x += deg_to_rad(pitch_deg)
 	_recoil_target.y += deg_to_rad(yaw_deg)
+	_recoil_snap = snap
+	_recoil_recovery = recovery
 
 
 func add_shake(amount: float) -> void:
@@ -288,8 +292,8 @@ func consume_mouse_delta() -> Vector2:
 
 
 func _update_recoil(delta: float) -> void:
-	_recoil_current = _recoil_current.lerp(_recoil_target, clampf(delta * 18.0, 0.0, 1.0))
-	_recoil_target = _recoil_target.lerp(Vector2.ZERO, clampf(delta * 5.0, 0.0, 1.0))
+	_recoil_current = _recoil_current.lerp(_recoil_target, clampf(delta * _recoil_snap, 0.0, 1.0))
+	_recoil_target = _recoil_target.lerp(Vector2.ZERO, clampf(delta * _recoil_recovery, 0.0, 1.0))
 	camera.rotation.x = _recoil_current.x
 	camera.rotation.y = _recoil_current.y
 
