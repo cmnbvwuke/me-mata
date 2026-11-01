@@ -37,8 +37,13 @@ const M4A1_MODEL := preload("res://assets/weapons/m4a1.glb")
 const P226_MODEL := preload("res://assets/weapons/p226.glb")
 ## Altura do eixo da mira do fuzil (= -ads_position.y do M4A1).
 const RIFLE_SIGHT_Y := 0.0927
-## Topo da alça de mira da pistola (pivô da correção de inclinação).
-const PISTOL_REAR_SIGHT := Vector3(0, 0.0357, 0.027)
+## Miras altas da pistola (de silenciador), feitas em código: as do modelo são
+## pequenas e a maça fica abaixo do ferrolho. Valores em metros.
+const PISTOL_SLIDE_TOP := 0.0262       # topo do ferrolho sob a alça
+const PISTOL_FRONT_BASE := 0.016       # a frente do ferrolho é mais baixa: a maça desce até ela
+const PISTOL_SIGHT_TOP := 0.0365       # topo das lâminas e da maça (nivelados)
+const PISTOL_REAR_Z := Vector2(0.026, 0.032)    # alça: frente / face traseira
+const PISTOL_FRONT_Z := Vector2(-0.104, -0.093) # maça: frente / face traseira
 const HAND_SCALE := 0.05
 
 
@@ -195,46 +200,21 @@ func _build_model() -> void:
 	add_child(muzzle)
 
 	var model := (P226_MODEL if data.model_type == "pistol" else M4A1_MODEL).instantiate() as Node3D
-	if data.model_type == "pistol":
-		# A maça de mira do modelo é ~4° mais baixa que a alça: inclina a pistola
-		# em torno da alça para nivelar a linha de visada com o olho (o silenciador
-		# foi exportado com a inclinação contrária e fica abaixo dessa linha)
-		var pivot := Node3D.new()
-		pivot.position = PISTOL_REAR_SIGHT
-		pivot.rotation.x = 0.066
-		add_child(pivot)
-		pivot.add_child(model)
-		model.position = -PISTOL_REAR_SIGHT
-	else:
-		add_child(model)
+	add_child(model)
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if data.model_type == "pistol":
-		# Três pontos de trítio: o da frente na maça, os de trás nas lâminas da
-		# alça. Todos ficam no mesmo ângulo logo abaixo da linha do olho (assim
-		# aparecem alinhados e encostados nas miras), e os de trás, mais perto do
-		# olho, são proporcionalmente menores para parecerem do mesmo tamanho.
-		var tritium := Color(0.3, 1.0, 0.4)
-		var eye := Vector3(0, -data.ads_position.y, -data.ads_position.z)
-		var drop := 0.0055  # rad abaixo da linha de visada
-		var front := Vector3(0, 0, -0.11)
-		front.y = eye.y - drop * (eye.z - front.z)
-		var front_r := 0.0019
-		_emissive_dot(front, tritium, front_r)
-		for side in [-1.0, 1.0]:
-			var rear := Vector3(side * 0.0055, 0, 0.029)
-			rear.y = eye.y - drop * (eye.z - rear.z)
-			_emissive_dot(rear, tritium, front_r * (eye.z - rear.z) / (eye.z - front.z))
+		_pistol_sights(-data.ads_position.y, -data.ads_position.z)
 		# Direita na empunhadura; esquerda envolve a direita pelo lado esquerdo
 		_arm(Vector3(0.027, -0.062, 0.05), Vector3(0, -0.25, -1), Vector3(-1, 0, 0), true, 1.0,
 			Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove)
 		_arm(Vector3(-0.032, -0.075, 0.045), Vector3(0, -0.4, -1), Vector3(1, 0, 0), false, 0.85,
 			Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true)
-		muzzle.position = Vector3(0, 0.02, -0.291)
+		muzzle.position = Vector3(0, 0.01, -0.291)
 	else:
 		# Tubo da mira: luva interna circular por cima da parede irregular do
 		# modelo, com anéis lisos nas pontas; o ponto vermelho fica na frente
-		_sight_tube(Vector3(0, RIFLE_SIGHT_Y, 0.036), Vector3(0, RIFLE_SIGHT_Y, 0.121), 0.0172, 0.0306)
+		_sight_tube(Vector3(0, RIFLE_SIGHT_Y, 0.036), Vector3(0, RIFLE_SIGHT_Y, 0.121), 0.0235, 0.0295)
 		_emissive_dot(Vector3(0, RIFLE_SIGHT_Y, 0.043), Color(1.0, 0.1, 0.05), 0.002)
 		# Direita na empunhadura; esquerda por baixo do guarda-mão, polegar no lado esquerdo
 		_arm(Vector3(0.026, -0.14, 0.155), Vector3(0, -0.3, -1), Vector3(-1, 0, 0), true, 1.0,
@@ -364,6 +344,44 @@ func _basis_along(dir: Vector3) -> Basis:
 	return Basis(x, y, z)
 
 
+## Alça (duas lâminas com entalhe) e maça altas, com os três pontos de trítio
+## na altura do olho: alinhados na mira, os de trás menores na proporção da
+## distância até o olho para parecerem do mesmo tamanho que o da frente.
+func _pistol_sights(eye_y: float, eye_z: float) -> void:
+	var black := _mat(Color(0.025, 0.025, 0.027), 0.3, 0.55)
+	var h := PISTOL_SIGHT_TOP - PISTOL_SLIDE_TOP
+	var rear_d := PISTOL_REAR_Z.y - PISTOL_REAR_Z.x
+	var rear_cz := (PISTOL_REAR_Z.x + PISTOL_REAR_Z.y) * 0.5
+	var notch_bottom := eye_y - 0.0022
+	# base da alça (abaixo do entalhe) e as duas lâminas
+	_block(Vector3(0.0145, notch_bottom - PISTOL_SLIDE_TOP, rear_d),
+		Vector3(0, (PISTOL_SLIDE_TOP + notch_bottom) * 0.5, rear_cz), black)
+	for side in [-1.0, 1.0]:
+		_block(Vector3(0.005, h, rear_d), Vector3(side * 0.0047, PISTOL_SLIDE_TOP + h * 0.5, rear_cz), black)
+	# maça estreita (cabe no entalhe com luz dos dois lados)
+	var front_d := PISTOL_FRONT_Z.y - PISTOL_FRONT_Z.x
+	var front_h := PISTOL_SIGHT_TOP - PISTOL_FRONT_BASE
+	_block(Vector3(0.0032, front_h, front_d),
+		Vector3(0, PISTOL_FRONT_BASE + front_h * 0.5, (PISTOL_FRONT_Z.x + PISTOL_FRONT_Z.y) * 0.5), black)
+	var tritium := Color(0.3, 1.0, 0.4)
+	var front_r := 0.0012
+	_emissive_dot(Vector3(0, eye_y, PISTOL_FRONT_Z.y + 0.0004), tritium, front_r)
+	var rear_r := front_r * (eye_z - PISTOL_REAR_Z.y) / (eye_z - PISTOL_FRONT_Z.y)
+	for side in [-1.0, 1.0]:
+		_emissive_dot(Vector3(side * 0.0047, eye_y, PISTOL_REAR_Z.y + 0.0003), tritium, rear_r)
+
+
+func _block(size: Vector3, pos: Vector3, mat: Material) -> void:
+	var mi := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	mi.mesh = box
+	mi.material_override = mat
+	mi.position = pos
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+
+
 ## Tubo de paredes finas entre `front` e `back` (eixo Z): parede interna
 ## circular e anéis nas duas pontas, preto fosco.
 func _sight_tube(front: Vector3, back: Vector3, r_in: float, r_out: float) -> void:
@@ -397,7 +415,7 @@ func _sight_tube(front: Vector3, back: Vector3, r_in: float, r_out: float) -> vo
 	add_child(mi)
 
 
-func _emissive_dot(pos: Vector3, color: Color, radius: float) -> void:
+func _emissive_dot(pos: Vector3, color: Color, radius: float, parent: Node3D = null) -> void:
 	var mi := MeshInstance3D.new()
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
@@ -414,4 +432,4 @@ func _emissive_dot(pos: Vector3, color: Color, radius: float) -> void:
 	mi.material_override = m
 	mi.position = pos
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mi)
+	(parent if parent else self).add_child(mi)
