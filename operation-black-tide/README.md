@@ -104,7 +104,7 @@ godot --headless --path operation-black-tide res://tests/missions_test.tscn -- m
    helicóptero pousar no heliponto e leve-o até lá.
 
 Cada objetivo concluído é um **checkpoint**. Ao morrer, "Tentar novamente" recomeça dali.
-Há 2 itens de **inteligência** opcionais (laptop do General e HD do CFTV) e 4 caixas de munição.
+Há 2 itens de **inteligência** opcionais (laptop do General e HD do CFTV) e 4 caixas de munição (uso único: somem depois de usadas).
 
 ### Dicas de furtividade
 
@@ -187,10 +187,13 @@ Para um modelo novo:
 ## Sistemas implementados
 
 ### Jogador (`scripts/player/player.gd`, `scripts/weapons/`)
-- **Recuo por arma** (`WeaponData`, grupo "Recuo"): subida progressiva em rajada, tendência lateral,
-  primeiro tiro mais controlado, redução ao mirar/agachar, velocidade de subida/retorno da câmera e coice
-  do modelo (para trás, cano subindo, giro e rolagem). O fuzil sobe e puxa para a direita em rajadas;
-  a pistola dá um salto forte por tiro e volta rápido.
+- **Recuo por arma** (`WeaponData`, grupo "Recuo"): cada tiro empurra a mira de verdade e a subida
+  acumula durante a rajada (o jogador compensa puxando o mouse para baixo); ao parar, só uma fração
+  volta sozinha (`recoil_return`) e o que o jogador já compensou não volta. Também: subida progressiva,
+  tendência lateral, primeiro tiro mais controlado, redução ao mirar/agachar e coice do modelo.
+  Fuzil: ~18° numa rajada de 30 tiros no quadril (~6° mirando), puxa para a direita, devolve 40%.
+  Pistola: salto forte por tiro, devolve 85%.
+- **Caixas de munição de uso único**: reabastecem tudo e somem; não são gastas com a munição cheia.
 - Movimento com aceleração, sprint, agachar (com checagem de teto antes de levantar), pulo,
   balanço de câmera, aterrissagem com tremor.
 - **Armas** definidas por `WeaponData` (.tres): dano, multiplicador de headshot, cadência, pente,

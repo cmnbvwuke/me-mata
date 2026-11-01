@@ -87,6 +87,13 @@ func switch_to(index: int) -> void:
 	ammo_changed.emit(current.ammo_in_mag, current.ammo_reserve)
 
 
+func is_ammo_full() -> bool:
+	for w in weapons:
+		if w.ammo_reserve < w.data.reserve_ammo or w.ammo_in_mag < w.data.magazine_size:
+			return false
+	return true
+
+
 func refill_all() -> void:
 	for w in weapons:
 		w.refill()
@@ -201,7 +208,7 @@ func _apply_recoil(d: WeaponData) -> void:
 	_burst_shots += 1
 	var vertical := d.recoil_vertical * climb * factor * randf_range(0.9, 1.1)
 	var horizontal := (randf_range(-1.0, 1.0) + d.recoil_horizontal_bias) * d.recoil_horizontal * factor
-	player.add_recoil(vertical, horizontal, d.recoil_snap, d.recoil_recovery)
+	player.add_recoil(vertical, horizontal, d.recoil_snap, d.recoil_recovery, d.recoil_return, d.recoil_reset_time)
 	player.add_shake(d.recoil_shake * factor)
 	var vm := lerpf(1.0, 0.55, aim_blend)  # mirando, a arma coiceia menos na tela
 	_kick_pos += Vector3(randf_range(-0.004, 0.004), 0.0, d.kick_back * vm)

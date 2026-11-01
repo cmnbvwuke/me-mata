@@ -3,7 +3,8 @@ extends StaticBody3D
 ## Objeto interativo genérico (segurar [E]). Implementa o mesmo contrato
 ## de interação do HVT: can_interact / get_interact_prompt /
 ## get_interact_hold_time / interact.
-## Tipos: AMMO (caixa de munição, reutilizável) e INTEL (inteligência, uso único).
+## Tipos: AMMO (caixa de munição) e INTEL (inteligência). Os dois são de uso
+## único; a caixa não é gasta se a munição já estiver cheia e some depois de usada.
 
 signal collected(pickup: Pickup)
 
@@ -32,7 +33,10 @@ func can_interact() -> bool:
 
 func get_interact_prompt() -> String:
 	if kind == Kind.AMMO:
-		return "Segure [E] para reabastecer munição"
+		var p := get_tree().get_first_node_in_group("player") as Player
+		if p and p.weapons.is_ammo_full():
+			return "Munição cheia — guarde a caixa para depois"
+		return "Segure [E] para reabastecer munição (uso único)"
 	return "Segure [E] para coletar inteligência (%s)" % intel_name
 
 
@@ -43,9 +47,16 @@ func get_interact_hold_time() -> float:
 func interact(by: Node3D) -> void:
 	if kind == Kind.AMMO:
 		var p := by as Player
-		if p:
-			p.weapons.refill_all()
+		if p == null or p.weapons.is_ammo_full():
+			return
+		p.weapons.refill_all()
 		AudioManager.play_2d("mag_in", -2.0)
+		_used = true
+		collision_layer = 0
+		# A caixa esvaziada encolhe e some
+		var tw := create_tween()
+		tw.tween_property(self, "scale", Vector3.ONE * 0.05, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw.tween_callback(queue_free)
 	else:
 		_used = true
 		GameManager.add_stat("intel")

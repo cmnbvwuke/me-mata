@@ -48,12 +48,16 @@ extends Resource
 ## Aumento da subida a cada disparo seguido (0.1 = +10% por tiro) e o limite.
 @export var recoil_climb: float = 0.0
 @export var recoil_climb_max: float = 0.0
-## Tempo sem atirar (s) para a sequência zerar.
+## Tempo sem atirar (s) para a sequência zerar e a mira começar a voltar.
 @export var recoil_reset_time: float = 0.25
 ## Redução ao mirar e agachado.
 @export var recoil_ads_mult: float = 0.65
 @export var recoil_crouch_mult: float = 0.8
-## Rapidez com que a câmera sobe (snap) e volta ao lugar (recovery).
+## O recuo empurra a mira de verdade e acumula enquanto se atira (o jogador
+## compensa puxando o mouse para baixo). Ao parar, só esta fração da subida
+## volta sozinha (o que o jogador já compensou não volta).
+@export_range(0.0, 1.0) var recoil_return: float = 0.5
+## Rapidez com que a mira sobe a cada tiro (snap) e com que a fração volta (recovery).
 @export var recoil_snap: float = 18.0
 @export var recoil_recovery: float = 5.0
 ## Tremor da câmera por disparo.

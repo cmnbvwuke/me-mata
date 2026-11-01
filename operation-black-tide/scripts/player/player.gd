@@ -70,10 +70,17 @@ var _capsule: CapsuleShape3D
 var _pitch := 0.0
 var _mouse_delta := Vector2.ZERO
 var _time_since_damage := 999.0
-var _recoil_target := Vector2.ZERO
-var _recoil_current := Vector2.ZERO
+## Recuo (radianos, x = pitch, y = yaw): ainda a aplicar, já aplicado nesta
+## rajada (e não compensado pelo jogador) e voltando depois que parou de atirar.
+var _recoil_pending := Vector2.ZERO
+var _recoil_accum := Vector2.ZERO
+var _recoil_returning := Vector2.ZERO
 var _recoil_snap := 18.0
 var _recoil_recovery := 5.0
+var _recoil_return := 0.5
+var _recoil_delay := 0.25
+var _since_shot := 99.0
+var _return_started := false
 var _shake := 0.0
 var _bob_time := 0.0
 var _bob_amount := 0.0
@@ -118,8 +125,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		var motion := event as InputEventMouseMotion
 		var sens := base_mouse_sensitivity * GameManager.mouse_sensitivity * weapons.get_sensitivity_multiplier()
 		rotate_y(-motion.relative.x * sens)
-		_pitch = clampf(_pitch - motion.relative.y * sens, deg_to_rad(-88.0), deg_to_rad(88.0))
+		var dy := -motion.relative.y * sens
+		_pitch = clampf(_pitch + dy, deg_to_rad(-88.0), deg_to_rad(88.0))
 		head.rotation.x = _pitch
+		# Puxar para baixo compensa o recuo: essa parte não "volta" depois
+		if dy < 0.0 and _recoil_accum.x > 0.0:
+			_recoil_accum.x = maxf(_recoil_accum.x + dy, 0.0)
 		_mouse_delta += motion.relative
 	elif event.is_action_pressed("flashlight"):
 		flashlight.visible = not flashlight.visible
@@ -274,11 +285,18 @@ func _update_head_bob(delta: float) -> void:
 # Câmera: recuo e tremor
 # =========================================================================
 
-func add_recoil(pitch_deg: float, yaw_deg: float, snap: float = 18.0, recovery: float = 5.0) -> void:
-	_recoil_target.x += deg_to_rad(pitch_deg)
-	_recoil_target.y += deg_to_rad(yaw_deg)
+## Um disparo empurra a mira (acumula na rajada). Depois de `delay` s sem atirar,
+## a fração `ret` da subida volta com velocidade `recovery`.
+func add_recoil(pitch_deg: float, yaw_deg: float, snap: float = 18.0, recovery: float = 5.0,
+		ret: float = 0.5, delay: float = 0.25) -> void:
+	_recoil_pending += Vector2(deg_to_rad(pitch_deg), deg_to_rad(yaw_deg))
+	_recoil_returning = Vector2.ZERO  # voltou a atirar: a mira fica onde está
+	_return_started = false
 	_recoil_snap = snap
 	_recoil_recovery = recovery
+	_recoil_return = ret
+	_recoil_delay = delay
+	_since_shot = 0.0
 
 
 func add_shake(amount: float) -> void:
@@ -292,10 +310,34 @@ func consume_mouse_delta() -> Vector2:
 
 
 func _update_recoil(delta: float) -> void:
-	_recoil_current = _recoil_current.lerp(_recoil_target, clampf(delta * _recoil_snap, 0.0, 1.0))
-	_recoil_target = _recoil_target.lerp(Vector2.ZERO, clampf(delta * _recoil_recovery, 0.0, 1.0))
-	camera.rotation.x = _recoil_current.x
-	camera.rotation.y = _recoil_current.y
+	_since_shot += delta
+	var step := _recoil_pending * clampf(delta * _recoil_snap, 0.0, 1.0)
+	_recoil_pending -= step
+	_recoil_accum += step
+	_turn_view(step)
+	# Parou de atirar: devolve a fração da subida acumulada (o que já voltou
+	# sai do acumulado, então pausas curtas entre tiros não "perdem" a volta)
+	if _since_shot > _recoil_delay and not _return_started and _recoil_pending.length() < 0.0005:
+		_return_started = true
+		_recoil_returning = _recoil_accum * _recoil_return
+	if _recoil_returning != Vector2.ZERO:
+		var back := _recoil_returning * clampf(delta * _recoil_recovery, 0.0, 1.0)
+		_recoil_returning -= back
+		if _recoil_returning.length() < 0.0002:
+			back += _recoil_returning
+			_recoil_returning = Vector2.ZERO
+		_recoil_accum -= back
+		_turn_view(-back)
+	if _return_started and _recoil_returning == Vector2.ZERO:
+		_recoil_accum = Vector2.ZERO  # o resto da subida fica (o jogador corrige)
+
+
+func _turn_view(v: Vector2) -> void:
+	if v == Vector2.ZERO:
+		return
+	_pitch = clampf(_pitch + v.x, deg_to_rad(-88.0), deg_to_rad(88.0))
+	head.rotation.x = _pitch
+	rotation.y += v.y
 
 
 func _update_shake(delta: float) -> void:
