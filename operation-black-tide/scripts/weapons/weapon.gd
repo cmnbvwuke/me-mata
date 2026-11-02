@@ -240,7 +240,8 @@ func _build_table_model(sleeve: Material, cuff: Material, glove: Material) -> vo
 		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for right in [true, false]:
 		var a := WeaponModels.arm_for(cfg, right)
-		_arm(a[0], a[1], a[2], right, a[3], a[4], a[5], sleeve, cuff, glove, not right)
+		_arm(a[0], a[1], a[2], right, a[3], a[4], a[5], sleeve, cuff, glove, not right,
+			1.15 if cfg.get("pistol", false) else 0.0)
 	muzzle.position = cfg["muzzle"]
 	var eye := Vector3(-data.ads_position.x, -data.ads_position.y, 0)
 	match type:
@@ -303,9 +304,9 @@ func _build_imported_model(sleeve: Material, cuff: Material, glove: Material) ->
 		_pistol_sights(-data.ads_position.y, -data.ads_position.z)
 		# Direita na empunhadura; esquerda envolve a direita pelo lado esquerdo
 		_arm(Vector3(0.027, -0.062, 0.05), Vector3(0, -0.25, -1), Vector3(-1, 0, 0), true, 1.0,
-			Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove)
+			Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46), sleeve, cuff, glove, false, 1.15)
 		_arm(Vector3(-0.032, -0.075, 0.045), Vector3(0, -0.4, -1), Vector3(1, 0, 0), false, 0.85,
-			Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true)
+			Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42), sleeve, cuff, glove, true, 1.15)
 		# com silenciador a boca fica na ponta dele; sem, na frente do ferrolho
 		muzzle.position = Vector3(0, 0.01, -0.291) if data.suppressed else Vector3(0, 0.01, -0.128)
 	elif data.model_type == "ak47":
@@ -359,9 +360,11 @@ func _mat(color: Color, metallic: float, roughness: float) -> StandardMaterial3D
 ## Braço em dois segmentos afunilados (antebraço e braço), punho e mão.
 ##  palm_center: centro da palma; fingers: direção dos dedos esticados;
 ##  palm: para onde a palma aponta (para a arma); curl: 0 = aberta, 1 = fechada.
+##  thumb_forward: gira o polegar para a frente (rad) — pegada de pistola, com o
+##  polegar ao longo da armação em vez de apontar para cima por cima do ferrolho.
 func _arm(palm_center: Vector3, fingers: Vector3, palm: Vector3, right: bool, curl: float,
 		elbow: Vector3, shoulder: Vector3, sleeve: Material, cuff: Material, glove: Material,
-		watch: bool = false) -> void:
+		watch: bool = false, thumb_forward: float = 0.0) -> void:
 	fingers = fingers.normalized()
 	var wrist := palm_center - fingers * 0.05
 	var up_arm := (elbow - wrist).normalized()
@@ -369,7 +372,7 @@ func _arm(palm_center: Vector3, fingers: Vector3, palm: Vector3, right: bool, cu
 	_limb(wrist + up_arm * 0.04, elbow, 0.034, 0.044, sleeve)
 	_joint(elbow, 0.045, sleeve)
 	_limb(wrist + up_arm * 0.01, wrist + up_arm * 0.045, 0.031, 0.034, cuff)
-	_hand(palm_center, fingers, palm, right, curl, glove)
+	_hand(palm_center, fingers, palm, right, curl, glove, thumb_forward)
 	if watch:
 		_limb(wrist + up_arm * 0.045, wrist + up_arm * 0.062, 0.036, 0.036, _mat(Color(0.05, 0.05, 0.05), 0.3, 0.5))
 
@@ -377,7 +380,8 @@ func _arm(palm_center: Vector3, fingers: Vector3, palm: Vector3, right: bool, cu
 ## Mão com os dedos dobrados em volta da arma, juntada numa única malha.
 ## No modelo os dedos apontam para -Z, o polegar para +X e os dedos dobram
 ## para +Y (mão direita com a palma para cima) ou -Y (mão esquerda).
-func _hand(pos: Vector3, fingers_dir: Vector3, palm: Vector3, right: bool, curl: float, mat: Material) -> void:
+func _hand(pos: Vector3, fingers_dir: Vector3, palm: Vector3, right: bool, curl: float, mat: Material,
+		thumb_forward: float = 0.0) -> void:
 	var model := HAND_MODEL.instantiate() as Node3D
 	var side := 1.0 if right else -1.0
 	for finger in ["index", "middle", "ring", "pinky"]:
@@ -391,6 +395,9 @@ func _hand(pos: Vector3, fingers_dir: Vector3, palm: Vector3, right: bool, curl:
 		var node := model.find_child("thumb_%d" % i, true, false) as Node3D
 		if node:
 			node.rotation = Vector3(thumb[i].x * side, thumb[i].y, thumb[i].z * side) * curl
+			if thumb_forward > 0.0:
+				# polegar esticado para a frente, colado na lateral da arma
+				node.rotation = Vector3(0.0, thumb_forward if i == 0 else 0.0, 0.12 * side * curl)
 	var st := SurfaceTool.new()
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		if mi.name == "arm_lower":

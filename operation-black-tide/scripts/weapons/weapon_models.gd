@@ -19,10 +19,10 @@ const IMPORTED := {
 		"left": Vector3(-0.022, -0.035, -0.15), "muzzle": Vector3(-0.01, 0.028, -0.545)},
 	"m249": {"model": "res://assets/weapons/m249.glb", "right": Vector3(0.022, -0.02, 0.12),
 		"left": Vector3(-0.016, 0.028, -0.26), "muzzle": Vector3(-0.0045, 0.122, -0.52)},
-	"glock": {"model": "res://assets/weapons/glock.glb", "right": Vector3(0.026, -0.018, 0.062),
-		"left": Vector3(-0.031, -0.032, 0.057), "muzzle": Vector3(0, 0.0435, -0.093), "pistol": true},
-	"deagle": {"model": "res://assets/weapons/deagle.glb", "right": Vector3(0.03, -0.02, 0.075),
-		"left": Vector3(-0.033, -0.035, 0.07), "muzzle": Vector3(0.003, 0.048, -0.135), "pistol": true},
+	"glock": {"model": "res://assets/weapons/glock.glb", "right": Vector3(0.026, -0.008, 0.068),
+		"left": Vector3(-0.031, -0.022, 0.063), "muzzle": Vector3(0, 0.0435, -0.093), "pistol": true},
+	"deagle": {"model": "res://assets/weapons/deagle.glb", "right": Vector3(0.03, -0.01, 0.08),
+		"left": Vector3(-0.033, -0.025, 0.075), "muzzle": Vector3(0.003, 0.048, -0.135), "pistol": true},
 }
 
 ## Mãos e braços a partir da tabela: [palma, dedos, palma-para, fechamento, cotovelo, ombro].
