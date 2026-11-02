@@ -6,28 +6,44 @@ extends RefCounted
 ## mira de cada uma. Para trocar por um modelo de verdade, basta colocar o .glb
 ## em Weapon.MODELS com o mesmo model_type.
 
-## [palma dir., dedos dir., cotovelo dir., ombro dir.,
-##  palma esq., dedos esq., palma-para esq., fechamento esq., cotovelo esq., ombro esq., boca do cano]
-const HANDS := {
-	"mp5sd": [Vector3(0.026, -0.085, 0.08), Vector3(0, -0.3, -1), Vector3(0.1, -0.24, 0.28), Vector3(0.15, -0.42, 0.48),
-		Vector3(-0.008, -0.075, -0.19), Vector3(1, 0, -0.3), Vector3(0, 1, 0), 0.8, Vector3(-0.2, -0.22, -0.02), Vector3(-0.48, -0.42, 0.4),
-		Vector3(0, 0, -0.47)],
-	"m4_shotgun": [Vector3(0.026, -0.09, 0.09), Vector3(0, -0.3, -1), Vector3(0.1, -0.25, 0.29), Vector3(0.15, -0.42, 0.48),
-		Vector3(-0.008, -0.06, -0.22), Vector3(1, 0, -0.3), Vector3(0, 1, 0), 0.8, Vector3(-0.2, -0.22, -0.04), Vector3(-0.48, -0.42, 0.4),
-		Vector3(0, 0.01, -0.54)],
-	"m24": [Vector3(0.028, -0.085, 0.14), Vector3(0, -0.35, -1), Vector3(0.1, -0.26, 0.34), Vector3(0.15, -0.42, 0.52),
-		Vector3(-0.008, -0.075, -0.28), Vector3(1, 0, -0.3), Vector3(0, 1, 0), 0.8, Vector3(-0.2, -0.22, -0.1), Vector3(-0.48, -0.42, 0.4),
-		Vector3(0, 0, -0.8)],
-	"m249": [Vector3(0.03, -0.105, 0.12), Vector3(0, -0.3, -1), Vector3(0.11, -0.27, 0.32), Vector3(0.16, -0.43, 0.5),
-		Vector3(-0.01, -0.075, -0.25), Vector3(1, 0, -0.3), Vector3(0, 1, 0), 0.8, Vector3(-0.22, -0.23, -0.06), Vector3(-0.5, -0.43, 0.4),
-		Vector3(0, 0, -0.6)],
-	"glock": [Vector3(0.027, -0.062, 0.05), Vector3(0, -0.25, -1), Vector3(0.08, -0.25, 0.26), Vector3(0.14, -0.42, 0.46),
-		Vector3(-0.032, -0.075, 0.045), Vector3(0, -0.4, -1), Vector3(1, 0, 0), 0.85, Vector3(-0.16, -0.26, 0.2), Vector3(-0.44, -0.42, 0.42),
-		Vector3(0, 0.012, -0.124)],
-	"deagle": [Vector3(0.029, -0.064, 0.055), Vector3(0, -0.25, -1), Vector3(0.08, -0.25, 0.27), Vector3(0.14, -0.42, 0.47),
-		Vector3(-0.034, -0.078, 0.05), Vector3(0, -0.4, -1), Vector3(1, 0, 0), 0.85, Vector3(-0.16, -0.26, 0.21), Vector3(-0.44, -0.42, 0.43),
-		Vector3(0, 0.012, -0.17)],
+## Armas com modelo importado (assets/weapons/*.glb, convertidos com origem no
+## centro da arma): mãos, boca do cano e mira. Os braços saem da palma (arm_for).
+##  right/left: centro da palma; left_fingers/left_palm: orientação da mão de apoio
+##  pistol: pega de pistola (as duas mãos no cabo)
+const IMPORTED := {
+	"mp5sd": {"model": "res://assets/weapons/mp5.glb", "right": Vector3(0.024, -0.01, 0.09),
+		"left": Vector3(-0.006, 0.028, -0.2), "muzzle": Vector3(0, 0.058, -0.5)},
+	"m4_shotgun": {"model": "res://assets/weapons/benelli.glb", "right": Vector3(0.014, -0.05, 0.2),
+		"left": Vector3(-0.018, -0.03, -0.15), "muzzle": Vector3(-0.008, 0.042, -0.505)},
+	"m24": {"model": "res://assets/weapons/m24.glb", "right": Vector3(0.014, -0.02, 0.22),
+		"left": Vector3(-0.022, -0.035, -0.15), "muzzle": Vector3(-0.01, 0.028, -0.545)},
+	"m249": {"model": "res://assets/weapons/m249.glb", "right": Vector3(0.022, -0.02, 0.12),
+		"left": Vector3(-0.016, 0.028, -0.26), "muzzle": Vector3(-0.0045, 0.122, -0.52)},
+	"glock": {"model": "res://assets/weapons/glock.glb", "right": Vector3(0.026, -0.018, 0.062),
+		"left": Vector3(-0.031, -0.032, 0.057), "muzzle": Vector3(0, 0.0435, -0.093), "pistol": true},
+	"deagle": {"model": "res://assets/weapons/deagle.glb", "right": Vector3(0.03, -0.02, 0.075),
+		"left": Vector3(-0.033, -0.035, 0.07), "muzzle": Vector3(0.003, 0.048, -0.135), "pistol": true},
 }
+
+## Mãos e braços a partir da tabela: [palma, dedos, palma-para, fechamento, cotovelo, ombro].
+static func arm_for(cfg: Dictionary, right: bool) -> Array:
+	var pistol: bool = cfg.get("pistol", false)
+	if right:
+		var p: Vector3 = cfg["right"]
+		var fingers := Vector3(0, -0.25, -1) if pistol else Vector3(0, -0.3, -1)
+		var elbow := p + (Vector3(0.053, -0.19, 0.21) if pistol else Vector3(0.075, -0.16, 0.2))
+		var shoulder := p + (Vector3(0.11, -0.36, 0.41) if pistol else Vector3(0.125, -0.33, 0.39))
+		return [p, fingers, Vector3(-1, 0, 0), 1.0, elbow, shoulder]
+	var q: Vector3 = cfg["left"]
+	if pistol:
+		return [q, Vector3(0, -0.4, -1), Vector3(1, 0, 0), 0.85, q + Vector3(-0.13, -0.18, 0.155), q + Vector3(-0.41, -0.34, 0.375)]
+	return [q, Vector3(1, 0, -0.3), Vector3(0, 1, 0), 0.8, q + Vector3(-0.19, -0.15, 0.19), q + Vector3(-0.47, -0.35, 0.6)]
+
+
+## Modelos temporários (caixas e cilindros) para armas que ainda não têm .glb.
+## HANDS no formato antigo: [palma dir., dedos dir., cotovelo dir., ombro dir.,
+##  palma esq., dedos esq., palma-para esq., fechamento esq., cotovelo esq., ombro esq., boca do cano]
+const HANDS := {}
 
 ## Pistolas usam as miras altas de Weapon._pistol_sights; as outras têm a mira
 ## própria construída aqui (o olho fica na altura indicada em ads_position.y).

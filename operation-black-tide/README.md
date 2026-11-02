@@ -207,7 +207,10 @@ Para um modelo novo:
   | P226 SD / P226 | silenciosa / mais dano | — / barulho |
   | Glock 17 | 17 tiros, rápida, recuo leve | dano baixo, barulho |
   | Desert Eagle | dano altíssimo | 7 tiros, recuo enorme, lenta, barulho |
-  MP5SD, Benelli, M24, M249, Glock e Deagle usam modelos temporários (`WeaponModels`) até ganharem um .glb.
+  Modelos 3D (Blend Swap, ver CRÉDITOS no menu) convertidos com `build_weapon2.py` (Blender: orientação, escala real,
+  pintura por região, remoção de peças); mãos, boca do cano e mira de cada um em `WeaponModels.IMPORTED`.
+  Extras feitos em código: silenciador da MP5SD, retícula holográfica da EOTech (Benelli), red dot da M249,
+  miras de ferro da AK e pontos de trítio das pistolas.
   Mecânicas: chumbos (`pellets`), queda de dano com a distância (`falloff_*`), luneta (`scope`, retícula na
   tela e balanço) e velocidade do jogador por arma (`move_speed_mult`). Nova arma = novo `.tres` com `slot`/`description`/`model_type`, entrada
   em `GameManager.WEAPONS` e o modelo em `Weapon.MODELS` (mãos e mira em `Weapon._build_model`).

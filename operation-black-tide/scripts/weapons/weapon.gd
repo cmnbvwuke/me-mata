@@ -40,7 +40,7 @@ const MODELS := {
 	"ak47": preload("res://assets/weapons/ak47.glb"),
 	"p226_sd": P226_MODEL,
 	"p226": preload("res://assets/weapons/p226_bare.glb"),
-}
+}  # demais modelos em WeaponModels.IMPORTED
 ## Altura do eixo da mira do fuzil (= -ads_position.y do M4A1).
 const RIFLE_SIGHT_Y := 0.0927
 ## Miras altas da pistola (de silenciador), feitas em código: as do modelo são
@@ -205,7 +205,9 @@ func _build_model() -> void:
 	muzzle.name = "Muzzle"
 	add_child(muzzle)
 
-	if data.model_type in WeaponModels.HANDS and not MODELS.has(data.model_type):
+	if WeaponModels.IMPORTED.has(data.model_type):
+		_build_table_model(sleeve, cuff, glove)
+	elif WeaponModels.HANDS.has(data.model_type) and not MODELS.has(data.model_type):
 		_build_temporary_model(sleeve, cuff, glove)
 	else:
 		_build_imported_model(sleeve, cuff, glove)
@@ -228,6 +230,70 @@ func _build_temporary_model(sleeve: Material, cuff: Material, glove: Material) -
 		_emissive_dot(Vector3(0, eye_y, -0.005), Color(1.0, 0.1, 0.05), 0.0015)
 
 
+## Modelo importado descrito em WeaponModels.IMPORTED (mãos, boca e mira).
+func _build_table_model(sleeve: Material, cuff: Material, glove: Material) -> void:
+	var type := data.model_type
+	var cfg: Dictionary = WeaponModels.IMPORTED[type]
+	var model := (load(cfg["model"]) as PackedScene).instantiate() as Node3D
+	add_child(model)
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for right in [true, false]:
+		var a := WeaponModels.arm_for(cfg, right)
+		_arm(a[0], a[1], a[2], right, a[3], a[4], a[5], sleeve, cuff, glove, not right)
+	muzzle.position = cfg["muzzle"]
+	var eye := Vector3(-data.ads_position.x, -data.ads_position.y, 0)
+	match type:
+		"mp5sd":
+			# MP5SD: o modelo é a MP5 comum; o silenciador integral é acrescentado aqui
+			var black := _mat(Color(0.04, 0.04, 0.042), 0.3, 0.6)
+			_cylinder_z(Vector3(0, 0.058, -0.29), Vector3(0, 0.058, -0.5), 0.021, black)
+		"m4_shotgun":
+			# Retícula holográfica da EOTech (o vidro do modelo foi removido)
+			_holo_reticle(Vector3(eye.x, eye.y, 0.074))
+		"m249":
+			# Red dot sobre a tampa do receptor (o modelo veio sem mira)
+			var black := _mat(Color(0.04, 0.04, 0.042), 0.3, 0.6)
+			_block(Vector3(0.026, 0.006, 0.07), Vector3(eye.x, 0.161, 0.015), black)
+			_sight_tube(Vector3(eye.x, eye.y, -0.015), Vector3(eye.x, eye.y, 0.045), 0.0165, 0.021)
+			_emissive_dot(Vector3(eye.x, eye.y, -0.01), Color(1.0, 0.1, 0.05), 0.0015)
+		"glock", "deagle":
+			# Pontos de trítio nas faces da maça e da alça, todos na altura do olho
+			var front_z := -0.0775 if type == "glock" else -0.1165
+			var rear_z := 0.0712 if type == "glock" else 0.0882
+			var spread := 0.0045 if type == "glock" else 0.006
+			var tritium := Color(0.3, 1.0, 0.4)
+			var eye_z := -data.ads_position.z
+			var y := eye.y - 0.0012
+			_emissive_dot(Vector3(eye.x, y, front_z), tritium, 0.0016)
+			for side in [-1.0, 1.0]:
+				_emissive_dot(Vector3(eye.x + side * spread, y, rear_z), tritium, 0.0016 * (eye_z - rear_z) / (eye_z - front_z))
+
+
+## Retícula holográfica: anel vermelho com ponto central, emissivo.
+func _holo_reticle(center: Vector3) -> void:
+	var red := Color(1.0, 0.12, 0.06)
+	_emissive_dot(center, red, 0.0009)
+	var seg := 28
+	for i in seg:
+		var a := TAU * i / seg
+		_emissive_dot(center + Vector3(cos(a), sin(a), 0) * 0.0075, red, 0.00045)
+
+
+func _cylinder_z(a: Vector3, b: Vector3, radius: float, mat: Material) -> void:
+	var mi := MeshInstance3D.new()
+	var c := CylinderMesh.new()
+	c.top_radius = radius
+	c.bottom_radius = radius
+	c.height = a.distance_to(b)
+	c.radial_segments = 20
+	mi.mesh = c
+	mi.material_override = mat
+	mi.transform = Transform3D(_basis_along(b - a), (a + b) * 0.5)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+
+
 func _build_imported_model(sleeve: Material, cuff: Material, glove: Material) -> void:
 	var model := (MODELS.get(data.model_type, M4A1_MODEL) as PackedScene).instantiate() as Node3D
 	add_child(model)
@@ -243,7 +309,8 @@ func _build_imported_model(sleeve: Material, cuff: Material, glove: Material) ->
 		# com silenciador a boca fica na ponta dele; sem, na frente do ferrolho
 		muzzle.position = Vector3(0, 0.01, -0.291) if data.suppressed else Vector3(0, 0.01, -0.128)
 	elif data.model_type == "ak47":
-		# Miras de ferro: alça no receptor e maça na ponta do cano (já no modelo)
+		# Miras de ferro nítidas (alça com entalhe e maça) por cima das do modelo
+		WeaponModels._iron_sights(self, _mat(Color(0.03, 0.03, 0.033), 0.3, 0.6), -data.ads_position.y, -0.217, -0.51)
 		_arm(Vector3(0.024, -0.085, 0.06), Vector3(0, -0.3, -1), Vector3(-1, 0, 0), true, 1.0,
 			Vector3(0.1, -0.24, 0.26), Vector3(0.15, -0.42, 0.46), sleeve, cuff, glove)
 		_arm(Vector3(-0.008, -0.04, -0.33), Vector3(1, 0, -0.3), Vector3(0, 1, 0), false, 0.8,

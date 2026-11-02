@@ -48,6 +48,7 @@ func _ready() -> void:
 	left.add_child(UIStyle.button("CAMPANHA", _show_campaign))
 	left.add_child(UIStyle.button("CONFIGURAÇÕES", _show_settings))
 	left.add_child(UIStyle.button("CONTROLES", _show_controls))
+	left.add_child(UIStyle.button("CRÉDITOS", _show_credits))
 	left.add_child(UIStyle.button("SAIR", _quit))
 	var filler := Control.new()
 	filler.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -186,7 +187,7 @@ func _show_controls() -> void:
 		["C / Ctrl", "Agachar (alternar)"], ["Espaço", "Pular / saltar janelas e obstáculos baixos"],
 		["Botão esquerdo", "Atirar"], ["Botão direito (segurar)", "Mirar (ADS)"],
 		["R", "Recarregar"], ["B", "Modo de disparo AUTO/SEMI"],
-		["1 / 2 / Q / Roda", "Trocar arma (M4A1 / P226 SD)"],
+		["1 / 2 / Q / Roda", "Trocar entre arma principal e secundária"],
 		["E (segurar)", "Interagir / capturar HVT / munição / inteligência"],
 		["F", "Lanterna (aumenta sua visibilidade!)"], ["N", "Visão noturna"],
 		["T", "Designar apoio aéreo (onde estiver mirando)"],
@@ -203,10 +204,32 @@ func _show_controls() -> void:
 	var tips := UIStyle.label("\nDICAS DE FURTIVIDADE\n" \
 		+ "• Agachado você é ~2x mais difícil de ver e faz quase nenhum ruído.\n" \
 		+ "• A vegetação bloqueia a visão inimiga. Holofotes das torres detectam rápido.\n" \
-		+ "• A P226 SD é suprimida; tiros do M4A1 alertam o complexo inteiro.\n" \
+		+ "• Armas com silenciador (P226 SD, MP5SD) quase não fazem barulho; as outras alertam o complexo.\n" \
 		+ "• Um guarda que te vê leva ~3 s para avisar pelo rádio — elimine-o antes.\n" \
 		+ "• Corpos encontrados por outros guardas disparam o alarme.", 16, UIStyle.DIM)
 	_content.add_child(tips)
+
+
+func _show_credits() -> void:
+	_clear()
+	_content.add_child(UIStyle.label("CRÉDITOS", 22, UIStyle.AMBER))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 28)
+	grid.add_theme_constant_override("v_separation", 6)
+	_content.add_child(grid)
+	for e in Credits.ENTRIES:
+		var a := UIStyle.label(String(e[0]), 15, UIStyle.AMBER)
+		a.custom_minimum_size.x = 300
+		a.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		grid.add_child(a)
+		var b := UIStyle.label(String(e[1]), 15)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_child(b)
+	var note := UIStyle.label("\n" + Credits.NOTE, 14, UIStyle.DIM)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_content.add_child(note)
 
 
 func _quit() -> void:
