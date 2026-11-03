@@ -271,6 +271,8 @@ func _on_damaged(amount: float, from_position: Vector3) -> void:
 
 
 func _on_interaction_changed(prompt: String, progress: float) -> void:
+	if GameManager.touch_mode:
+		prompt = prompt.replace("[E]", "[USAR]").replace("[Espaço]", "[PULAR]").replace("[T]", "[APOIO AÉREO]")
 	_prompt_label.visible = prompt != ""
 	_prompt_label.text = prompt
 	_prompt_bar.visible = prompt != "" and progress > 0.0
@@ -425,6 +427,15 @@ func _build() -> void:
 	ammo.offset_bottom = -22
 	ammo.alignment = BoxContainer.ALIGNMENT_END
 	_root.add_child(ammo)
+	if GameManager.touch_mode:
+		# no celular a parte de baixo é dos botões: munição vai para o alto, à direita
+		ammo.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		ammo.offset_left = -380
+		ammo.offset_right = -30
+		ammo.offset_top = 105
+		ammo.offset_bottom = 235
+		ammo.alignment = BoxContainer.ALIGNMENT_BEGIN
+		add_child(TouchControls.new())
 	_ammo_hint = UIStyle.label("", 15, UIStyle.AMBER)
 	_ammo_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	ammo.add_child(_ammo_hint)

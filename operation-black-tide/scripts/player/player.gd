@@ -104,7 +104,8 @@ func _ready() -> void:
 	flashlight.visible = false
 	_apply_settings()
 	GameManager.settings_changed.connect(_apply_settings)
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if not GameManager.touch_mode:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	health_changed.emit.call_deferred(health, max_health)
 
 
@@ -115,6 +116,10 @@ func _apply_settings() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
+	# No celular o olhar vem dos controles de toque (TouchControls.look); o
+	# "mouse" emulado a partir do toque é ignorado
+	if GameManager.touch_mode and (event is InputEventMouseMotion or event is InputEventMouseButton):
+		return
 	# Navegador/Electron só captura o mouse após um clique: recaptura ao clicar na tela
 	if event is InputEventMouseButton and event.is_pressed() and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED \
 			and not get_tree().paused:
@@ -122,16 +127,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var motion := event as InputEventMouseMotion
-		var sens := base_mouse_sensitivity * GameManager.mouse_sensitivity * weapons.get_sensitivity_multiplier()
-		rotate_y(-motion.relative.x * sens)
-		var dy := -motion.relative.y * sens
-		_pitch = clampf(_pitch + dy, deg_to_rad(-88.0), deg_to_rad(88.0))
-		head.rotation.x = _pitch
-		# Puxar para baixo compensa o recuo: essa parte não "volta" depois
-		if dy < 0.0 and _recoil_accum.x > 0.0:
-			_recoil_accum.x = maxf(_recoil_accum.x + dy, 0.0)
-		_mouse_delta += motion.relative
+		look((event as InputEventMouseMotion).relative)
 	elif event.is_action_pressed("flashlight"):
 		flashlight.visible = not flashlight.visible
 		AudioManager.play_2d("fire_mode", -10.0)
@@ -141,6 +137,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		nvg_toggled.emit(nvg_enabled)
 	elif event.is_action_pressed("air_support") and not cinematic_mode:
 		_request_air_support()
+
+
+## Gira a visão (mouse ou arrasto na tela), em pixels de movimento.
+func look(relative: Vector2) -> void:
+	var sens := base_mouse_sensitivity * GameManager.mouse_sensitivity * weapons.get_sensitivity_multiplier()
+	rotate_y(-relative.x * sens)
+	var dy := -relative.y * sens
+	_pitch = clampf(_pitch + dy, deg_to_rad(-88.0), deg_to_rad(88.0))
+	head.rotation.x = _pitch
+	# Puxar para baixo compensa o recuo: essa parte não "volta" depois
+	if dy < 0.0 and _recoil_accum.x > 0.0:
+		_recoil_accum.x = maxf(_recoil_accum.x + dy, 0.0)
+	_mouse_delta += relative
 
 
 func _physics_process(delta: float) -> void:

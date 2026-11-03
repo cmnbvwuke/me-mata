@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://xclwn6ckw7r4"
 path.s3tc="res://.godot/imported/ibarra_cor.png-02b5d01df874e6b7ac92b4399c994482.s3tc.ctex"
+path.etc2="res://.godot/imported/ibarra_cor.png-02b5d01df874e6b7ac92b4399c994482.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/characters/ibarra_cor.png"
-dest_files=["res://.godot/imported/ibarra_cor.png-02b5d01df874e6b7ac92b4399c994482.s3tc.ctex"]
+dest_files=["res://.godot/imported/ibarra_cor.png-02b5d01df874e6b7ac92b4399c994482.s3tc.ctex", "res://.godot/imported/ibarra_cor.png-02b5d01df874e6b7ac92b4399c994482.etc2.ctex"]
 
 [params]
 

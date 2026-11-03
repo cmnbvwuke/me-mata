@@ -19,6 +19,8 @@ static func level() -> int:
 
 ## Nível sugerido para a placa de vídeo atual (usado na primeira execução).
 static func detect_default() -> int:
+	if OS.has_feature("mobile"):
+		return Level.LOW
 	match RenderingServer.get_video_adapter_type():
 		RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, RenderingDevice.DEVICE_TYPE_CPU:
 			return Level.LOW
@@ -42,7 +44,9 @@ static func positional_shadows_allowed(is_spot: bool) -> bool:
 static func apply(scene: Node, environment: Environment, sun: DirectionalLight3D) -> void:
 	var q := level()
 	var vp := scene.get_viewport()
-	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if q < Level.HIGH else Viewport.SCALING_3D_MODE_BILINEAR
+	# FSR só existe nos renderizadores Vulkan; no de compatibilidade (celular) usa bilinear
+	var fsr_ok := str(ProjectSettings.get_setting("rendering/renderer/rendering_method")) != "gl_compatibility"
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if q < Level.HIGH and fsr_ok else Viewport.SCALING_3D_MODE_BILINEAR
 	vp.scaling_3d_scale = [0.7, 0.85, 1.0][q]
 	vp.msaa_3d = Viewport.MSAA_2X if q == Level.HIGH else Viewport.MSAA_DISABLED
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA

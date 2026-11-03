@@ -186,6 +186,21 @@ Para um modelo novo:
 
 ---
 
+## Demo para celular (Android)
+
+Preset de exportação **"Android (demo)"** (`export_presets.cfg`): APK arm64, renderizador de compatibilidade
+(OpenGL ES 3), texturas ETC2/ASTC, tela deitada, qualidade gráfica Baixo. Feature `demo`: só a Absolute Resolve
+é jogável (as outras missões aparecem como "versão completa" e ficam fora do APK).
+
+- Controles de toque (`scripts/ui/touch_controls.gd`, ativos quando `OS.has_feature("mobile")`): joystick
+  flutuante na metade esquerda (empurrar até o fim para a frente = correr), arrastar na direita para olhar,
+  botões ATIRAR, MIRAR (alterna), RECARREGAR, AGACHAR, PULAR, USAR (segurar), TROCAR ARMA e, no topo, APOIO
+  AÉREO, VISÃO NOTURNA, LANTERNA, PAUSA e PULAR INTRO. Os botões disparam as mesmas ações do teclado.
+- Exportar: Godot 4.3 com os templates de Android, JDK 17+ e um Android SDK com `build-tools/*/apksigner`
+  (configurados nas Editor Settings) e a keystore de release nas variáveis
+  `GODOT_ANDROID_KEYSTORE_RELEASE_PATH/_USER/_PASSWORD`:
+  `godot --headless --path operation-black-tide --export-release "Android (demo)" saida.apk`
+
 ## Sistemas implementados
 
 ### Jogador (`scripts/player/player.gd`, `scripts/weapons/`)

@@ -43,6 +43,13 @@ const HAND_STYLES := [
 	["Pele escura", Color(0.32, 0.21, 0.15)],
 ]
 
+# --- Plataforma ----------------------------------------------------------
+## Celular (ou teste com a feature "touch_test"): controles de toque na tela.
+var touch_mode: bool = OS.has_feature("mobile") or OS.has_feature("touch_test")
+## Demo: só a primeira missão é jogável (export com a feature "demo").
+var demo: bool = OS.has_feature("demo")
+const DEMO_MISSION := "absolute_resolve"
+
 # --- Estado da missão -----------------------------------------------------
 var current_mission_id: String = ""
 ## Índice do último checkpoint alcançado (== índice do objetivo a retomar).
@@ -67,7 +74,17 @@ func _ready() -> void:
 # Fluxo de missão
 # =========================================================================
 
+## Na demo só a primeira missão pode ser jogada.
+func is_mission_playable(mission_id: String) -> bool:
+	var mission := Campaign.get_mission(mission_id)
+	if mission.is_empty() or String(mission.get("scene", "")) == "":
+		return false
+	return not demo or mission_id == DEMO_MISSION
+
+
 func start_mission(mission_id: String) -> void:
+	if not is_mission_playable(mission_id):
+		return
 	var mission := Campaign.get_mission(mission_id)
 	if mission.is_empty() or String(mission.get("scene", "")) == "":
 		push_warning("Missão '%s' ainda não é jogável." % mission_id)
@@ -117,6 +134,8 @@ func is_mission_completed(mission_id: String) -> bool:
 
 ## Próxima missão jogável na ordem da campanha (ou "" se for a última).
 func get_next_mission(mission_id: String) -> String:
+	if demo:
+		return ""
 	var ids: Array[String] = []
 	for phase in Campaign.PHASES:
 		for mission in phase["missions"]:

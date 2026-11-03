@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://h3rshvafnjtf"
 path.s3tc="res://.godot/imported/militia_normal.png-f092b43e7c127a2257ba4f195a78a530.s3tc.ctex"
+path.etc2="res://.godot/imported/militia_normal.png-f092b43e7c127a2257ba4f195a78a530.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/characters/militia_normal.png"
-dest_files=["res://.godot/imported/militia_normal.png-f092b43e7c127a2257ba4f195a78a530.s3tc.ctex"]
+dest_files=["res://.godot/imported/militia_normal.png-f092b43e7c127a2257ba4f195a78a530.s3tc.ctex", "res://.godot/imported/militia_normal.png-f092b43e7c127a2257ba4f195a78a530.etc2.ctex"]
 
 [params]
 

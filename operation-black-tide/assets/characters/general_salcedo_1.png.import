@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://baliiqduvdxyq"
 path.s3tc="res://.godot/imported/general_salcedo_1.png-757b854c48bf9abde6ba0836addfb11b.s3tc.ctex"
+path.etc2="res://.godot/imported/general_salcedo_1.png-757b854c48bf9abde6ba0836addfb11b.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/characters/general_salcedo_1.png"
-dest_files=["res://.godot/imported/general_salcedo_1.png-757b854c48bf9abde6ba0836addfb11b.s3tc.ctex"]
+dest_files=["res://.godot/imported/general_salcedo_1.png-757b854c48bf9abde6ba0836addfb11b.s3tc.ctex", "res://.godot/imported/general_salcedo_1.png-757b854c48bf9abde6ba0836addfb11b.etc2.ctex"]
 
 [params]
 

@@ -53,7 +53,8 @@ func _ready() -> void:
 	var filler := Control.new()
 	filler.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(filler)
-	left.add_child(UIStyle.label("Protótipo jogável — Godot 4", 14, UIStyle.DIM))
+	left.add_child(UIStyle.label("DEMO — Missão: Absolute Resolve" if GameManager.demo else "Protótipo jogável — Godot 4",
+		14, UIStyle.AMBER if GameManager.demo else UIStyle.DIM))
 
 	# Coluna direita: conteúdo
 	var panel := PanelContainer.new()
@@ -93,14 +94,14 @@ func _show_campaign() -> void:
 		list.add_child(gap)
 		list.add_child(UIStyle.label(String(phase["title"]), 18, UIStyle.AMBER))
 		for mission in phase["missions"]:
-			var playable := String(mission["scene"]) != ""
 			var id := String(mission["id"])
+			var playable := GameManager.is_mission_playable(id)
 			var done := "   ✓" if GameManager.is_mission_completed(id) else ""
 			var b := UIStyle.button("   " + String(mission["title"]) + done, func() -> void: _select_mission(id))
 			b.custom_minimum_size = Vector2(0, 40)
 			if not playable:
 				b.add_theme_color_override("font_color", UIStyle.DIM)
-				b.tooltip_text = "Em desenvolvimento"
+				b.tooltip_text = "Versão completa" if GameManager.demo else "Em desenvolvimento"
 			list.add_child(b)
 	var brief := VBoxContainer.new()
 	brief.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -168,10 +169,10 @@ func _select_mission(id: String) -> void:
 	_selected_mission = id
 	_briefing_title.text = "BRIEFING — " + String(m["title"]).to_upper()
 	_briefing_text.text = String(m["brief"])
-	var playable := String(m["scene"]) != ""
+	var playable := GameManager.is_mission_playable(id)
 	_start_button.visible = true
 	_start_button.disabled = not playable
-	_start_button.text = "INICIAR MISSÃO" if playable else "EM DESENVOLVIMENTO"
+	_start_button.text = "INICIAR MISSÃO" if playable else ("DISPONÍVEL NA VERSÃO COMPLETA" if GameManager.demo else "EM DESENVOLVIMENTO")
 
 
 func _show_settings() -> void:
