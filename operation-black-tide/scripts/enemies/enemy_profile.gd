@@ -21,6 +21,8 @@ extends Resource
 @export var max_health: float = 100.0
 ## Redução de dano no torso (colete). Tiros na cabeça ignoram.
 @export_range(0.0, 0.9) var armor: float = 0.0
+## Multiplicador do dano de tiros na cabeça (capacete < 1).
+@export_range(0.1, 1.0) var headshot_resist: float = 1.0
 @export var walk_speed: float = 1.7
 @export var run_speed: float = 4.2
 
@@ -45,3 +47,12 @@ extends Resource
 @export_range(0.0, 1.0) var flank_chance: float = 0.15
 ## Chance de avançar agressivamente sobre o jogador a cada decisão.
 @export_range(0.0, 1.0) var aggression: float = 0.2
+## Moral (1 = nunca foge). Ferido ou vendo companheiros caírem, quem tem moral
+## baixa pode fugir em pânico por alguns segundos antes de voltar a lutar.
+@export_range(0.0, 1.0) var morale: float = 1.0
+## Fogo de supressão: segundos atirando onde o jogador foi visto depois que ele se esconde.
+@export var suppressive_time: float = 0.0
+## Atira correndo, sem precisar estar bem virado para o alvo (menos preciso).
+@export var run_and_gun: bool = false
+## Granadas (lançadas quando o jogador fica escondido atrás de cobertura).
+@export var grenades: int = 0

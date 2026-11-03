@@ -78,6 +78,11 @@ var _flashlight: SpotLight3D
 var _soldier: SoldierModel
 var _prev_yaw := 0.0
 var _last_shot_msec := -10000
+var _flee_timer := 0.0
+## Quando viu o jogador pela última vez (supressão e granada só valem para quem viu).
+var _last_seen_msec := -100000
+var _grenades_left := 0
+var _grenade_cooldown := 0.0
 
 @onready var agent: NavigationAgent3D = $NavigationAgent3D
 @onready var body_shape: CollisionShape3D = $CollisionShape3D
@@ -91,6 +96,8 @@ func _ready() -> void:
 	if profile == null:
 		profile = load("res://resources/enemies/guard.tres") as EnemyProfile
 	health = profile.max_health
+	_grenades_left = profile.grenades
+	_grenade_cooldown = _rng.randf_range(4.0, 8.0)
 	body_shape.shape = body_shape.shape.duplicate()
 	_build_visual()
 	_home_position = global_position
@@ -372,6 +379,10 @@ func _tick_combat(delta: float) -> void:
 		return
 	_tick_radio(delta)
 	_reaction_timer -= delta
+	_grenade_cooldown -= delta
+	if _flee_timer > 0.0:
+		_tick_flee(delta)
+		return
 	_tick_shooting(delta)
 	_decision_timer -= delta
 	if _decision_timer <= 0.0:
@@ -383,6 +394,14 @@ func _tick_combat(delta: float) -> void:
 func _decide_tactics() -> void:
 	var ppos := _player.global_position
 	var dist := global_position.distance_to(ppos)
+
+	# Elite: jogador entrincheirado fora de vista -> granada na última posição conhecida
+	var since_seen := (Time.get_ticks_msec() - _last_seen_msec) / 1000.0
+	if _grenades_left > 0 and _grenade_cooldown <= 0.0 and since_seen > 1.5 and since_seen < 9.0:
+		var gd := global_position.distance_to(last_known_position)
+		if gd > 7.0 and gd < 28.0 and not _allies_near(last_known_position, 5.0):
+			_throw_grenade(last_known_position)
+			return
 
 	# Perdeu o contato há muito tempo: volta a procurar
 	if _time_unseen > 12.0:
@@ -519,6 +538,19 @@ func _try_flank() -> bool:
 
 func _tick_shooting(delta: float) -> void:
 	_shot_cooldown -= delta
+	# Supressão: o jogador sumiu atrás de algo há pouco -> continua atirando ali
+	if _can_see_player:
+		_last_seen_msec = Time.get_ticks_msec()
+	var since_seen := (Time.get_ticks_msec() - _last_seen_msec) / 1000.0
+	var suppressing := not _can_see_player and since_seen < profile.suppressive_time and not is_crouched
+	if suppressing:
+		if _shot_cooldown <= 0.0:
+			_shot_cooldown = 60.0 / profile.fire_rate * 1.6
+			_fire_shot(last_known_position + Vector3(0, _rng.randf_range(0.6, 1.4), 0), 4.0)
+			_last_shot_msec = Time.get_ticks_msec()
+			if _soldier:
+				_soldier.kick()
+		return
 	if not _can_see_player or is_crouched:
 		_aim_quality = maxf(0.0, _aim_quality - delta * 0.5)
 		return
@@ -528,7 +560,8 @@ func _tick_shooting(delta: float) -> void:
 	# Precisa estar virado para o jogador
 	var to_player := _player.global_position - global_position
 	to_player.y = 0.0
-	if (-global_basis.z).angle_to(to_player.normalized()) > deg_to_rad(25.0):
+	var tolerance := 60.0 if profile.run_and_gun else 25.0
+	if (-global_basis.z).angle_to(to_player.normalized()) > deg_to_rad(tolerance):
 		return
 	if _burst_left <= 0:
 		_burst_pause -= delta
@@ -547,11 +580,13 @@ func _tick_shooting(delta: float) -> void:
 		_soldier.kick()
 
 
-func _fire_shot() -> void:
+## `target` vazio = mira no jogador; `extra_spread` em graus (supressão é imprecisa).
+func _fire_shot(target: Variant = null, extra_spread: float = 0.0) -> void:
 	var from := _muzzle.global_position
-	var target := _player.get_aim_point() + Vector3(0, _rng.randf_range(-0.35, 0.45), 0)
-	var dir := (target - from).normalized()
-	var spread := lerpf(9.0, 1.0, profile.accuracy) * lerpf(1.8, 0.8, _aim_quality)
+	if target == null:
+		target = _player.get_aim_point() + Vector3(0, _rng.randf_range(-0.35, 0.45), 0)
+	var dir := ((target as Vector3) - from).normalized()
+	var spread := lerpf(9.0, 1.0, profile.accuracy) * lerpf(1.8, 0.8, _aim_quality) + extra_spread
 	spread += Vector2(_player.velocity.x, _player.velocity.z).length() * 0.6
 	if _moving:
 		spread *= 1.5
@@ -626,7 +661,7 @@ func _apply_movement(delta: float) -> void:
 
 	# Orientação: encara o jogador em combate; senão, a direção do movimento
 	var face_yaw := _look_yaw
-	if state == State.COMBAT and _player != null:
+	if state == State.COMBAT and _player != null and _flee_timer <= 0.0:
 		var look_at_pos := _player.global_position if _can_see_player else last_known_position
 		if _can_see_player or not _moving:
 			var v := look_at_pos - global_position
@@ -645,6 +680,56 @@ func _apply_movement(delta: float) -> void:
 	else:
 		_animate_walk(delta, horizontal.length())
 	_prev_yaw = rotation.y
+
+
+# =========================================================================
+# Moral, fuga e granadas
+# =========================================================================
+
+## Um companheiro caiu por perto.
+func on_ally_down() -> void:
+	if not is_dead and state == State.COMBAT:
+		_maybe_flee(0.6)
+
+
+## Foge em pânico com chance (1 - moral) * peso.
+func _maybe_flee(weight: float) -> void:
+	if profile.morale >= 1.0 or _flee_timer > 0.0 or is_dead:
+		return
+	if _rng.randf() > (1.0 - profile.morale) * weight:
+		return
+	_flee_timer = _rng.randf_range(5.0, 9.0)
+	_release_cover()
+	is_crouched = false
+	var away := global_position - (_player.global_position if _player else global_position + Vector3.FORWARD)
+	away.y = 0.0
+	away = away.normalized() if away.length() > 0.1 else -global_basis.z
+	_move_to(global_position + away * 18.0 + Vector3(_rng.randf_range(-4, 4), 0, _rng.randf_range(-4, 4)), true)
+
+
+func _tick_flee(delta: float) -> void:
+	_flee_timer -= delta
+	if _flee_timer <= 0.0:
+		_decision_timer = 0.0  # volta a lutar
+	elif not _moving:
+		_flee_timer = minf(_flee_timer, 1.5)  # chegou: recupera o fôlego e volta
+
+
+func _allies_near(pos: Vector3, radius: float) -> bool:
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node != self and (node as Node3D).global_position.distance_to(pos) < radius:
+			return true
+	return false
+
+
+func _throw_grenade(target: Vector3) -> void:
+	_grenades_left -= 1
+	_grenade_cooldown = _rng.randf_range(12.0, 18.0)
+	var g := Grenade.new()
+	get_parent().add_child(g)
+	var miss := Vector3(_rng.randf_range(-1.8, 1.8), 0, _rng.randf_range(-1.8, 1.8)) * lerpf(1.6, 0.6, profile.accuracy)
+	g.launch(global_position + Vector3.UP * 1.6, target + miss)
+	AudioManager.play_3d("radio_beep", global_position, -6.0, 30.0, 4.0)
 
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
@@ -667,6 +752,8 @@ func take_damage(info: DamageInfo) -> void:
 	var amount := info.amount
 	if not info.is_headshot and not info.is_explosion:
 		amount *= 1.0 - profile.armor
+	elif info.is_headshot and not info.is_explosion:
+		amount *= profile.headshot_resist
 	health -= amount
 	if not info.is_explosion:
 		FX.blood(self, info.hit_position, (info.hit_position - info.origin).normalized())
@@ -674,6 +761,9 @@ func take_damage(info: DamageInfo) -> void:
 	if health <= 0.0:
 		_die(info)
 		return
+	# Moral baixa: muito ferido, pode entrar em pânico e fugir
+	if health < profile.max_health * 0.45:
+		_maybe_flee(1.0)
 	_visual.rotation.x = 0.15  # tranco do impacto
 	if info.source is Player:
 		last_known_position = (info.source as Player).global_position
@@ -696,6 +786,11 @@ func _die(info: DamageInfo) -> void:
 		GameManager.add_stat("kills")
 	remove_from_group("enemies")
 	add_to_group("corpses")
+	# Companheiros próximos que viram a queda podem perder a coragem
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.global_position.distance_to(global_position) < 16.0:
+			e.on_ally_down()
 	AudioManager.play_3d("death_thud", global_position, -4.0, 30.0, 4.0)
 	if _soldier:
 		_soldier.play_death()

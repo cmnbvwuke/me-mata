@@ -229,6 +229,14 @@ Preset de exportação **"Android (demo)"** (`export_presets.cfg`): APK arm64, r
   Mecânicas: chumbos (`pellets`), queda de dano com a distância (`falloff_*`), luneta (`scope`, retícula na
   tela e balanço) e velocidade do jogador por arma (`move_speed_mult`). Nova arma = novo `.tres` com `slot`/`description`/`model_type`, entrada
   em `GameManager.WEAPONS` e o modelo em `Weapon.MODELS` (mãos e mira em `Weapon._build_model`).
+- **Tipos de inimigo** (`resources/enemies/*.tres`, campos novos em `EnemyProfile`):
+  | | Milícia do Cartel | Guarda Presidencial | Guarda Negra (elite) |
+  |---|---|---|---|
+  | Vida / proteção | 70 | 100, colete leve (-10%) | 140, colete (-35%), capacete (cabeça -30%) |
+  | Dano / precisão | 7 / baixa, rajadas 5-10 | 6 / média, rajadas 3-5 | 9 / alta, rajadas 2-3 |
+  | IA | avança atirando correndo (`run_and_gun`), sem cobertura; foge em pânico (`morale` 0,35) ferido ou vendo companheiros caírem | cobertura, flanco, fogo de supressão (1,5 s) onde viu o jogador se esconder; moral 0,75 | cobertura e flanco frequentes, supressão 2,5 s, 2 granadas (`Grenade`) contra jogador entrincheirado, nunca foge |
+  Com M4A1: milícia cai com 3 tiros no corpo, guarda com 4, elite com 7; tiro na cabeça só não derruba a elite.
+  A granada avisa ("GRANADA!" + bipe, 1,8 s), a cobertura protege e não é lançada perto de aliados.
 - **Caixas de munição de uso único**: reabastecem tudo e somem; não são gastas com a munição cheia.
 - Movimento com aceleração, sprint, agachar (com checagem de teto antes de levantar), pulo,
   balanço de câmera, aterrissagem com tremor.
