@@ -35,11 +35,12 @@ const HAND_MODEL := preload("res://assets/characters/hand.glb")
 ## Modelos das armas (convertidos no Blender: escala real, cano em -Z; ver README).
 const M4A1_MODEL := preload("res://assets/weapons/m4a1.glb")
 const P226_MODEL := preload("res://assets/weapons/p226.glb")
+## Caminhos (carregados só quando a arma é usada: a demo web não inclui todos).
 const MODELS := {
-	"m4a1": M4A1_MODEL,
-	"ak47": preload("res://assets/weapons/ak47.glb"),
-	"p226_sd": P226_MODEL,
-	"p226": preload("res://assets/weapons/p226_bare.glb"),
+	"m4a1": "res://assets/weapons/m4a1.glb",
+	"ak47": "res://assets/weapons/ak47.glb",
+	"p226_sd": "res://assets/weapons/p226.glb",
+	"p226": "res://assets/weapons/p226_bare.glb",
 }  # demais modelos em WeaponModels.IMPORTED
 ## Altura do eixo da mira do fuzil (= -ads_position.y do M4A1).
 const RIFLE_SIGHT_Y := 0.0927
@@ -296,7 +297,7 @@ func _cylinder_z(a: Vector3, b: Vector3, radius: float, mat: Material) -> void:
 
 
 func _build_imported_model(sleeve: Material, cuff: Material, glove: Material) -> void:
-	var model := (MODELS.get(data.model_type, M4A1_MODEL) as PackedScene).instantiate() as Node3D
+	var model := (load(MODELS.get(data.model_type, MODELS["m4a1"])) as PackedScene).instantiate() as Node3D
 	add_child(model)
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

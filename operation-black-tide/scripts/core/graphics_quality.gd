@@ -19,7 +19,7 @@ static func level() -> int:
 
 ## Nível sugerido para a placa de vídeo atual (usado na primeira execução).
 static func detect_default() -> int:
-	if OS.has_feature("mobile"):
+	if OS.has_feature("mobile") or OS.has_feature("web"):
 		return Level.LOW
 	match RenderingServer.get_video_adapter_type():
 		RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, RenderingDevice.DEVICE_TYPE_CPU:

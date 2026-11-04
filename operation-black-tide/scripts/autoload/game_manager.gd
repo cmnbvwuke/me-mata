@@ -45,7 +45,9 @@ const HAND_STYLES := [
 
 # --- Plataforma ----------------------------------------------------------
 ## Celular (ou teste com a feature "touch_test"): controles de toque na tela.
-var touch_mode: bool = OS.has_feature("mobile") or OS.has_feature("touch_test")
+var touch_mode: bool = OS.has_feature("mobile") or OS.has_feature("touch_test") \
+	or OS.has_feature("web_android") or OS.has_feature("web_ios") \
+	or (OS.has_feature("web") and DisplayServer.is_touchscreen_available())
 ## Demo: só a primeira missão é jogável (export com a feature "demo").
 var demo: bool = OS.has_feature("demo")
 const DEMO_MISSION := "absolute_resolve"
@@ -213,6 +215,8 @@ func save_settings() -> void:
 func weapons_for_slot(slot: String) -> Array[WeaponData]:
 	var list: Array[WeaponData] = []
 	for path in WEAPONS:
+		if not ResourceLoader.exists(path):
+			continue  # a demo web leva só parte do arsenal
 		var d := load(path) as WeaponData
 		if d and d.slot == slot:
 			list.append(d)
@@ -220,7 +224,7 @@ func weapons_for_slot(slot: String) -> Array[WeaponData]:
 
 
 func _valid_weapon(path: String, slot: String) -> String:
-	if path in WEAPONS and (load(path) as WeaponData).slot == slot:
+	if path in WEAPONS and ResourceLoader.exists(path) and (load(path) as WeaponData).slot == slot:
 		return path
 	return weapons_for_slot(slot)[0].resource_path
 
