@@ -525,9 +525,16 @@ func _body_fits(space: PhysicsDirectSpaceState3D, feet: Vector3, height: float) 
 func _find_interactable() -> Object:
 	var from := camera.global_position
 	var to := from - camera.global_basis.z * 2.6
-	var query := PhysicsRayQueryParameters3D.create(from, to, Layers.WORLD | Layers.HVT, [get_rid()])
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if hit.is_empty():
+	var exclude: Array[RID] = [get_rid()]
+	var hit := {}
+	# Paredes invisíveis (limites do mapa, beira do píer) não bloqueiam a interação
+	for i in 4:
+		var query := PhysicsRayQueryParameters3D.create(from, to, Layers.WORLD | Layers.HVT, exclude)
+		hit = get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty() or not (hit["collider"] as Object).has_meta("invisible"):
+			break
+		exclude.append(hit["rid"])
+	if hit.is_empty() or (hit["collider"] as Object).has_meta("invisible"):
 		return null
 	var c: Object = hit["collider"]
 	if c != null and c.has_method("can_interact") and c.can_interact():

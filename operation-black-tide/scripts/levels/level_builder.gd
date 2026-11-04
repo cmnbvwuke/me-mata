@@ -206,6 +206,7 @@ func collider(size: Vector3, center: Vector3, rot_y: float = 0.0) -> StaticBody3
 	var body := StaticBody3D.new()
 	body.collision_layer = Layers.WORLD
 	body.collision_mask = 0
+	body.set_meta("invisible", true)   # a interação do jogador atravessa (ver Player._find_interactable)
 	var cs := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
 	shape.size = size
