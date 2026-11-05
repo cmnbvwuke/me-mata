@@ -1,0 +1,224 @@
+{
+ "id": "prologo",
+ "disclaimer_key": "DISCLAIMER_DETAIL",
+ "scenes": [
+  {
+   "id": "p1",
+   "title": "Cena 1: Live “Tons de Cinza”",
+   "background": "live_studio",
+   "note": "Tutorial da DualSpeechBubble. Obsessão inicial: 15.",
+   "lines": [
+    {
+     "speaker": "NARRADOR",
+     "stage": "Um quarto-estúdio impecavelmente cinza. Ring light cinza. Planta artificial cinza. Uma caneca escrita “NUANCE”."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Boa noite, gente. Hoje a gente vai falar de polarização. E, como sempre: calma. Tudo tem tons de cinza.",
+     "inner": "Ele está assistindo? O Renan entrou na live? Não. Calma. Tons de cinza. Tons de cinza."
+    },
+    {
+     "speaker": "CHAT",
+     "public": "@racional_88: rainha da ponderação 👑 | @bot_do_debate: e o Renan, hein?"
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Olha, sobre o Renan eu tenho uma avaliação técnica e equilibrada: ele é um quadro relevante do Movimento.",
+     "inner": "Relevante. Essencial. Insubstituível. O homem mais focado que eu já vi. Focado tanto que nunca focou em mim. Ainda.",
+     "effects": {
+      "obsession": 3
+     }
+    },
+    {
+     "speaker": "CHAT",
+     "public": "@duvidosa_cinza: ué, por que vc sorriu?"
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Não sorri. Foi um ajuste facial epistemológico. Próxima pergunta.",
+     "inner": "ANOTA ESSE @ NA PLANILHA.",
+     "fx": "tutorial:dual_bubble"
+    }
+   ]
+  },
+  {
+   "id": "p2",
+   "title": "Cena 2: A reunião da Missão",
+   "background": "hq_meeting_room",
+   "note": "Primeira aparição do Renan. Introduz a Atenção do Renan.",
+   "lines": [
+    {
+     "speaker": "NARRADOR",
+     "stage": "Sede do Movimento. Quadro branco com um único tópico: “A MISSÃO”. Embaixo, sublinhado três vezes: “a Missão”."
+    },
+    {
+     "speaker": "RENAN",
+     "public": "Pessoal, rapidinho. A Missão não é um projeto. A Missão é a Missão. Alguma dúvida?"
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Só uma observação metodológica: concordo, com nuance.",
+     "inner": "Ele olhou pra mim. Olhou pra todo mundo, mas eu estava em “todo mundo”. Logo, olhou pra mim. É lógica formal.",
+     "effects": {
+      "obsession": 2
+     }
+    },
+    {
+     "speaker": "JULIA",
+     "public": "Renan, fiz um gráfico de engajamento da semana. Subimos 4%."
+    },
+    {
+     "speaker": "RENAN",
+     "public": "Ótimo trabalho, Júlia. Dados são fundamentais para a Missão.",
+     "fx": "renan_attention:julia_planilha:+5"
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Gráfico lindo, Júlia! Super didático!",
+     "inner": "Fundamental. Ele disse FUNDAMENTAL. Pra um gráfico de pizza. Eu tenho um doutorado em pizza, Júlia. Metafórico.",
+     "effects": {
+      "obsession": 5
+     }
+    }
+   ]
+  },
+  {
+   "id": "p3",
+   "title": "Cena 3: A Proposta de Convergência",
+   "background": "hq_corridor",
+   "note": "A rejeição institucional. Primeiro salto grande de Obsessão.",
+   "lines": [
+    {
+     "speaker": "NARRADOR",
+     "stage": "Corredor. Espectro segura um pen drive com uma apresentação de 34 slides: “Proposta de Convergência Afetivo-Institucional”."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Renan, tem dois minutinhos? Preparei uma… reflexão. Tem slides.",
+     "inner": "Slide 1: Introdução. Slide 2: Nós. Slides 3 a 34: Nós, com gráficos."
+    },
+    {
+     "speaker": "RENAN",
+     "public": "Claro. Mas antes: isso é pauta da Missão?"
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Tangencialmente. É uma pauta de… convergência.",
+     "inner": "Tangencialmente total. Convergência total."
+    },
+    {
+     "speaker": "NARRADOR",
+     "stage": "Ela termina a apresentação. Silêncio. Um ar-condicionado institucional zumbe ao fundo."
+    },
+    {
+     "speaker": "RENAN",
+     "public": "Agradeço muito o carinho e a dedicação. De verdade. Mas eu tenho um compromisso exclusivo com a Missão. Não misturo o pessoal com o institucional."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Claro, Renan! Super entendo. A Missão primeiro.",
+     "inner": "A Missão primeiro. Eu segundo. Todo o resto… em lugar nenhum.",
+     "fx": "screen_crack",
+     "effects": {
+      "obsession": 15
+     }
+    },
+    {
+     "speaker": "RENAN",
+     "public": "Fico feliz que você entenda. Bom trabalho na live de ontem, aliás."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Obrigada!",
+     "inner": "ELE VIU A LIVE. Rejeição com elogio. Isso é a dialética. Tese: não. Antítese: viu a live. Síntese: AINDA HÁ ESPERANÇA.",
+     "fx": "petals",
+     "effects": {
+      "obsession": 5
+     }
+    }
+   ]
+  },
+  {
+   "id": "p4",
+   "title": "Cena 4: Áudio de 14 minutos",
+   "background": "espectro_bedroom_night",
+   "note": "Tutorial do Desabafo. Primeira gravação no Arquivo Wellington.",
+   "lines": [
+    {
+     "speaker": "NARRADOR",
+     "stage": "Madrugada. Ela abre o contato “Teacher Wellington 🍎”. Última mensagem dele: “How are you, dear?” (há 2 anos)."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Teacher, desculpa a hora. Posso te mandar um áudio rapidinho?",
+     "inner": "Rapidinho = 14 minutos e 37 segundos. Com introdução, desenvolvimento e anexos."
+    },
+    {
+     "speaker": "NARRADOR",
+     "stage": "🎙️ Áudio 1/9 — 14:37"
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "…e aí ele disse “compromisso exclusivo com a Missão”. EXCLUSIVO, Teacher. Que tipo de pessoa namora uma Missão? Enfim. Eu tô ótima. Super racional."
+    },
+    {
+     "speaker": "WELLINGTON",
+     "public": "Oh, dear. That’s… a lot. Só uma correção: no áudio 4 você disse “I am very fine”. É “I’m fine”. Continue."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "public": "Você é a única pessoa de fora com quem eu posso falar disso.",
+     "inner": "Ele não é do Movimento. Não conhece ninguém. É o confidente perfeito. Seguro. Inofensivo. Analógico."
+    },
+    {
+     "speaker": "WELLINGTON",
+     "public": "Of course. Fica tranquila. Isso fica só entre nós.",
+     "stage": "Close na mesa dele: três gravadores ligados. Um deles tem uma etiqueta: “BACKUP DO BACKUP”.",
+     "fx": "archive_add:p_audio_01",
+     "effects": {
+      "obsession": -12
+     }
+    },
+    {
+     "speaker": "NARRADOR",
+     "stage": "📼 Nova entrada no Arquivo Wellington. (Todas as transcrições do Arquivo são fictícias.)",
+     "fx": "tutorial:archive"
+    }
+   ]
+  },
+  {
+   "id": "p5",
+   "title": "Cena 5: Monólogo — “Tons de Cinza”",
+   "background": "monologue_stage",
+   "note": "Cutscene de fim de prólogo. Libera a Semana 1 e a rival Júlia Planilha.",
+   "lines": [
+    {
+     "speaker": "NARRADOR",
+     "stage": "O quarto se desfaz. Ela está sozinha num palco. Um holofote cinza. Pétalas cinza caem. Violinos."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "inner": "Eu sou uma pessoa racional. Eu defendo o diálogo. Eu acredito em tons de cinza."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "inner": "E é por isso que eu vou analisar, com rigor científico e honestidade intelectual, cada pessoa que chegar perto dele."
+    },
+    {
+     "speaker": "ESPECTRO",
+     "inner": "Júlia Planilha. Gráfico de pizza. Fundamental.",
+     "fx": "rival_reveal:julia_planilha"
+    },
+    {
+     "speaker": "ESPECTRO",
+     "inner": "Fase 1: observação. Fase 2: nuance. Fase 3… a Missão vai ter que me agradecer.",
+     "fx": "obsession_meter_reveal"
+    },
+    {
+     "speaker": "NARRADOR",
+     "stage": "🎭 SEMANA 1 — “Dados São Fundamentais”"
+    }
+   ]
+  }
+ ]
+}

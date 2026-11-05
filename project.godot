@@ -1,0 +1,25 @@
+; Espectro Simulator — Godot 4.x
+config_version=5
+
+[application]
+config/name="Espectro Simulator"
+config/description="Jogo de ficção satírica e dark comedy."
+run/main_scene="res://scenes/boot/fiction_disclaimer.tscn"
+config/features=PackedStringArray("4.3")
+
+[autoload]
+EventBus="*res://scripts/autoload/event_bus.gd"
+GameState="*res://scripts/autoload/game_state.gd"
+ObsessionSystem="*res://scripts/autoload/obsession_system.gd"
+ReputationSystem="*res://scripts/autoload/reputation_system.gd"
+ConfidantSystem="*res://scripts/autoload/confidant_system.gd"
+EndingEvaluator="*res://scripts/autoload/ending_evaluator.gd"
+SaveManager="*res://scripts/autoload/save_manager.gd"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[internationalization]
+locale/translations=PackedStringArray("res://localization/strings.pt_BR.translation")
