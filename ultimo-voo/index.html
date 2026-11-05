@@ -1426,7 +1426,7 @@ Object.assign(TYPES, {
   } },
 });
 
-function failMission(title, text) { if (!state.customEnd) state.customEnd = { title, text }; }
+function failMission(title, text, news) { if (!state.customEnd) state.customEnd = { title, text, news }; }
 function hideTrees(pred) { // tira árvores de onde passa rio ou trilho (e da colisão)
   if (!treeMesh) return;
   const m4 = new THREE.Matrix4(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -1856,12 +1856,61 @@ function updateVIPConvoy(dt) {
   }
 }
 
+// ---------- proteger o general ----------
+const GENERAL_T = 120;   // o atirador dispara 2:00 depois do início
+function spawnGeneral() { // general aliado visita a praça; atirador inimigo escondido num telhado
+  const X = state.ex, PX = PLAZA.x, PZ = PLAZA.z, k = new Kit();
+  k.add(B(6, .5, 4), 0x6b5a44, PX, .25, PZ);                          // tablado
+  k.add(B(.9, 1.1, .6), 0x2e2e2c, PX, 1.05, PZ + 1.2);                 // púlpito
+  addMissionKit(k);
+  const G = makePerson('general'); G.group.position.set(PX, .5, PZ + .6); G.heading = 0; people.push(G); X.general = G;
+  [[-2.2, .5, PZ - 1], [2.2, .5, PZ - 1]].forEach(([x, y, z]) => { const p = makePerson('ally'); p.group.position.set(PX + x, y, z); p.heading = 0; people.push(p); });
+  for (let i = 0; i < 16; i++) { // moradores assistindo
+    const p = makePerson('civil');
+    p.group.position.set(PX - 12 + (i % 8) * 3.4 + (Math.random() - .5), 0, PZ + 10 + Math.floor(i / 8) * 3 + Math.random());
+    p.heading = Math.PI + (Math.random() - .5) * .5; people.push(p);
+  }
+  // atirador num prédio alto entre 100 e 320 m da praça
+  const ok = b => !b.mission && b.h > 10 && b.maxX - b.minX > 6 && b.maxZ - b.minZ > 6 && Math.hypot((b.minX + b.maxX) / 2 - PX, (b.minZ + b.maxZ) / 2 - PZ) > 100 && Math.hypot((b.minX + b.maxX) / 2 - PX, (b.minZ + b.maxZ) / 2 - PZ) < 320;
+  let cands = buildings.filter(ok).sort((a, b) => b.h - a.h).slice(0, 8);
+  if (!cands.length) cands = buildings.filter(b => !b.mission && b.h > 5).slice(0, 8);
+  const b = pick(cands), cx = (b.minX + b.maxX) / 2, cz = (b.minZ + b.maxZ) / 2, y = b.h;
+  const sn = makePerson('soldier'); sn.group.position.set(cx, y, cz); sn.heading = Math.atan2(PX - cx, PZ - cz);
+  Object.assign(sn, { objective: true, label: 'ATIRADOR', range: 230, danger: 3.2, hidden: true }); people.push(sn); X.sniper = sn;
+  const sp = makePerson('soldier'); sp.group.position.set(cx - 1, y, cz - 1); sp.heading = sn.heading; sp.range = 150; people.push(sp);
+  const kk = new Kit(); sandRing(kk, cx, cz, 2.6, sn.heading + Math.PI / 2 - 1.2, sn.heading + Math.PI / 2 + 1.2, 5, y); addMissionKit(kk);
+  X.glintT = 8; X.revealT = 0;
+}
+function updateGeneral(dt) {
+  const X = state.ex, sn = X.sniper, G = X.general;
+  if (!sn || !G) return;
+  if (sn.alive) {
+    X.glintT -= dt;
+    if (X.glintT <= 0) { // reflexo da luneta revela a posição por alguns segundos
+      X.glintT = 12; X.revealT = 3;
+      const p = sn.group.position.clone(); p.y += 1.5;
+      puff({ pos: p, vel: tmpV.set(0, 0, 0), life: .5, s0: 1.2, s1: 3, op: 1, add: true, color: 0xffffff });
+    }
+    X.revealT = Math.max(0, X.revealT - dt);
+    sn.hidden = !(X.revealT > 0 || (state.phase === 'fly' && sn.group.position.distanceTo(d.pos) < 250));
+    sn.heading = Math.atan2(G.group.position.x - sn.group.position.x, G.group.position.z - sn.group.position.z);
+  } else sn.hidden = false;
+  if (sn.alive && G.alive && state.mt >= GENERAL_T) {
+    tracerFrom(sn.group.position, G.group.position);
+    audio.pop(sn.group.position.distanceTo(d.pos) * .5);
+    killPerson(G);
+    for (const p of people) if (p.alive && p.kind === 'civil' && p.group.position.distanceTo(G.group.position) < 60) p.panic = 8;
+    failMission('GENERAL ATINGIDO', 'O atirador disparou antes de ser neutralizado. Procure o reflexo da luneta nos telhados ao redor da praça e chegue escondido atrás de outros prédios.',
+      { head: 'General aliado é atingido por atirador', extra: 'O disparo partiu do telhado de um prédio perto da praça', sub: 'O atirador não foi localizado a tempo' });
+  }
+}
+
 Object.assign(SPAWN, { atirador: spawnSniper, ponte: spawnBridge, bunker: spawnBunker, trem: spawnTrain, noturno: spawnSupply, barcos: spawnBoats,
   vila: spawnVillage, evacuacao: spawnEvac, cacadrones: spawnUAVs, cegar: spawnBlind, resgate: spawnRescue, reconhecimento: spawnRecon,
-  alvonoite: () => spawnHVT(), mercado: spawnMarket, comboiovip: spawnVIPConvoy });
+  alvonoite: () => spawnHVT(), mercado: spawnMarket, comboiovip: spawnVIPConvoy, general: spawnGeneral });
 const MUPD = { ponte: updateBridge, bunker: updateBunker, trem: updateTrain, barcos: updateBoats, vila: updateVillage, evacuacao: updateEvac,
   cacadrones: updateUAVs, cegar: updateBlind, resgate: updateRescue, reconhecimento: updateRecon,
-  mercado: updateMarket, comboiovip: updateVIPConvoy };
+  mercado: updateMarket, comboiovip: updateVIPConvoy, general: updateGeneral };
 MISSIONS.push(
   { id: 'atirador', name: 'Atirador no telhado', news: 'Atirador de elite é neutralizado no alto de um prédio', extra: 'O ataque atingiu só a laje, sem ferir quem passava na rua',
     sub: '1 atirador · 2 drones', drones: 2, targets: 1, fire: true,
@@ -1940,6 +1989,11 @@ MISSIONS.push(
     brief: 'Três picapes idênticas e armadas saem do norte em 20 s, descem juntas pela rua central e se separam no cruzamento. Só uma leva o comandante. Mantenha cada carro no centro da mira, a menos de 280 m, por 1 s para identificá-lo. Se o carro certo sair da cidade, a missão falha.',
     win: u => `O carro do comandante foi destruído com ${u} de ${TOTAL_DRONES} drones.`,
     fail: 'Os drones acabaram e o comandante escapou. Identifique os carros antes de atacar: os chamarizes também atiram.' },
+  { id: 'general', name: 'Proteger o general', news: 'Atirador é neutralizado antes de atingir general aliado', extra: 'O general discursava na praça quando o drone atingiu o telhado',
+    sub: '1 atirador · 3 drones · 2:00', drones: 3, targets: 1, fire: true,
+    brief: 'Um general aliado (marcação azul GENERAL) discursa na praça ao norte. Um atirador inimigo está escondido no telhado de um prédio alto perto dali e vai disparar em 2:00. Ele só aparece no OSD a menos de 250 m ou quando o reflexo da luneta brilha, a cada 12 s. Neutralize o atirador sem atingir o general nem os moradores.',
+    win: u => `O atirador foi neutralizado com ${u} de ${TOTAL_DRONES} drones. O general saiu ileso.`,
+    fail: 'Os drones acabaram e o atirador continua no telhado. Ele vigia a praça: chegue por trás dos prédios.' },
 );
 const STATUS = {
   ponte: () => state.ex.broken ? 'PONTE CORTADA · DESTRUA MAIS UM TRECHO' : 'CAMINHÕES ATRAVESSANDO A PONTE',
@@ -1952,6 +2006,7 @@ const STATUS = {
   resgate: () => state.ex.done ? 'PILOTO A BORDO' : `RESGATE EM ${fmtT(Math.max(0, 150 - state.mt))}`,
   mercado: () => { const L = state.hvt; if (!L || !L.alive) return ''; if (L.inCar) return `ALVO EM FUGA · ${fmtT(Math.max(0, 25 - state.escapeT))}`; const c = state.car.group.position; return `ALVO A ${Math.round(Math.hypot(c.x - L.group.position.x, c.z - L.group.position.z))} m DO CARRO`; },
   comboiovip: () => state.mt < 20 ? `COMBOIO PARTE EM ${fmtT(Math.ceil(20 - state.mt))}` : state.ex.found ? 'CARRO DO ALVO IDENTIFICADO' : `IDENTIFIQUE O CARRO · ${state.ex.checked || 0}/3 VERIFICADOS`,
+  general: () => state.ex.general && !state.ex.general.alive ? 'GENERAL ATINGIDO' : state.ex.sniper && !state.ex.sniper.alive ? 'GENERAL EM SEGURANÇA' : `ATIRADOR DISPARA EM ${fmtT(Math.max(0, GENERAL_T - state.mt))}`,
   reconhecimento: () => `${d.unarmed ? 'RECONHECIMENTO · ' : ''}MARCADOS ${state.ex.marked || 0}/${TOTAL_TARGETS}`,
 };
 MISSIONS.forEach(m => { if (STATUS[m.id]) m.status = STATUS[m.id]; });
@@ -2007,9 +2062,9 @@ function makePerson(kind) {
   const soldier = kind === 'soldier';
   const uni = matOlive.color.getHex(), uniD = shade(uni, .75);
   const skin = pick(SKIN), hair = pick(HAIR);
-  const leader = kind === 'leader', civ = kind === 'civil';
+  const leader = kind === 'leader', civ = kind === 'civil', ally = kind === 'general' || kind === 'ally';
   const suit = kind === 'pilot' ? 0xc8702c : 0;   // macacão de voo laranja
-  const shirt = soldier ? uni : leader ? 0x2c2f2a : suit || pick(CIV_TOP), pants = soldier ? uni : leader ? 0x3a3c38 : suit || pick(CIV_BOT), shoe = soldier || leader || suit ? 0x2b2620 : pick(SHOES);
+  const shirt = soldier ? uni : leader ? 0x2c2f2a : ally ? 0x3d4f63 : suit || pick(CIV_TOP), pants = soldier ? uni : leader ? 0x3a3c38 : ally ? 0x34404f : suit || pick(CIV_BOT), shoe = soldier || leader || ally || suit ? 0x2b2620 : pick(SHOES);
   const female = civ && Math.random() < .45, skirt = female && Math.random() < .5, kid = civ && Math.random() < .14;
   const shortSleeve = civ && Math.random() < .5;
   const g = new THREE.Group();
@@ -2037,7 +2092,8 @@ function makePerson(kind) {
       b.add(Cy(.13, .135, .09, 12), 0x1c1d1a, 0, 1.84, 0);                    // boné
       b.add(B(.2, .03, .12), 0x1c1d1a, 0, 1.81, .15);
       b.add(B(.47, .3, .27), 0x4a4d45, 0, 1.38, 0);                            // jaqueta
-    } else if (Math.random() < .3) b.add(B(.1, .3, .26), pick(BAGS), .3, 1.02, 0);  // bolsa
+    } else if (ally) b.add(Cy(.135, .135, .06, 12), kind === 'general' ? 0x8a1c1c : 0x2c3540, 0, 1.84, 0);   // boina
+    else if (Math.random() < .3) b.add(B(.1, .3, .26), pick(BAGS), .3, 1.02, 0);  // bolsa
     else if (Math.random() < .2) b.add(B(.3, .36, .14), pick(BAGS), 0, 1.3, -.2); // mochila
   }
   const body = b.mesh(matVC);
@@ -2568,19 +2624,21 @@ function detonate(point, reason) {
     tmpV.copy(v.group.position); tmpV.y += 1.2;
     if (!v.armored && tmpV.distanceTo(point) < (v.hitR || BLAST_R)) hits.push(v);
   }
-  const soldiers = [], civs = [];
+  const soldiers = [], civs = [], allies = [];
   let leaderHit = false;
   for (const p of people) {
     if (!p.alive || p.inCar) continue;
     tmpV.copy(p.group.position); tmpV.y += 1;
     const dd = tmpV.distanceTo(point);
-    if (dd < BLAST_R) { if (p.kind === 'leader') leaderHit = true; else (p.kind === 'soldier' ? soldiers : civs).push(p); }
+    if (dd < BLAST_R) { if (p.kind === 'leader') leaderHit = true; else if (p.kind === 'general' || p.kind === 'ally') allies.push(p); else (p.kind === 'soldier' ? soldiers : civs).push(p); }
     else if (p.kind === 'civil' && dd < 90) p.panic = 6 + Math.random() * 4;
   }
   if (state.car && (state.car.carrier || state.car.hvtCar) && hits.includes(state.car)) leaderHit = true;
   explode(point, onGround, hits.length > 0 || soldiers.length > 0 || leaderHit);
   hits.forEach(destroyVehicle);
-  soldiers.forEach(killPerson); civs.forEach(killPerson);
+  soldiers.forEach(killPerson); civs.forEach(killPerson); allies.forEach(killPerson);
+  if (allies.length) failMission(allies.some(p => p.kind === 'general') ? 'GENERAL ATINGIDO' : 'ALIADO ATINGIDO', 'A explosão do seu drone atingiu o grupo do general. Ataque o telhado do atirador, longe da praça.',
+    { head: 'Ataque com drone atinge comitiva de general aliado', extra: 'A explosão aconteceu perto do palanque onde o general discursava', sub: 'Investigação apura falha na operação' });
   if (leaderHit) { if (state.hvt.inCar) state.hvt.alive = false; else killPerson(state.hvt); }
   const objP = soldiers.filter(p => p.objective);
   const civVeh = hits.filter(h => h.civilian).reduce((s, h) => s + (h.passengers || 1), 0);   // ônibus, helicóptero de resgate
@@ -2785,8 +2843,8 @@ function drawFlyHUD(blink) {
   // pessoas: comandante e infantaria (alvos) e civis (não atacar)
   const focal = (H / 2) / Math.tan(camera.fov * Math.PI / 360);
   for (const p of people) {
-    if (!p.alive || p.inCar) continue;
-    const isL = p.kind === 'leader' || p.objective, pilot = p.kind === 'pilot';
+    if (!p.alive || p.inCar || p.hidden) continue;
+    const isL = p.kind === 'leader' || p.objective, pilot = p.kind === 'pilot' || p.kind === 'general' || p.kind === 'ally';
     tmpV.copy(p.group.position); tmpV.y += 1;
     const dist = tmpV.distanceTo(d.pos);
     if (dist > (isL || pilot ? 1000 : 260)) continue;
@@ -2798,7 +2856,7 @@ function drawFlyHUD(blink) {
     hc.strokeStyle = 'rgba(0,0,0,.6)'; hc.lineWidth = 3; hc.strokeRect(s.x - sz, s.y - sz, sz * 2, sz * 2);
     hc.strokeStyle = col; hc.lineWidth = isL ? 2 : 1.3; hc.strokeRect(s.x - sz, s.y - sz, sz * 2, sz * 2);
     if (isL) txt(`${p.kind === 'leader' ? 'ALVO · COMANDANTE' : p.label || 'ALVO'} ${Math.round(dist)}m`, s.x, s.y - sz - 10, 'center', col, fs - 2);
-    else if (pilot) txt(`PILOTO ${Math.round(dist)}m`, s.x, s.y - sz - 10, 'center', col, fs - 2);
+    else if (pilot) txt(`${p.kind === 'pilot' ? 'PILOTO' : p.kind === 'general' ? 'GENERAL' : 'ALIADO'} ${Math.round(dist)}m`, s.x, s.y - sz - 10, 'center', col, fs - 2);
     else if (dist < 140) txt(civ ? 'CIVIL' : 'INF', s.x, s.y - sz - 8, 'center', col, fs - 4);
   }
   if (nearest && !onScreen) {
@@ -2893,8 +2951,8 @@ function drawMinimap(small) {
     hc.fillRect(mx(v.group.position.x) - 2.5, mz(v.group.position.z) - 2.5, 5, 5);
   }
   for (const p of people) {
-    if (!p.alive || p.inCar || !(p.objective || p.kind === 'pilot')) continue;
-    hc.fillStyle = p.kind === 'pilot' ? '#7fd0ff' : '#ffb22e';
+    if (!p.alive || p.inCar || p.hidden || !(p.objective || p.kind === 'pilot' || p.kind === 'general')) continue;
+    hc.fillStyle = p.kind === 'pilot' || p.kind === 'general' ? '#7fd0ff' : '#ffb22e';
     hc.fillRect(mx(p.group.position.x) - 1.5, mz(p.group.position.z) - 1.5, 3, 3);
   }
   if (state.ex.river) { hc.fillStyle = 'rgba(90,150,180,.35)'; hc.fillRect(mx(RIVER.x - RIVER.w / 2), mz(-900), RIVER.w * sc, 1900 * sc); }
@@ -3022,7 +3080,7 @@ function nearestTarget() {
   }
   let best = null, bd = Infinity;
   for (const v of vehicles) { if (!v.alive || !v.objective || v.hidden || v.armored) continue; const dd = v.group.position.distanceToSquared(d.pos); if (dd < bd) { bd = dd; best = v; } }
-  for (const p of people) { if (!p.alive || !p.objective) continue; const dd = p.group.position.distanceToSquared(d.pos); if (dd < bd) { bd = dd; best = p; } }
+  for (const p of people) { if (!p.alive || !p.objective || p.hidden) continue; const dd = p.group.position.distanceToSquared(d.pos); if (dd < bd) { bd = dd; best = p; } }
   return best;
 }
 function drawNoise(amount) {
@@ -3161,13 +3219,18 @@ function placeholderShot() { // quando não há foto: tela de sinal da emissora
   return c.toDataURL('image/jpeg', .8);
 }
 let newsTimer = null;
-function showNews(ms, used) {
+function showNews(ms, used, bad) { // bad: manchete de missão fracassada
   const shots = state.shots.length ? state.shots.slice() : [placeholderShot()];
   const imgs = [$('#newsA'), $('#newsB')];
   imgs[0].src = shots[0]; imgs[0].classList.add('on'); imgs[1].classList.remove('on');
-  $('#newsHead').textContent = `${ms.news} ${currentMap.where}`;
-  $('#newsSub').textContent = `${used} drone(s) usado(s) · ${state.inf} combatente(s) atingido(s) · nenhum civil ferido`;
-  const items = [
+  $('#newsHead').textContent = `${bad ? bad.head : ms.news} ${currentMap.where}`;
+  $('#newsSub').textContent = bad ? bad.sub : `${used} drone(s) usado(s) · ${state.inf} combatente(s) atingido(s) · nenhum civil ferido`;
+  const items = bad ? [
+    `${bad.head.toUpperCase()} ${currentMap.where.toUpperCase()}`,
+    bad.extra,
+    `Comando aliado abre investigação sobre a segurança do evento`,
+    `${used} drone(s) FPV foram lançados durante a operação`,
+  ] : [
     `${ms.news.toUpperCase()} ${currentMap.where.toUpperCase()}`,
     ms.extra,
     `A operação durou ${fmtT(state.time)} de voo, com ${used} drone(s) FPV`,
@@ -3211,7 +3274,7 @@ function endMission(mode) {
   $('#sDrones').textContent = `${used}/${TOTAL_DRONES}`;
   $('#sTime').textContent = fmtT(state.time);
   $('#sSpeed').textContent = `${Math.round(state.maxSpeed)}`;
-  if (win) showNews(ms, used); else { clearInterval(newsTimer); $('#news').hidden = true; }
+  if (win) showNews(ms, used); else if (custom && custom.news) showNews(ms, used, custom.news); else { clearInterval(newsTimer); $('#news').hidden = true; }
   $('#end').hidden = false;
   $('#againBtn').focus();
 }
