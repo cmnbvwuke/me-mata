@@ -245,7 +245,7 @@ const MISSIONS = [
     win: u => `A coluna foi neutralizada com ${u} de ${TOTAL_DRONES} drones. ${u <= TOTAL_TARGETS ? 'Nenhum drone desperdiçado.' : `${u - TOTAL_TARGETS} drone(s) erraram o alvo.`}`,
     fail: 'Os drones acabaram com veículos da coluna ainda em movimento. Aproxime-se baixo, entre os prédios, e mergulhe sobre o alvo nos últimos 100 m.' },
   { id: 'alvo', name: 'Alvo de alto valor', news: 'Comandante da Frente Ocre é morto em ataque com drone',
-    extra: 'O ataque aconteceu durante um comício da milícia na praça central', sub: '1 comandante · 3 drones · 1:00', drones: 3, targets: 1, speech: 60, fire: true,
+    extra: 'O ataque aconteceu durante um comício da milícia na praça central', sub: '1 comandante · 3 drones · 1:00', drones: 3, targets: 1, speech: 60, fire: true, hvt: true,
     brief: 'O comandante de uma milícia fictícia, a Frente Ocre, discursa num palanque na praça ao norte, cercado de guarda-costas e combatentes. O discurso dura só 1:00; depois ele vai para o carro e foge, então decole rápido e vá direto para a praça. Os combatentes atiram em drones que passam baixo e perto. Há civis assistindo atrás da plateia.',
     win: u => `O comandante foi neutralizado com ${u} de ${TOTAL_DRONES} drones, sem atingir civis.`,
     fail: 'Os drones acabaram e o comandante continua vivo. Chegue baixo pelo sul, entre os prédios, e mergulhe direto sobre o palanque.',
@@ -1773,10 +1773,95 @@ function updateRecon(dt) {
   }
 }
 
+// ---------- novas missões de alvo de alto valor ----------
+const MARKET_Z = -2 * STEP;   // rua do mercado (z = -240)
+function spawnMarket() { // comandante atravessa a pé uma rua de feira cheia de gente
+  const X = state.ex, k = new Kit();
+  const awn = [0xb8452f, 0x2f6a8a, 0xd1a23a, 0x4f7a3a, 0x8a4f7a];
+  for (let x = -224; x <= 92; x += 8) {
+    if (Math.abs(x + 120) < 12 || Math.abs(x) < 12) continue;   // cruzamentos livres
+    for (const side of [-1, 1]) {
+      const z = MARKET_Z + side * 5.2;
+      k.add(B(3, .9, 1.6), 0x6b5a44, x, .45, z);                               // bancada
+      k.add(B(2.6, .25, 1.2), pick([0xc9a24a, 0x8fae4a, 0xc0603a, 0xd9cfb0]), x, 1.02, z);   // mercadoria
+      for (const sx of [-1.4, 1.4]) k.add(B(.08, 2.3, .08), 0x3b3b38, x + sx, 1.15, z - side * .7);
+      k.add(B(3.3, .06, 2.1), pick(awn), x, 2.35, z - side * .3, side * .12);  // toldo
+    }
+  }
+  addMissionKit(k);
+  // carro de fuga esperando no fim da feira, no cruzamento leste
+  const car = parkedVehicle('pickup', 0, 0, 0, { node: [1, -2], p: new THREE.Vector2(STEP, MARKET_Z) });
+  car.name = 'CARRO DO ALVO';
+  chooseDir(car, true); car.heading = Math.atan2(DIRS[car.dir][0], DIRS[car.dir][1]); placeVehicle(car, 1);
+  state.car = car;
+  const cp = car.group.position;
+  // comandante e guarda-costas
+  const L = makePerson('leader'); L.group.position.set(-236, 0, MARKET_Z); L.heading = Math.PI / 2; people.push(L); state.hvt = L;
+  Object.assign(L, { walk: 1.9, board: car, exit: [[-180, 0, MARKET_Z + .5], [-60, 0, MARKET_Z - .5], [60, 0, MARKET_Z + .5], [104, 0, MARKET_Z], [cp.x - 1.4, 0, cp.z]] });
+  for (let i = 0; i < 4; i++) {
+    const p = makePerson('soldier'); p.escort = i / 4 * Math.PI * 2 + .4;
+    p.group.position.set(-236 + Math.cos(p.escort) * 1.7, 0, MARKET_Z + Math.sin(p.escort) * 1.7); people.push(p);
+  }
+  parkedVehicle('pickup', -258, MARKET_Z - 3.4, Math.PI / 2, { gun: true });
+  guards(cp.x + 6, cp.z - 10, 3, 3);
+  // fregueses andando entre as bancas, em grupos com espaços vazios entre eles
+  for (const cx of [-205, -160, -90, -45, 35, 78]) {
+    for (let i = 0; i < 5; i++) {
+      const p = makePerson('civil'), x0 = cx - 9 + Math.random() * 4, x1 = cx + 5 + Math.random() * 4;
+      const loop = [[x0, MARKET_Z - 3], [x1, MARKET_Z - 3], [x1, MARKET_Z + 3], [x0, MARKET_Z + 3]];
+      putOnLoop(p, loop, ri(0, 3), Math.random());
+      p.speed = .7 + Math.random() * .5; p.idle = Math.random() * 3; people.push(p);
+    }
+  }
+  X.market = true;
+}
+function updateMarket(dt) {
+  const L = state.hvt;
+  if (!L || !L.alive || !L.inCar) return;
+  state.escapeT += dt;
+  if (state.escapeT > 25) failMission('ALVO ESCAPOU', 'O comandante entrou no carro e saiu da cidade. Ataque nos trechos da feira sem fregueses por perto, ou destrua o carro antes de ele chegar.');
+}
+const VIP_ROUTES = [ // todos descem juntos pela rua x = 0 e se separam no cruzamento z = -240
+  [[0, -620], [0, -240], [-640, -240]],
+  [[0, -650], [0, -240], [640, -240]],
+  [[0, -680], [0, -240], [0, 120], [-640, 120]],
+];
+function spawnVIPConvoy() { // três carros iguais; só um leva o comandante
+  const X = state.ex, real = ri(0, 2);
+  X.found = false; X.checked = 0; X.markProg = 0;
+  X.cars = VIP_ROUTES.map((r, i) => {
+    const v = routeVehicle('pickup', r.map(p => p.slice()), 9, { gun: true, halt: true, idT: 0, name: 'CARRO ?' });
+    if (i === real) { v.hvtCar = true; v.onEnd = () => failMission('ALVO ESCAPOU', 'O carro do comandante saiu da cidade. Identifique os carros cedo, ainda juntos na rua norte, antes que eles se separem.'); }
+    return v;
+  });
+  const L = makePerson('leader'); scene.remove(L.group); L.inCar = true; state.hvt = L; state.car = X.cars[real];
+  guards(0, -700, 4, 5);
+}
+function updateVIPConvoy(dt) {
+  const X = state.ex; X.markProg = 0;
+  if (state.mt > 20) for (const v of X.cars) v.halt = false;   // o comboio parte depois de 20 s
+  if (state.phase !== 'fly' || X.found) return;
+  for (const v of X.cars) {
+    if (!v.alive || v.idDone) continue;
+    tmpV.copy(v.group.position); tmpV.y += 1.4;
+    const dist = tmpV.distanceTo(d.pos), s = toScreen(tmpV, camera);
+    const inSight = s.z < 1 && Math.abs(s.nx) < .22 && Math.abs(s.ny) < .22 && dist < 280;
+    v.idT = inSight ? v.idT + dt : Math.max(0, v.idT - dt * .5);
+    X.markProg = Math.max(X.markProg, Math.min(1, v.idT));
+    if (v.idT >= 1) {
+      v.idDone = true; X.checked++;
+      if (v.hvtCar) { X.found = true; v.carrier = true; v.name = 'CARRO DO ALVO'; showBanner('ALVO IDENTIFICADO', 'O comandante está neste carro', 2, 'good'); }
+      else { v.name = 'CHAMARIZ'; showBanner('CHAMARIZ', 'O comandante não está neste carro', 1.6, 'alert'); }
+    }
+  }
+}
+
 Object.assign(SPAWN, { atirador: spawnSniper, ponte: spawnBridge, bunker: spawnBunker, trem: spawnTrain, noturno: spawnSupply, barcos: spawnBoats,
-  vila: spawnVillage, evacuacao: spawnEvac, cacadrones: spawnUAVs, cegar: spawnBlind, resgate: spawnRescue, reconhecimento: spawnRecon });
+  vila: spawnVillage, evacuacao: spawnEvac, cacadrones: spawnUAVs, cegar: spawnBlind, resgate: spawnRescue, reconhecimento: spawnRecon,
+  alvonoite: () => spawnHVT(), mercado: spawnMarket, comboiovip: spawnVIPConvoy });
 const MUPD = { ponte: updateBridge, bunker: updateBunker, trem: updateTrain, barcos: updateBoats, vila: updateVillage, evacuacao: updateEvac,
-  cacadrones: updateUAVs, cegar: updateBlind, resgate: updateRescue, reconhecimento: updateRecon };
+  cacadrones: updateUAVs, cegar: updateBlind, resgate: updateRescue, reconhecimento: updateRecon,
+  mercado: updateMarket, comboiovip: updateVIPConvoy };
 MISSIONS.push(
   { id: 'atirador', name: 'Atirador no telhado', news: 'Atirador de elite é neutralizado no alto de um prédio', extra: 'O ataque atingiu só a laje, sem ferir quem passava na rua',
     sub: '1 atirador · 2 drones', drones: 2, targets: 1, fire: true,
@@ -1839,6 +1924,22 @@ MISSIONS.push(
     brief: 'Três alvos (um lançador, um posto de comando e um obuseiro) estão parados em ruas da cidade, misturados a caminhões comuns, e não aparecem no OSD. O primeiro drone é de reconhecimento, sem ogiva: mantenha cada alvo no centro da mira, a menos de 320 m, por 1,5 s para marcá-lo. Os drones seguintes enxergam os alvos marcados.',
     win: u => `Os três alvos foram destruídos com ${u} drones.`,
     fail: 'Os drones acabaram com alvos de pé. Marque todos no voo de reconhecimento antes de atacar.' },
+  { id: 'alvonoite', name: 'Alvo de alto valor · noite', news: 'Comandante da Frente Ocre é atingido em comício noturno', extra: 'O ataque aconteceu à luz de tochas, na praça central',
+    sub: '1 comandante · noite · 3 drones · 1:15', drones: 3, targets: 1, speech: 75, fire: true, hvt: true, night: true,
+    brief: 'O comandante da Frente Ocre (milícia fictícia) volta a discursar na praça ao norte, agora de madrugada. Use a câmera térmica (T, ou o botão TÉRMICA): pessoas aparecem brancas e é difícil distinguir civis de combatentes. O discurso dura 1:15; depois ele vai para o carro.',
+    win: u => `O comandante foi neutralizado no escuro com ${u} de ${TOTAL_DRONES} drones, sem atingir civis.`,
+    fail: 'Os drones acabaram e o comandante continua vivo. Na térmica, o palanque fica na borda norte da praça, de frente para o sul.',
+    timeout: 'O discurso terminou e o comandante fugiu de carro no escuro.' },
+  { id: 'mercado', name: 'Comandante na feira', news: 'Comandante da Frente Ocre é atingido ao sair de feira', extra: 'O ataque esperou um trecho vazio da rua para não ferir fregueses',
+    sub: '1 comandante · 3 drones · a pé', drones: 3, targets: 1, fire: true, hvt: true,
+    brief: 'O comandante atravessa a pé uma rua de feira ao norte, de oeste para leste, cercado por quatro guarda-costas. No fim da rua um carro espera por ele. A feira está cheia de fregueses em grupos: espere ele passar por um trecho vazio, como os cruzamentos, antes de mergulhar.',
+    win: u => `O comandante foi neutralizado com ${u} de ${TOTAL_DRONES} drones, sem atingir os fregueses.`,
+    fail: 'Os drones acabaram e o comandante continua vivo. Os cruzamentos da feira não têm bancas nem fregueses.' },
+  { id: 'comboiovip', name: 'Comboio do comandante', news: 'Carro de comandante é destruído em fuga', extra: 'O comboio usava dois carros idênticos como chamariz',
+    sub: '1 de 3 carros · 3 drones', drones: 3, targets: 1, fire: true, hvt: true,
+    brief: 'Três picapes idênticas e armadas saem do norte em 20 s, descem juntas pela rua central e se separam no cruzamento. Só uma leva o comandante. Mantenha cada carro no centro da mira, a menos de 280 m, por 1 s para identificá-lo. Se o carro certo sair da cidade, a missão falha.',
+    win: u => `O carro do comandante foi destruído com ${u} de ${TOTAL_DRONES} drones.`,
+    fail: 'Os drones acabaram e o comandante escapou. Identifique os carros antes de atacar: os chamarizes também atiram.' },
 );
 const STATUS = {
   ponte: () => state.ex.broken ? 'PONTE CORTADA · DESTRUA MAIS UM TRECHO' : 'CAMINHÕES ATRAVESSANDO A PONTE',
@@ -1849,6 +1950,8 @@ const STATUS = {
   evacuacao: () => `ÔNIBUS EM SEGURANÇA ${state.ex.safe || 0}/2`,
   cegar: () => state.ex.hq && state.ex.hq.armored ? 'ETAPA 1: DEFESA AÉREA' : 'ETAPA 2: POSTO DE COMANDO',
   resgate: () => state.ex.done ? 'PILOTO A BORDO' : `RESGATE EM ${fmtT(Math.max(0, 150 - state.mt))}`,
+  mercado: () => { const L = state.hvt; if (!L || !L.alive) return ''; if (L.inCar) return `ALVO EM FUGA · ${fmtT(Math.max(0, 25 - state.escapeT))}`; const c = state.car.group.position; return `ALVO A ${Math.round(Math.hypot(c.x - L.group.position.x, c.z - L.group.position.z))} m DO CARRO`; },
+  comboiovip: () => state.mt < 20 ? `COMBOIO PARTE EM ${fmtT(Math.ceil(20 - state.mt))}` : state.ex.found ? 'CARRO DO ALVO IDENTIFICADO' : `IDENTIFIQUE O CARRO · ${state.ex.checked || 0}/3 VERIFICADOS`,
   reconhecimento: () => `${d.unarmed ? 'RECONHECIMENTO · ' : ''}MARCADOS ${state.ex.marked || 0}/${TOTAL_TARGETS}`,
 };
 MISSIONS.forEach(m => { if (STATUS[m.id]) m.status = STATUS[m.id]; });
@@ -2059,7 +2162,7 @@ function updateLeader(dt) { // fim do discurso: desce do palco e vai até o carr
   const L = state.hvt;
   if (!L || !L.alive || L.inCar || !L.exit || !L.exit.length) return;
   const g = L.group, [tx, ty, tz] = L.exit[0];
-  const dx = tx - g.position.x, dy = ty - g.position.y, dz2 = tz - g.position.z, dist = Math.hypot(dx, dy, dz2), sp = 2.2 * dt;
+  const dx = tx - g.position.x, dy = ty - g.position.y, dz2 = tz - g.position.z, dist = Math.hypot(dx, dy, dz2), sp = (L.walk || 2.2) * dt;
   if (dist <= sp) {
     g.position.set(tx, ty, tz); L.exit.shift();
     if (!L.exit.length) { // chegou ao destino
@@ -2474,7 +2577,7 @@ function detonate(point, reason) {
     if (dd < BLAST_R) { if (p.kind === 'leader') leaderHit = true; else (p.kind === 'soldier' ? soldiers : civs).push(p); }
     else if (p.kind === 'civil' && dd < 90) p.panic = 6 + Math.random() * 4;
   }
-  if (state.car && state.car.carrier && hits.includes(state.car)) leaderHit = true;
+  if (state.car && (state.car.carrier || state.car.hvtCar) && hits.includes(state.car)) leaderHit = true;
   explode(point, onGround, hits.length > 0 || soldiers.length > 0 || leaderHit);
   hits.forEach(destroyVehicle);
   soldiers.forEach(killPerson); civs.forEach(killPerson);
@@ -2725,7 +2828,7 @@ function drawFlyHUD(blink) {
   const rssi = Math.round(-45 - home / 22 - (d.los ? 0 : 18));
   txt(`LQ ${lq}%  RSSI ${rssi}dBm`, tl, top + 20, 'left', lq < 40 ? red : '#f2f5f0', fs - 2);
   txt(`DRONES ${state.drones + 1}/${TOTAL_DRONES}  ALVOS ${state.kills}/${TOTAL_TARGETS}  INF ${state.inf}`, tl, top + 40, 'left', '#f2f5f0', fs - 2);
-  if (currentMission.id === 'alvo') {
+  if (currentMission.speech) {
     const L = state.hvt, left = currentMission.speech - state.mt;
     const label = L && L.inCar ? 'ALVO EM FUGA'
       : state.convoyT > 0 ? `COMBOIO CHEGA EM ${fmtT(Math.ceil(state.convoyT))}`
@@ -2796,7 +2899,7 @@ function drawMinimap(small) {
   }
   if (state.ex.river) { hc.fillStyle = 'rgba(90,150,180,.35)'; hc.fillRect(mx(RIVER.x - RIVER.w / 2), mz(-900), RIVER.w * sc, 1900 * sc); }
   if (state.ex.rail) { hc.strokeStyle = 'rgba(242,245,240,.5)'; hc.setLineDash([3, 2]); hc.beginPath(); hc.moveTo(mx(RAIL_X), mz(-900)); hc.lineTo(mx(RAIL_X), mz(1000)); hc.stroke(); hc.setLineDash([]); }
-  const hv = currentMission.id === 'alvo' ? nearestTarget() : null;
+  const hv = currentMission.hvt ? nearestTarget() : null;
   if (hv) {
     hc.strokeStyle = '#ffb22e'; hc.lineWidth = 2;
     hc.beginPath(); hc.arc(mx(hv.group.position.x), mz(hv.group.position.z), 6, 0, 7); hc.stroke();
@@ -2842,7 +2945,7 @@ function updateMissionClock(dt) {
   if (state.forceWin && state.phase !== 'lost') return endMission('win');
   if (state.civHit && state.phase === 'fly') return endMission('civ');   // explosão secundária atingiu civis
   if (ms.limit && state.mt >= ms.limit && state.kills < TOTAL_TARGETS && state.phase !== 'lost') return endMission('timeout');
-  if (ms.id !== 'alvo' || !state.hvt) return;
+  if (!ms.speech || !state.hvt) return;
   const L = state.hvt;
   if (!L.alive) return;
   updateConvoy(dt);
@@ -2907,7 +3010,16 @@ function startDrive(v) { // veículo com o comandante foge pelas ruas
   v.carrier = true; v.speed = v.type === 'apc' ? 12 : 11;
 }
 function nearestTarget() {
-  if (currentMission.id === 'alvo') { const L = state.hvt; if (!L || !L.alive) return null; return L.inCar ? state.car : L; }
+  if (currentMission.hvt) {
+    const L = state.hvt; if (!L || !L.alive) return null;
+    const cars = state.ex.cars;
+    if (cars && !state.ex.found) { // comboio: carro ainda não identificado mais próximo
+      let best = null, bd = Infinity;
+      for (const v of cars) { if (!v.alive || v.idDone) continue; const dd = v.group.position.distanceToSquared(d.pos); if (dd < bd) { bd = dd; best = v; } }
+      return best;
+    }
+    return L.inCar ? state.car : L;
+  }
   let best = null, bd = Infinity;
   for (const v of vehicles) { if (!v.alive || !v.objective || v.hidden || v.armored) continue; const dd = v.group.position.distanceToSquared(d.pos); if (dd < bd) { bd = dd; best = v; } }
   for (const p of people) { if (!p.alive || !p.objective) continue; const dd = p.group.position.distanceToSquared(d.pos); if (dd < bd) { bd = dd; best = p; } }
@@ -3086,7 +3198,7 @@ function endMission(mode) {
   const win = !abandoned && !civ && !timeout && !custom && (state.kills >= TOTAL_TARGETS || state.forceWin);
   const used = TOTAL_DRONES - state.drones;
   $('#endEyebrow').textContent = `${ms.name} · ${currentMap.name}`;
-  $('#endTitle').textContent = custom ? custom.title : civ ? 'MISSÃO ENCERRADA' : timeout ? (ms.id === 'alvo' ? 'ALVO ESCAPOU' : 'TEMPO ESGOTADO') : abandoned ? 'MISSÃO ABANDONADA' : win ? 'MISSÃO CUMPRIDA' : 'MISSÃO FALHOU';
+  $('#endTitle').textContent = custom ? custom.title : civ ? 'MISSÃO ENCERRADA' : timeout ? (ms.hvt ? 'ALVO ESCAPOU' : 'TEMPO ESGOTADO') : abandoned ? 'MISSÃO ABANDONADA' : win ? 'MISSÃO CUMPRIDA' : 'MISSÃO FALHOU';
   $('#endTitle').style.color = win ? 'var(--amber)' : 'var(--red)';
   $('#sInf').textContent = `${state.inf}`;
   $('#endText').textContent = custom ? custom.text
