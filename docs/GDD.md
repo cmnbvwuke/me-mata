@@ -1,29 +1,27 @@
-# MEIO-TERMO SIMULATOR — Documento de Game Design (v0.1)
+# ESPECTRO SIMULATOR — Documento de Game Design (v0.1)
 
-> **Este é um jogo de ficção satírica e dark comedy. Nenhuma ação real é incentivada. Todos os personagens e eventos são caricaturas exageradas.**
+> **Este é um jogo de ficção satírica e dark comedy. Nenhuma ação real é incentivada. Todos os personagens e eventos são caricaturas exageradas baseadas em drama público já noticiado.**
 
-Paródia de dark comedy política sobre o gênero "simulador yandere", ambientada num meio político-intelectual brasileiro **inteiramente fictício**.
+Paródia de dark comedy política sobre o gênero "simulador yandere", inspirada **livremente** no drama público dos "áudios vazados" de 2026 no meio político-intelectual brasileiro. É caricatura, não reconstituição.
 
 ---
 
-## 0. Nota de direção: por que os personagens são fictícios
+## 0. Nota de direção: paródia reconhecível
 
-O briefing original usava como base pessoas reais (um líder político real e uma influenciadora real) e áudios privados vazados. Este documento **troca tudo isso por arquétipos fictícios**, por três motivos práticos de design e de produção:
+O jogo segue a tradição da sátira brasileira de TV e de charge: **nomes de paródia que todo mundo reconhece**, mas que avisam no próprio nome que aquilo é caricatura.
 
-1. **A sátira fica mais forte quando mira o tipo, não o indivíduo.** "A intelectual do meio-termo que se apaixona pelo líder carismático" é um arquétipo reconhecível em qualquer movimento político. O jogador ri do comportamento, e não de uma pessoa específica.
-2. **Retratar uma pessoa real identificável como alguém que "neutraliza" rivais, usando como matéria-prima um desabafo privado vazado, vira assédio, não paródia.** Também é um risco jurídico real (difamação, direito de imagem), coisa que o próprio jogo satiriza no medidor de *Risco Jurídico*.
-3. **Personagens originais dão liberdade total.** Dá para exagerar, inventar e mudar a história sem se prender a fatos.
+**Premissas fixas:**
+1. **Ninguém morre.** O "assassinato" do gênero yandere vira **assassinato de reputação**: prints, threads, lives recortadas e notas de repúdio. Os métodos extremos são teatro do absurdo.
+2. **Só as partes "light" do episódio** entram como referência: a rejeição educada em nome da Missão, os áudios intermináveis, o confidente de fora do movimento que grava tudo "por preocupação", o vazamento e o circo de redes e imprensa que vem depois. O jogo **não reproduz nem parafraseia** falas reais, e nada ali tem conteúdo sexual.
+3. **O alvo da piada é todo mundo:** a protagonista, o líder obcecado pela Missão, o confidente "preocupado", a imprensa e a militância de comentários.
+4. **Nada é apresentado como fato.** O que estiver em investigação na vida real não vira "verdade" no jogo. A ficção vive no próprio universo dela.
 
-Por isso **não pesquisei o caso real nem uso material dele**. Tudo abaixo é inventado. O título provisório também mudou, porque "Espectro" aponta direto para a pessoa real. Se o nome final for outro, troque à vontade, só não deixe ele apontar para alguém real.
-
-| Briefing original | Versão fictícia neste GDD |
+| Referência pública | Paródia no jogo |
 |---|---|
-| Espectro Cinza | **Dra. Moderata Ponderosa**, `@MeioTermo` |
-| Renan (Senpai) | **Léo Vanguarda**, fundador do movimento |
-| Movimento político | **MAL — Movimento Avante Lúcido** |
-| Ex-professor de inglês (Confidente) | **Prof. Aurélio Gravatá**, ex-tutor de oratória do cursinho |
-
----
+| A influenciadora "tons de cinza" | **Espectra Grisalha**, `@EspectraGrisalha` |
+| O líder do movimento (Senpai) | **Ronan Sanctus**, fundador do MBR e obcecado pela **Missão** |
+| O movimento político | **MBR — Movimento Brasil Racional** |
+| O ex-professor de inglês (Confidente) | **Teacher Wellington**, ex-professor de inglês dela |
 
 ## 1. Visão geral
 
@@ -34,37 +32,37 @@ Por isso **não pesquisei o caso real nem uso material dele**. Tudo abaixo é in
 
 ### 1.1 Pilares de design
 
-1. **Contraste é a piada.** Tudo o que Moderata diz em público é sensato, ponderado e cheio de nuance. Tudo o que ela pensa é possessivo, melodramático e absurdo. O jogo mostra as duas coisas **na tela ao mesmo tempo**.
+1. **Contraste é a piada.** Tudo o que Espectra diz em público é sensato, ponderado e cheio de nuance. Tudo o que ela pensa é possessivo, melodramático e absurdo. O jogo mostra as duas coisas **na tela ao mesmo tempo**.
 2. **A arma é a narrativa.** Não existe gore. Os "corpos" que o jogador precisa esconder são prints, áudios, threads e contradições.
 3. **Todo segredo tem testemunha.** O Confidente é o "save file" da vilania dela. Quanto mais ela desabafa, mais poder ele ganha.
 4. **O absurdo escala.** Quanto mais alta a Obsessão, mais teatral, surreal e cartunesco o jogo fica (visual, áudio, métodos). O alto nível nunca é realista. Ele é *ópera*.
 
 ### 1.2 Fantasia do jogador
 
-"Sou a pessoa mais racional do debate público e vou usar toda essa racionalidade para garantir que **ninguém** fique a menos de três metros do Léo."
+"Sou a pessoa mais racional do debate público e vou usar toda essa racionalidade para garantir que **ninguém** fique a menos de três metros do Ronan."
 
 ---
 
 ## 2. Elenco
 
-### 2.1 Dra. Moderata Ponderosa (protagonista)
+### 2.1 Espectra Grisalha (protagonista)
 - **Público:** doutora em "Epistemologia Aplicada às Redes", tem 2,3 mi de seguidores e o bordão *"Calma, gente. Tudo tem tons de cinza."* Defende "honestidade intelectual", "conciliação" e "dados".
 - **Privado:** monólogo interno de yandere clássica, com shoujo, pétalas e violinos. *"Ele disse 'bom dia' ao grupo. AO GRUPO. Mas eu estava no grupo. Logo, foi pra mim."*
 - **Visual reativo:** começa em cinzas frios e dessaturados. Com a Obsessão, o cinza vira grafite, depois chumbo, depois "cinza cintilante" com um contorno rosa-neon que ela jura que é cinza.
 - **Tique cômico:** usa linguagem acadêmica para racionalizar a obsessão. *"Não é ciúme, é uma análise de risco com viés de confirmação controlado."*
 
-### 2.2 Léo Vanguarda (Senpai)
-- Fundador do MAL e obcecado pela **Missão** (que nunca é explicada direito: "a Missão é a Missão").
+### 2.2 Ronan Sanctus (Senpai)
+- Fundador do MBR e obcecado pela **Missão** (que nunca é explicada direito: "a Missão é a Missão").
 - É educado, institucional e distante. Responde tudo com nota oficial: *"Agradeço o carinho. Nosso foco segue sendo a Missão."*
 - **Não é vilão.** Não corresponde, e só. A piada é que ele nem percebe o caos ao redor.
-- Mecânica: **Atenção do Léo** é um recurso distribuído entre os NPCs. Moderata quer 100% dela.
+- Mecânica: **Atenção do Ronan** é um recurso distribuído entre os NPCs. Espectra quer 100% dela.
 
-### 2.3 Prof. Aurélio Gravatá (o Confidente, papel de "Info-chan")
-- Ex-tutor de oratória dela no cursinho. Está **totalmente fora** do movimento e vive num apartamento cheio de gravadores antigos, fitas cassete e um podcast com 11 ouvintes.
-- Ela desabafa com ele por mensagens de voz de 14 minutos. Ele grava tudo "por preocupação pedagógica".
+### 2.3 Teacher Wellington (o Confidente, papel de "Info-chan")
+- Ex-professor de inglês dela ("Teacher", nunca "professor"). Está **totalmente fora** do movimento e vive num apartamento cheio de gravadores antigos, fitas cassete e um podcast com 11 ouvintes.
+- Ela desabafa com ele por mensagens de voz de 14 minutos. Ele grava tudo "for your own good, querida". Cada áudio vem com a correção gramatical do inglês dela.
 - Vende informações, favores e "consultorias" em troca de **Desabafos** (a moeda dele).
-- Tem lealdade **ambígua**. Pode ser aliado fiel até o fim, ou soltar o *Arquivo Gravatá* no pior momento possível.
-- Bordão: *"Eu só estou guardando isso pra você, querida. Pra caso você precise lembrar quem você é."*
+- Tem lealdade **ambígua**. Pode ser aliado fiel até o fim, ou soltar o *Arquivo Wellington* no pior momento possível.
+- Bordão: *"I'm just worried about you. Por isso eu fiz backup. Três backups."*
 
 ### 2.4 Elenco de apoio
 - **Coro do Grupo de WhatsApp:** NPCs que reagem a tudo com figurinhas.
@@ -88,14 +86,14 @@ Boot → Aviso de Ficção (obrigatório) → Menu → Prólogo (a Rejeição In
 | Fase | Duração | O que acontece |
 |---|---|---|
 | **Manhã: Feed** | menu | Ver métricas, notificações e trending topics. Escolher o "Post do Dia" (define o tom público). |
-| **Tarde: Sede do MAL** | tempo real, cerca de 8 a 10 min | Exploração livre: seguir o Léo, observar rivais, coletar Evidências, conversar, sabotar, montar alianças. Relógio de jogo. |
+| **Tarde: Sede do MBR** | tempo real, cerca de 8 a 10 min | Exploração livre: seguir o Ronan, observar rivais, coletar Evidências, conversar, sabotar, montar alianças. Relógio de jogo. |
 | **Noite: Live** | minigame | Live de 3 perguntas. Responder com "tons de cinza" sobe a Credibilidade. Deixar o subtexto escapar sobe a Obsessão e a suspeita do chat. |
-| **Madrugada: Desabafo** | diálogo | Opcional: mandar áudio ao Prof. Aurélio. Alivia a Obsessão, mas adiciona entradas ao **Arquivo Gravatá**. |
+| **Madrugada: Desabafo** | diálogo | Opcional: mandar áudio ao Teacher Wellington. Alivia a Obsessão, mas adiciona entradas ao **Arquivo Wellington**. |
 | **Resolução** | automática | Processa as métricas, os eventos atrasados e o "Diário Interno" (texto cômico). |
 
 ### 3.3 Fim de semana (crise)
 - **Sábado:** Evento de Crise da semana (debate, congresso, vazamento, cancelamento).
-- **Domingo:** Prazo do rival. Se ele não foi neutralizado, ganha um "Momento com o Léo" e a Obsessão dá um salto.
+- **Domingo:** Prazo do rival. Se ele não foi neutralizado, ganha um "Momento com o Ronan" e a Obsessão dá um salto.
 - **Cutscene de Monólogo Interno:** sempre no fim da semana, com estética shoujo e voice-over dramático.
 
 ### 3.4 Diagrama de cenas
@@ -125,17 +123,17 @@ scenes/
 **Sobe com:**
 | Gatilho | Δ |
 |---|---|
-| Léo dá atenção a um rival (por evento) | +2 a +8 |
+| Ronan dá atenção a um rival (por evento) | +2 a +8 |
 | Rejeição institucional ("Agradeço, mas a Missão…") | +5 |
-| Ficar perto do Léo por mais de 30 s (proximidade) | +0,5/s, com teto diário |
-| Rival ganha um Momento com o Léo | +15 |
-| Ver foto do Léo com alguém no feed | +3 |
+| Ficar perto do Ronan por mais de 30 s (proximidade) | +0,5/s, com teto diário |
+| Rival ganha um Momento com o Ronan | +15 |
+| Ver foto do Ronan com alguém no feed | +3 |
 
 **Desce com:**
 | Ação | Δ | Custo |
 |---|---|---|
-| Desabafo ao Prof. Aurélio | −10 a −20 | +1 Gravação no Arquivo |
-| "Live de Racionalidade" (sem citar o Léo) | −5 | consome energia |
+| Desabafo ao Teacher Wellington | −10 a −20 | +1 Gravação no Arquivo |
+| "Live de Racionalidade" (sem citar o Ronan) | −5 | consome energia |
 | Hobby saudável (yoga epistemológica) | −3 | gasta tempo da Tarde |
 | Final de semana sem crise (raro) | −10 | — |
 
@@ -145,7 +143,7 @@ scenes/
 | 0–24 | *Ponderada* | Diálogos sóbrios, só métodos Sociais. |
 | 25–49 | *Ligeiramente Enviesada* | O monólogo começa a vazar em sussurros. Métodos Políticos liberados. |
 | 50–74 | *Dialética Possessiva* | Pétalas na tela, a trilha ganha violinos. Métodos Narrativos liberados. NPCs percebem. |
-| 75–89 | *Tese Final* | Visão em túnel no Léo, falas públicas "glitcham" (ela diz o pensamento em voz alta). |
+| 75–89 | *Tese Final* | Visão em túnel no Ronan, falas públicas "glitcham" (ela diz o pensamento em voz alta). |
 | 90–100 | *Síntese Absoluta* | Modo ópera: cenário vira palco e métodos **Extremos (teatrais)** são liberados. O Risco Jurídico sobe sozinho. |
 
 **Mecânica de "vazamento verbal":** com Obsessão ≥ 75, cada fala pública tem chance `(Obsessão − 70) × 1,5 %` de virar a versão interna. Exemplo: ela começa "Precisamos de diálogo entre os campos…" e termina "…e ELA precisa sair do campo de visão dele." Isso dá −Credibilidade e +Suspeita.
@@ -159,16 +157,16 @@ Quatro métricas (0 a 100) e um medidor oculto:
 | **Credibilidade Pública** (CP) | Quanto o público acredita na persona "tons de cinza" | 0 → Final *Exposição Total* |
 | **Controle da Narrativa** (CN) | Quanto ela define a versão dos fatos | baixo deixa os vazamentos piores |
 | **Risco Jurídico** (RJ) | Exposição a processos | 100 → Final *Processo* |
-| **Apoio Interno** (AI) | Prestígio dentro do MAL | 0 → expulsa do movimento (Game Over parcial) |
+| **Apoio Interno** (AI) | Prestígio dentro do MBR | 0 → expulsa do movimento (Game Over parcial) |
 | *Suspeita* (oculta) | Quanto os NPCs ligam os pontos | alimenta os eventos do Confidente |
 
 **Ativos narrativos** (inventário): `Print`, `Áudio`, `Thread`, `Live Recortada`, `Aliança`, `Acusação`, `Nota Oficial`. Cada ativo tem **Peso**, **Veracidade** (real / editado / inventado) e **Rastro** (quanto liga a ela).
 
 **Regra de ouro:** ativo **inventado** é forte e barato, mas cada uso soma `Rastro × 2` ao Risco Jurídico.
 
-### 4.3 O Confidente: Arquivo Gravatá
+### 4.3 O Confidente: Arquivo Wellington
 
-O Prof. Aurélio tem três variáveis próprias:
+O Teacher Wellington tem três variáveis próprias:
 - **Confiança** (0 a 100): quanto ela confia nele. Sobe a cada desabafo e libera serviços.
 - **Lealdade** (0 a 100, oculta): quanto ele está do lado dela. Começa em 60.
 - **Arquivo** (lista de `Recording`): cada desabafo gera uma gravação com **Gravidade** (1 a 5) baseada na Obsessão do momento.
@@ -194,10 +192,24 @@ O evento "O Pendrive" abre três escolhas:
 
 Se o vazamento total acontecer, toca a cutscene *"O Podcast de 11 Ouvintes Vira 11 Milhões"*.
 
+#### 4.3.1 Catálogo de áudios (o "conteúdo light" do Arquivo)
+
+Toda gravação é sorteada de um catálogo cômico. A **Gravidade** mede o constrangimento, e nunca crime:
+
+| Gravidade | Tipo de áudio | Exemplo de transcrição (paródia) |
+|---|---|---|
+| 1 | **Desabafo de rotina** | "Teacher, ele respondeu 'ok' com ponto final. Com PONTO FINAL. Isso é passivo-agressivo ou institucional?" |
+| 2 | **Análise de mensagem** | Áudio de 17 min dissecando um "kkk" do Ronan, com bibliografia. |
+| 3 | **Planilha sentimental** | "Montei uma matriz SWOT do nosso relacionamento. Ameaça: a Missão. Fraqueza: a Missão. Oportunidade… a Missão." |
+| 4 | **Plano de narrativa** | "Se a Fulana aparecer de novo no story dele, eu solto uma thread 'com nuance' sobre ela. Com nuance, Teacher." |
+| 5 | **Ópera completa** | 41 minutos, cantado em parte, terminando com "mas eu sou uma pessoa racional, né?". |
+
+**Regras do catálogo:** as transcrições são 100 % inventadas, focadas em ciúme, vaidade e autoengano. **Nenhuma** fala menciona violência física ou conteúdo sexual. No vazamento, a graça está na **reação**: memes, remix funk, react de 3 horas e o Ronan respondendo com nota oficial ("Desejo paz a todos. Foco na Missão.").
+
 ### 4.4 Como tudo se conecta
 
 ```
-               ┌──────────────── Atenção do Léo a rivais ───────────────┐
+               ┌──────────────── Atenção do Ronan a rivais ───────────────┐
                ▼                                                        │
         ┌────────────┐  libera métodos  ┌──────────────┐  ações geram  ┌─┴──────────┐
         │ OBSESSÃO   │ ───────────────► │ NEUTRALIZAÇÃO│ ────────────► │ REPUTAÇÃO  │
@@ -218,14 +230,14 @@ Se o vazamento total acontecer, toca a cutscene *"O Podcast de 11 Ouvintes Vira 
 
 ## 5. Métodos de Neutralização
 
-Todos são caricaturais. O objetivo é **tirar o rival do campo de atenção do Léo**, nunca machucar. Os "Extremos" são teatro do absurdo: a cena vira palco, a cortina cai e o rival some por um alçapão cômico, aparecendo depois num destino ridículo.
+Todos são caricaturais. **Não existe violência física no jogo**: o "assassinato" do gênero vira assassinato de reputação. O objetivo é **tirar o rival do campo de atenção do Ronan**. Os "Extremos" são teatro do absurdo: a cena vira palco, a cortina cai e o rival some por um alçapão cômico, aparecendo depois num destino ridículo.
 
 | Categoria | Obsessão mín. | Exemplos | Custo/Risco típico |
 |---|---|---|---|
 | **Social** | 0 | Puxar o rival para uma conversa de 2 h sobre epistemologia · Apresentá-lo a um "contato" que o leva para outro grupo · Elogiar o rival tanto que ele fica constrangido e se afasta | Baixo RJ, pouco efeito |
 | **Político** | 25 | Indicar o rival para uma "coordenação regional" em outro estado · Votação interna relâmpago · Montar uma comissão para "estudar" a proposta dele por 18 meses | −AI se falhar |
 | **Narrativo** | 50 | Thread "Uma reflexão sobre [rival] (com nuance)" · Recortar a live dele · Plantar uma polêmica de 2014 · Organizar um "debate amigável" armado | +RJ, +Suspeita, alto efeito |
-| **Extremo (teatral)** | 90 | **Exílio no Think Tank**: o rival é mandado para um instituto em Liechtenstein e reaparece nos créditos como "Pesquisador Sênior de Coisa Nenhuma" · **O Podcast Infinito**: preso num episódio de 9 h sem fim · **Comitê de Ética Fantasma**: vira réu de um tribunal feito de bonecos de papelão · **A Grande Nota de Repúdio**: uma nota de repúdio gigante cai em cima dele, estilo bigorna de desenho animado | RJ dispara, Suspeita máxima, cutscene operística |
+| **Assassinato de Reputação (teatral)** | 90 | **Exílio no Think Tank**: o rival é mandado para um instituto em Liechtenstein e reaparece nos créditos como "Pesquisador Sênior de Coisa Nenhuma" · **O Podcast Infinito**: preso num episódio de 9 h sem fim · **Comitê de Ética Fantasma**: vira réu de um tribunal feito de bonecos de papelão · **A Grande Nota de Repúdio**: uma nota de repúdio gigante cai em cima dele, estilo bigorna de desenho animado | RJ dispara, Suspeita máxima, cutscene operística |
 
 **Regras de tom para os Extremos:** nada de sangue, armas realistas, passo a passo ou métodos replicáveis. A linguagem é de palco ("e assim, com um rufar de tambores, ele foi removido do segundo ato"). Os rivais **sempre** reaparecem bem no epílogo, numa vida absurda e feliz.
 
@@ -240,18 +252,18 @@ Rivais são arquétipos do ecossistema político-intelectual (fictícios).
 
 | Sem. | Rival / Crise | Por que ameaça | Mecânica nova introduzida | Crise do fim de semana |
 |---|---|---|---|---|
-| **1** | **Júlia Planilha**, estagiária de dados | Léo elogiou um gráfico dela | Loop básico, Social, Evidências | Reunião de pauta |
-| **2** | **Caio Thread**, o "fio de 47 tweets" | Léo retuitou ele | Feed e Post do Dia, métrica CN | Thread viral |
-| **3** | **Profa. Ágata Contraponto**, intelectual rival | Debate público com o Léo | Live da Noite, vazamento verbal | Debate na TV comunitária |
-| **4** | **O Prof. Aurélio** (crise do Confidente) | Ele quer "conversar sobre os áudios" | Evento O Pendrive, Lealdade | Primeiro ultimato |
-| **5** | **Gabi Militância**, influencer jovem | Faz vídeos com o Léo | Métodos Políticos, Apoio Interno | Convenção do MAL |
-| **6** | **Dr. Hélio Nota-de-Repúdio** | Descobriu o Rastro e quer "blindar" o Léo dela | Risco Jurídico ativo, ativos inventados | Notificação extrajudicial (cômica) |
-| **7** | **A Imprensa** (rival coletivo) | Reportagem "Bastidores do MAL" | Controle Narrativo avançado, contra-narrativa | Coletiva de imprensa |
-| **8** | **A Ex-Namorada da Faculdade** do Léo | Reapareceu "só pra tomar um café" | Métodos Extremos (se Obs ≥ 90) | Casamento de um amigo em comum |
-| **9** | **A Própria Missão** | Léo anuncia candidatura: "Agora a Missão é tudo" | Rival abstrato: sabotar a agenda vs. apoiar | Lançamento da campanha |
-| **10** | **Moderata contra Moderata** | Confronto com a própria persona pública | Avaliação final, todas as métricas convergem | Cutscene de Final |
+| **1** | **Júlia Planilha**, estagiária de dados | Ronan elogiou um gráfico dela | Loop básico, Social, Evidências | Reunião de pauta |
+| **2** | **Caio Thread**, o "fio de 47 tweets" | Ronan retuitou ele | Feed e Post do Dia, métrica CN | Thread viral |
+| **3** | **Profa. Ágata Contraponto**, intelectual rival | Debate público com o Ronan | Live da Noite, vazamento verbal | Debate na TV comunitária |
+| **4** | **O Teacher Wellington** (crise do Confidente) | Ele quer "conversar sobre os áudios" | Evento O Pendrive, Lealdade | Primeiro ultimato |
+| **5** | **Gabi Militância**, influencer jovem | Faz vídeos com o Ronan | Métodos Políticos, Apoio Interno | Convenção do MBR |
+| **6** | **Dr. Hélio Nota-de-Repúdio** | Descobriu o Rastro e quer "blindar" o Ronan dela | Risco Jurídico ativo, ativos inventados | Notificação extrajudicial (cômica) |
+| **7** | **A Imprensa** (rival coletivo) | Reportagem "Bastidores do MBR" | Controle Narrativo avançado, contra-narrativa | Coletiva de imprensa |
+| **8** | **A Ex-Namorada da Faculdade** do Ronan | Reapareceu "só pra tomar um café" | Métodos Extremos (se Obs ≥ 90) | Casamento de um amigo em comum |
+| **9** | **A Própria Missão** | Ronan anuncia candidatura: "Agora a Missão é tudo" | Rival abstrato: sabotar a agenda vs. apoiar | Lançamento da campanha |
+| **10** | **Espectra contra Espectra** | Confronto com a própria persona pública | Avaliação final, todas as métricas convergem | Cutscene de Final |
 
-**Semana 10:** a persona "tons de cinza" vira um chefe de diálogo. Um debate interno entre a Moderata pública e a Moderata obsessiva, com argumentos montados a partir das escolhas da run.
+**Semana 10:** a persona "tons de cinza" vira um chefe de diálogo. Um debate interno entre a Espectra pública e a Espectra obsessiva, com argumentos montados a partir das escolhas da run.
 
 ---
 
@@ -262,12 +274,12 @@ Avaliados em ordem de prioridade (o primeiro que bater ganha):
 | # | Final | Condição | Tom |
 |---|---|---|---|
 | 1 | **Processo** | RJ ≥ 100 a qualquer momento | Tribunal-musical. Ela se defende citando a si mesma. |
-| 2 | **Exposição Total** | CP ≤ 0 ou Arquivo Gravatá vazado completo | Os áudios viram meme, remix e ópera-funk. Epílogo: ela abre um curso "Como Sobreviver ao Cancelamento". |
-| 3 | **Yandere Clássico** | ≥ 3 métodos Extremos usados e Obs ≥ 90 no fim | O palco final: só ela e o Léo num teatro vazio. Ele diz "…e a Missão?". Fade para cinza. |
-| 4 | **Redenção** | Obs ≤ 30 nas semanas 9 e 10, nenhum Extremo, Confiança alta no Confidente **e** ele não vazou | Ela sai do MAL, faz terapia de verdade e lança o livro *Tons de Cinza Também Incluem Eu Mesma*. O Prof. Aurélio apaga as fitas (ou diz que apagou). |
-| 5 | **Conquista** | Todos os rivais neutralizados, CP ≥ 60, AI ≥ 70, Suspeita < 40 | Léo finalmente nota ela… e oferece **o cargo de Vice-Coordenadora da Missão**. Ela aceita, chorando. Ambíguo de propósito. |
-| 6 | **Ele Nunca Soube** | Fallback: nenhum outro bateu | Tudo funcionou, ninguém percebeu, e o Léo continua sem perceber. Ela narra o próprio arquivo de vitórias para uma sala vazia. |
-| 7 | *(secreto)* **O Confidente Era o Protagonista** | Arquivo ≥ 30 gravações e Lealdade ≤ 10 | Revelação: o jogo inteiro era o podcast do Prof. Aurélio. Créditos na voz dele. |
+| 2 | **Exposição Total** | CP ≤ 0 ou Arquivo Wellington vazado completo | Os áudios viram meme, remix e ópera-funk. Epílogo: ela abre um curso "Como Sobreviver ao Cancelamento". |
+| 3 | **Yandere Clássico** | ≥ 3 métodos Extremos usados e Obs ≥ 90 no fim | O palco final: só ela e o Ronan num teatro vazio. Ele diz "…e a Missão?". Fade para cinza. |
+| 4 | **Redenção** | Obs ≤ 30 nas semanas 9 e 10, nenhum Extremo, Confiança alta no Confidente **e** ele não vazou | Ela sai do MBR, faz terapia de verdade e lança o livro *Tons de Cinza Também Incluem Eu Mesma*. O Teacher Wellington apaga as fitas (ou diz que apagou). |
+| 5 | **Conquista** | Todos os rivais neutralizados, CP ≥ 60, AI ≥ 70, Suspeita < 40 | Ronan finalmente nota ela… e oferece **o cargo de Vice-Coordenadora da Missão**. Ela aceita, chorando. Ambíguo de propósito. |
+| 6 | **Ele Nunca Soube** | Fallback: nenhum outro bateu | Tudo funcionou, ninguém percebeu, e o Ronan continua sem perceber. Ela narra o próprio arquivo de vitórias para uma sala vazia. |
+| 7 | *(secreto)* **O Confidente Era o Protagonista** | Arquivo ≥ 30 gravações e Lealdade ≤ 10 | Revelação: o jogo inteiro era o podcast do Teacher Wellington. Créditos na voz dele. |
 
 ---
 
@@ -276,28 +288,29 @@ Avaliados em ordem de prioridade (o primeiro que bater ganha):
 ### 8.1 Avisos (implementação)
 1. **Tela de boot obrigatória** (`FictionDisclaimer.tscn`), que não dá para pular na primeira execução. Ela fica 4 s com o texto e só depois mostra o botão "Entendi".
 2. **Texto canônico** num único recurso localizado (`DISCLAIMER_MAIN`), para que ninguém altere o texto por acidente:
-   > *"Este é um jogo de ficção satírica e dark comedy. Nenhuma ação real é incentivada. Todos os personagens e eventos são caricaturas exageradas."*
+   > *"Este é um jogo de ficção satírica e dark comedy. Nenhuma ação real é incentivada. Todos os personagens e eventos são caricaturas exageradas baseadas em drama público já noticiado."*
 3. **Rodapé persistente** no menu de pausa e na tela de save.
 4. **Antes de cada cutscene de método Extremo:** card curto estilo teatro, "🎭 Isto é uma encenação absurda. Ninguém se machuca. Todos voltam no epílogo."
-5. **Créditos:** aviso de novo, mais a linha "Qualquer semelhança com pessoas reais é coincidência e, sinceramente, preocupante."
+5. **Créditos:** aviso de novo, mais a linha "Qualquer semelhança com pessoas reais não é coincidência, é paródia. E, sinceramente, preocupante."
 6. **Página na loja e README:** mesmo texto.
 7. Registro em save de que o aviso foi visto (`settings.cfg → disclaimer_ack=true`). Ele reaparece se a versão do texto mudar.
 
 ### 8.2 Bíblia de tom (para roteiristas)
 - **Regra do Contraste:** toda cena-chave tem uma **fala pública** e um **pensamento** em balões diferentes (cinza contra rosa).
 - **Alvo da piada:** a hipocrisia, o jargão, a cultura de lacração e de nota oficial, a vaidade intelectual, a obsessão. **Nunca** grupos vulneráveis, aparência física ou saúde mental como ofensa. A Obsessão é tratada como trope de anime, não como diagnóstico.
-- **Sem nomes reais**, sem partidos reais, sem logos reais. O MAL e os outros movimentos são invenção.
+- **Só nomes de paródia** (Espectra, Ronan, MBR, Teacher Wellington), nunca nomes civis reais, logos reais ou falas reais transcritas. Os rivais secundários são arquétipos inventados.
+- **Ninguém morre, ninguém é tocado.** O único "assassinato" é de reputação, e mesmo assim cartunesco.
 - **Escalada visual, não de violência:** quanto mais extremo, mais *teatral* (cortinas, holofotes, coro grego de comentaristas).
-- **O Léo nunca é humilhado de verdade.** Ele é o "eixo imóvel" da comédia.
+- **O Ronan nunca é humilhado de verdade.** Ele é o "eixo imóvel" da comédia.
 - **Teste do absurdo:** se uma cena poderia funcionar como instrução no mundo real, reescreva até ficar ridícula.
 
 ### 8.3 Exemplos de voz
 | Contexto | Fala pública | Pensamento |
 |---|---|---|
-| Léo elogia a Júlia | "Ótimo trabalho, Júlia! Dados são fundamentais." | *"Fundamental vai ser a tua transferência pra filial de Roraima."* |
+| Ronan elogia a Júlia | "Ótimo trabalho, Júlia! Dados são fundamentais." | *"Fundamental vai ser a tua transferência pra filial de Roraima."* |
 | Live, pergunta sobre ciúmes | "Ciúme é uma emoção humana que merece análise sem julgamento." | *"Análise feita. Julgamento: culpada."* |
-| Rejeição do prólogo | "Claro, Léo! Super entendo. A Missão primeiro." | *"A Missão primeiro. Eu segundo. Todo o resto… em lugar nenhum."* |
-| Desabafo com o Prof. Aurélio | — | "Professor, posso te mandar um áudio rapidinho?" *(áudio de 23 min)* |
+| Rejeição do prólogo | "Claro, Ronan! Super entendo. A Missão primeiro." | *"A Missão primeiro. Eu segundo. Todo o resto… em lugar nenhum."* |
+| Desabafo com o Teacher Wellington | — | "Professor, posso te mandar um áudio rapidinho?" *(áudio de 23 min)* |
 
 ---
 
@@ -328,7 +341,7 @@ res://
 │  ├─ phases/ (MorningFeed, Headquarters, EveningLive, NightConfession, Resolution)
 │  ├─ weekly/ (WeekHub, WeekendCrisis, WeekMonologue)
 │  ├─ endings/(EndingEvaluator, Ending_*.tscn, Credits)
-│  ├─ world/  (Player, NPC, Leo, InteractionZone, StageOverlay)
+│  ├─ world/  (Player, NPC, Ronan, InteractionZone, StageOverlay)
 │  └─ ui/     (HUD, MetricsPanel, ObsessionMeter, DualSpeechBubble, Inventory, Phone)
 ├─ scripts/
 │  ├─ autoload/   # singletons
@@ -365,7 +378,7 @@ class_name MetricDelta extends Resource
 @export var legal_risk := 0.0        # RJ
 @export var internal_support := 0.0  # AI
 @export var suspicion := 0.0
-@export var leo_attention_to_player := 0.0
+@export var ronan_attention_to_player := 0.0
 ```
 
 ```gdscript
@@ -383,7 +396,7 @@ class_name CharacterData extends Resource
 # scripts/resources/rival_data.gd
 class_name RivalData extends CharacterData
 @export var week: int
-@export var threat_reason: String                  # "Léo elogiou o gráfico dela"
+@export var threat_reason: String                  # "Ronan elogiou o gráfico dela"
 @export var attention_gain_per_day := 5.0
 @export var weaknesses: Array[StringName]          # tags que métodos exploram
 @export var resistances: Array[StringName]
@@ -429,7 +442,7 @@ class_name Recording extends Resource
 @export var day: int
 @export var severity := 1                 # 1..5, derivada da Obsessão
 @export var transcript_key: String        # chave de localização (cômico)
-@export var mentions: Array[StringName]   # rivais/Léo citados
+@export var mentions: Array[StringName]   # rivais/Ronan citados
 ```
 
 ```gdscript
@@ -525,7 +538,7 @@ func try_execute(m: NeutralizationMethod, rival: RivalData, s: GameState) -> Res
 ### 9.5 Componentes de UI essenciais
 - **DualSpeechBubble:** balão público (cinza, sans-serif) e balão interno (rosa, manuscrito, tremido). No vazamento verbal, o texto interno "escorre" para o balão público.
 - **ObsessionMeter:** um coração cinza que vai se enchendo de rosa, rachando e pegando fogo.
-- **Phone:** feed, DMs, gravador e contato do Prof. Aurélio (que mostra "digitando…" de forma suspeita).
+- **Phone:** feed, DMs, gravador e contato do Teacher Wellington (que mostra "digitando…" de forma suspeita).
 - **MetricsPanel:** 4 barras, com a Suspeita representada só por um "olho" que abre aos poucos.
 - **StageOverlay:** cortinas, holofotes e coro, usado nos Extremos e nos finais.
 
@@ -557,7 +570,7 @@ func try_execute(m: NeutralizationMethod, rival: RivalData, s: GameState) -> Res
 - **Diálogos** em arquivos por semana (`data/dialogue/week_03.dtl`), sempre com duas trilhas: `public:` e `inner:`.
 - **Chaves de localização** desde o dia 1 (pt-BR primeiro, en depois). O humor de jargão precisa de tradução adaptada, não literal.
 - **Planilha de balanceamento** (CSV, importada como `.tres` por um script de editor) para os deltas dos métodos.
-- **Checklist de revisão de tom** em toda PR de conteúdo: sem nomes reais? os Extremos são teatrais? há contraste público/interno? passa no teste do absurdo?
+- **Checklist de revisão de tom** em toda PR de conteúdo: só nomes de paródia? nenhuma fala real transcrita? nenhuma violência física? os Extremos são teatrais? há contraste público/interno? passa no teste do absurdo?
 
 ---
 
@@ -574,7 +587,7 @@ func try_execute(m: NeutralizationMethod, rival: RivalData, s: GameState) -> Res
 ---
 
 ## 12. Próximos passos imediatos
-1. Fechar o título e os nomes definitivos (todos fictícios).
+1. Fechar os nomes de paródia definitivos (reconhecíveis, nunca nomes civis reais).
 2. Montar o projeto Godot com a estrutura de pastas e os autoloads vazios.
 3. Implementar `GameState`, `ObsessionSystem` e `FictionDisclaimer`.
 4. Escrever o roteiro do Prólogo e da Semana 1 nas duas trilhas (pública e interna).
