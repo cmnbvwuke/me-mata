@@ -47,4 +47,5 @@ func _on_new() -> void:
 
 func _on_load() -> void:
 	if SaveManager.load_slot(0):
-		get_tree().change_scene_to_file(PROLOGUE_SCENE)  # TODO: WeekHub quando existir
+		var next := "res://scenes/story/week_hub.tscn" if GameState.has_flag(&"prologue_done") else PROLOGUE_SCENE
+		get_tree().change_scene_to_file(next)

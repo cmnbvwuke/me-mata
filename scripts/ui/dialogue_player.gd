@@ -2,6 +2,7 @@ extends Control
 ## Toca um roteiro JSON (data/dialogue/*.json) com balão público + balão interno.
 
 @export_file("*.json") var dialogue_path := "res://data/dialogue/prologo.json"
+@export_file("*.tscn") var next_scene := "res://scenes/story/week_hub.tscn"
 
 const COLOR_PUBLIC := Color(0.82, 0.82, 0.84)
 const COLOR_INNER := Color(1.0, 0.72, 0.86)
@@ -66,14 +67,15 @@ func _apply_effects(l: Dictionary) -> void:
 		ConfidantSystem.record_confession(fx.substr(12))
 		ObsessionSystem.add(before - ObsessionSystem.value())
 	elif fx.begins_with("rival_reveal:"):
-		GameState.rivals[StringName(fx.substr(13))] = "active"
+		GameState.rivals[fx.substr(13)] = "active"
 
 
 func _finish() -> void:
 	GameState.set_flag(&"prologue_done")
 	SaveManager.save(0)
-	_stage.text = "Fim do Prólogo. (Semana 1 ainda não implementada.)"
 	set_process_unhandled_input(false)
+	if next_scene != "":
+		get_tree().change_scene_to_file(next_scene)
 
 
 func _build_ui() -> void:

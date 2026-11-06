@@ -1,0 +1,530 @@
+{
+ "number": 1,
+ "title": "Dados São Fundamentais",
+ "rival": {
+  "id": "julia_planilha",
+  "name": "Júlia Planilha",
+  "bio": "Estagiária de dados do Movimento. Fala em “insights”. Tem 14 abas abertas no Excel e um gráfico de pizza como foto de perfil.",
+  "threat": "O Renan elogiou o gráfico dela: “Dados são fundamentais para a Missão.”",
+  "attention_start": 30,
+  "attention_gain_per_day": 7,
+  "deadline_threshold": 50,
+  "weaknesses": [
+   "vaidade_academica",
+   "excel"
+  ],
+  "resistances": [
+   "fofoca"
+  ],
+  "epilogue": "Júlia virou Head de Dados de um instituto de pesquisa em Lisboa. Hoje faz gráficos de pizza de pastel de nata. Está radiante."
+ },
+ "feed_events": {
+  "1": {
+   "text": "📱 O Renan curtiu um post da Júlia: “Engajamento +4% 📊”.",
+   "effects": {
+    "obsession": 3
+   }
+  },
+  "2": {
+   "text": "📱 A Júlia postou story: “Café com a equipe ☕”. O Renan aparece no canto, desfocado. Você dá zoom. Ainda desfocado. Você dá zoom de novo.",
+   "effects": {
+    "obsession": 4
+   }
+  },
+  "3": {
+   "text": "📱 Trending: #PizzaChartGate. Ninguém sabe o que é. Você já tem opinião formada.",
+   "effects": {
+    "narrative_control": 2
+   }
+  },
+  "4": {
+   "text": "📱 O Renan postou: “Foco na Missão.” Sem curtir nada de ninguém. Você se sente estranhamente em paz.",
+   "effects": {
+    "obsession": -3
+   }
+  },
+  "5": {
+   "text": "📱 A Júlia marcou o Renan num meme de planilha. Ele respondeu com 👍. UM JOINHA. Você relê 41 vezes.",
+   "effects": {
+    "obsession": 6
+   }
+  }
+ },
+ "posts": [
+  {
+   "id": "thread_nuance",
+   "label": "Thread: “Por que o debate precisa de nuance (1/23)”",
+   "public": "Fio sobre nuance. Vai ser longo. Como deve ser.",
+   "inner": "23 tweets. Ele lê até o fim. Ele PRECISA ler até o fim.",
+   "effects": {
+    "credibility": 3
+   }
+  },
+  {
+   "id": "indireta_pizza",
+   "label": "Indireta: “Gráfico de pizza não é argumento.”",
+   "public": "Só uma reflexão metodológica, sem citar ninguém. 🍕❌",
+   "inner": "Citando alguém. Citando muito.",
+   "effects": {
+    "narrative_control": 3,
+    "suspicion": 4,
+    "obsession": -4
+   }
+  },
+  {
+   "id": "foto_caneca",
+   "label": "Foto da caneca “NUANCE” com a legenda “segunda-feira produtiva”",
+   "public": "Bom dia, gente. Café e equilíbrio.",
+   "inner": "Ângulo escolhido para aparecer o reflexo da sede do Movimento na caneca. Sutil.",
+   "effects": {
+    "internal_support": 2,
+    "credibility": 1
+   }
+  }
+ ],
+ "hq_slots": [
+  "13h",
+  "15h",
+  "17h"
+ ],
+ "hq_actions": [
+  {
+   "id": "observar_julia",
+   "label": "Observar a Júlia de longe (com um livro de cabeça para baixo)",
+   "kind": "intel",
+   "public": "Só lendo aqui. Epistemologia.",
+   "inner": "Ela usa VLOOKUP. Em 2026. Anotado.",
+   "effects": {
+    "suspicion": 2
+   },
+   "gives_intel": 1,
+   "result": "Você aprendeu a rotina da Júlia: almoça às 12h, faz pausa no bebedouro às 15h, entra em pânico quando a planilha trava."
+  },
+  {
+   "id": "perto_renan",
+   "label": "“Passar por acaso” perto da sala do Renan (pela 4ª vez)",
+   "kind": "proximity",
+   "public": "Oi, Renan! Nossa, que coincidência.",
+   "inner": "Coincidência calculada com margem de erro de 3 minutos.",
+   "effects": {
+    "obsession": 5,
+    "renan_attention": 3
+   },
+   "result": "O Renan acena sem tirar os olhos do documento “MISSÃO_v47_final_FINAL.docx”."
+  },
+  {
+   "id": "ajudar_movimento",
+   "label": "Ajudar a revisar o texto de um panfleto do Movimento",
+   "kind": "support",
+   "public": "Posso sugerir uma vírgula? E uma nuance?",
+   "inner": "Ajudar o Movimento é ajudar o Renan. Ajudar o Renan é ajudar a gente.",
+   "effects": {
+    "internal_support": 5,
+    "obsession": -2
+   },
+   "result": "O panfleto agora tem 11 vírgulas a mais e a palavra “dialético” duas vezes."
+  },
+  {
+   "id": "yoga",
+   "label": "Yoga epistemológica no terraço (hobby saudável)",
+   "kind": "rest",
+   "public": "Inspira… tons de cinza… expira…",
+   "inner": "Inspira… Renan… expira… Júlia não…",
+   "effects": {
+    "obsession": -5
+   },
+   "result": "Você se sente 3% mais centrada. Uma pomba te observa com julgamento."
+  }
+ ],
+ "methods": [
+  {
+   "id": "seminario_infinito",
+   "category": "SOCIAL",
+   "label": "O Seminário Infinito",
+   "desc": "Puxar a Júlia para uma conversa de 2 horas sobre “a epistemologia dos gráficos de pizza”.",
+   "exploits": [
+    "vaidade_academica"
+   ],
+   "base_success": 0.55,
+   "witness_chance": 0.2,
+   "public": "Júlia, você já pensou na dimensão ontológica de um gráfico de pizza?",
+   "inner": "Ela não vai sair dessa conversa até o Renan ir embora.",
+   "on_success": {
+    "rival_attention": -20,
+    "credibility": 1
+   },
+   "success_text": "Duas horas depois, a Júlia sai com o olhar perdido e três livros recomendados. O Renan foi embora há 40 minutos.",
+   "on_fail": {
+    "obsession": 4,
+    "credibility": -2
+   },
+   "fail_text": "A Júlia ADOROU. Pediu para continuar amanhã. E chamou o Renan para participar. Ele não foi, mas foi CHAMADO.",
+   "on_witnessed": {
+    "suspicion": 5
+   },
+   "sets_flag": "julia_cansada"
+  },
+  {
+   "id": "elogio_constrangedor",
+   "category": "SOCIAL",
+   "label": "O Elogio Constrangedor",
+   "desc": "Elogiar a Júlia na frente de todo mundo, com tanta intensidade que ela fica sem graça de aparecer.",
+   "exploits": [
+    "excel"
+   ],
+   "base_success": 0.6,
+   "witness_chance": 1.0,
+   "public": "Gente, a Júlia é um GÊNIO. Uma visionária. A Simone de Beauvoir das tabelas dinâmicas!",
+   "inner": "Brilha, Júlia. Brilha até sumir.",
+   "on_success": {
+    "rival_attention": -15,
+    "internal_support": 2
+   },
+   "success_text": "A Júlia fica vermelha, murmura “obrigada…” e passa o resto do dia escondida atrás do monitor.",
+   "on_fail": {
+    "rival_attention": 5,
+    "obsession": 3
+   },
+   "fail_text": "O Renan concorda: “Verdade, ela é ótima.” Você acabou de fazer marketing da rival.",
+   "on_witnessed": {
+    "suspicion": 1
+   }
+  },
+  {
+   "id": "vaga_dos_sonhos",
+   "category": "SOCIAL",
+   "label": "A Vaga dos Sonhos",
+   "desc": "Apresentar a Júlia a um “contato” que oferece uma vaga de Head de Dados num instituto em Lisboa.",
+   "requires_any": [
+    "flag:julia_cansada",
+    "intel:2",
+    "flag:ficha_julia"
+   ],
+   "exploits": [
+    "vaidade_academica",
+    "excel"
+   ],
+   "base_success": 0.45,
+   "witness_chance": 0.3,
+   "public": "Júlia, conheço um pessoal em Lisboa que ia AMAR seu trabalho. Posso te apresentar?",
+   "inner": "Lisboa. 8 mil quilômetros. Fuso de 4 horas. Perfeito.",
+   "on_success": {
+    "neutralize": true,
+    "credibility": 2
+   },
+   "success_text": "Uma semana depois, a Júlia anuncia no LinkedIn: “Novo desafio! 🇵🇹📊”. O Renan comenta: “Sucesso. A Missão agradece.” Você também agradece.",
+   "on_fail": {
+    "obsession": 5,
+    "suspicion": 3
+   },
+   "fail_text": "A Júlia agradece mas recusa: “Meu lugar é na Missão!” Ela disse MISSÃO. Com M maiúsculo. Que ousadia.",
+   "on_witnessed": {
+    "suspicion": 6
+   }
+  },
+  {
+   "id": "thread_com_nuance",
+   "category": "NARRATIVE",
+   "min_obsession": 50,
+   "label": "🔒 Thread “Uma reflexão sobre a Júlia (com nuance)”",
+   "desc": "Liberado com Obsessão ≥ 50 (Dialética Possessiva).",
+   "locked_text": "Você ainda é ponderada demais para isso. Por enquanto."
+  }
+ ],
+ "teacher_services": [
+  {
+   "id": "ficha_julia",
+   "label": "Pedir ao Teacher a “Ficha da Rival” (custa um áudio)",
+   "teacher": "Oh, the girl with the pizza? I did a little research, dear. Ela sonha em morar em Portugal. Está tudo aqui. Também gravei este pedido, aliás. For your own good.",
+   "sets_flag": "ficha_julia",
+   "adds_bonus": 0.15
+  }
+ ],
+ "live_questions": {
+  "1": [
+   {
+    "q": "@racional_88: Qual sua opinião sobre gráficos de pizza?",
+    "answers": [
+     {
+      "type": "ponderada",
+      "public": "Todo recurso visual tem méritos e limitações. Contexto é tudo.",
+      "effects": {
+       "credibility": 2,
+       "obsession": 2
+      }
+     },
+     {
+      "type": "indireta",
+      "public": "Digamos que quem usa gráfico de pizza tem… fome de atenção.",
+      "effects": {
+       "narrative_control": 3,
+       "suspicion": 3,
+       "obsession": -2
+      }
+     },
+     {
+      "type": "sincera",
+      "min_obsession": 40,
+      "public": "Gráfico de pizza é a arma das estagiárias que querem roubar o que é dos outros.",
+      "effects": {
+       "credibility": -6,
+       "suspicion": 6,
+       "obsession": -6
+      }
+     }
+    ]
+   },
+   {
+    "q": "@bot_do_debate: Você e o Renan são próximos?",
+    "answers": [
+     {
+      "type": "ponderada",
+      "public": "Temos uma relação institucional de respeito mútuo.",
+      "effects": {
+       "credibility": 2,
+       "obsession": 2
+      }
+     },
+     {
+      "type": "indireta",
+      "public": "Próximos o suficiente para eu saber que ele prefere tabelas bem formatadas.",
+      "effects": {
+       "narrative_control": 2,
+       "suspicion": 4
+      }
+     },
+     {
+      "type": "sincera",
+      "min_obsession": 40,
+      "public": "Próximos? Eu sei o horário em que ele toma café. Os três horários.",
+      "effects": {
+       "credibility": -5,
+       "suspicion": 8,
+       "obsession": -5
+      }
+     }
+    ]
+   }
+  ],
+  "default": [
+   {
+    "q": "@duvidosa_cinza: Por que você fala tanto em “tons de cinza”?",
+    "answers": [
+     {
+      "type": "ponderada",
+      "public": "Porque a realidade é complexa e o debate merece nuance.",
+      "effects": {
+       "credibility": 1,
+       "obsession": 1
+      }
+     },
+     {
+      "type": "indireta",
+      "public": "Porque algumas pessoas só enxergam fatias de pizza.",
+      "effects": {
+       "narrative_control": 2,
+       "suspicion": 3,
+       "obsession": -2
+      }
+     },
+     {
+      "type": "sincera",
+      "min_obsession": 40,
+      "public": "Porque cinza é a cor da sala do Renan. Eu contei. São quatro tons.",
+      "effects": {
+       "credibility": -5,
+       "suspicion": 7,
+       "obsession": -5
+      }
+     }
+    ]
+   },
+   {
+    "q": "@militante_lucido: O que você acha da Missão?",
+    "answers": [
+     {
+      "type": "ponderada",
+      "public": "Um projeto relevante que merece análise crítica e construtiva.",
+      "effects": {
+       "credibility": 1,
+       "internal_support": 2,
+       "obsession": 2
+      }
+     },
+     {
+      "type": "indireta",
+      "public": "A Missão é linda. Pena que algumas pessoas só querem aparecer nela.",
+      "effects": {
+       "narrative_control": 2,
+       "suspicion": 3
+      }
+     },
+     {
+      "type": "sincera",
+      "min_obsession": 40,
+      "public": "A Missão é minha rival número um. A Júlia é a número dois.",
+      "effects": {
+       "credibility": -6,
+       "suspicion": 8,
+       "obsession": -6
+      }
+     }
+    ]
+   },
+   {
+    "q": "@estudante_de_dados: Dica para quem está começando na política?",
+    "answers": [
+     {
+      "type": "ponderada",
+      "public": "Leia muito, ouça os dois lados e desconfie de certezas.",
+      "effects": {
+       "credibility": 1,
+       "obsession": 1
+      }
+     },
+     {
+      "type": "indireta",
+      "public": "Não confie em quem tem 14 abas de Excel abertas.",
+      "effects": {
+       "narrative_control": 2,
+       "suspicion": 4,
+       "obsession": -2
+      }
+     },
+     {
+      "type": "sincera",
+      "min_obsession": 40,
+      "public": "Fique longe do Renan. Ele é comprometido. Com a Missão. E comigo, um dia.",
+      "effects": {
+       "credibility": -6,
+       "suspicion": 9,
+       "obsession": -6
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "verbal_leak": {
+  "text": "…e por isso o diálogo é tão import— ELA PRECISA SAIR DO CAMPO DE VISÃO DELE. Quer dizer. Próxima pergunta.",
+  "effects": {
+   "credibility": -4,
+   "suspicion": 5
+  }
+ },
+ "confession": {
+  "prompt": "Madrugada. O contato “Teacher Wellington 🍎” brilha na tela.",
+  "transcripts": {
+   "1": "“Teacher, ele respondeu ‘ok’ com ponto final. Com PONTO FINAL. Isso é passivo-agressivo ou institucional?”",
+   "2": "Áudio de 17 minutos analisando o 👍 que o Renan deu num meme da Júlia. Com bibliografia.",
+   "3": "“Montei uma matriz SWOT do nosso relacionamento. Ameaça: a Missão. Fraqueza: a Missão. Oportunidade… a Missão.”",
+   "4": "“Se a Júlia aparecer de novo no story dele, eu solto uma thread COM NUANCE sobre gráficos de pizza. Com nuance, Teacher.”",
+   "5": "41 minutos, parte deles cantados, terminando em “mas eu sou uma pessoa racional, né?”."
+  },
+  "teacher_replies": [
+   "Oh, dear. Só uma correção: é “I’m fine”, não “I am very fine”. Continue.",
+   "Fica tranquila. Isso fica só entre nós. *clique* *clique* *clique*",
+   "Very interesting. Você poderia repetir a parte da planilha? O áudio cortou. Para eu… entender melhor.",
+   "I’m just worried about you. Por isso eu fiz backup. Três backups."
+  ],
+  "skip_text": "Você não manda áudio. Fica olhando o teto e ensaiando o que diria. A Obsessão sobe de tanto ruminar.",
+  "skip_effects": {
+   "obsession": 4
+  }
+ },
+ "resolution_lines": [
+  "📊 O Renan mandou “bom dia” no grupo. Você mandou “bom dia 🙂” 0,4 segundo depois. Recorde pessoal.",
+  "📊 Alguém deixou um pedaço de pizza na copa. Você interpreta como provocação.",
+  "📊 O Renan trabalhou até as 23h na Missão. Você ficou online até as 23h01. Só por garantia.",
+  "📊 A Júlia esqueceu o carregador na sede. Você não fez nada com ele. Mas pensou muito sobre isso."
+ ],
+ "weekend_crisis": {
+  "title": "Sábado: A Reunião de Pauta",
+  "intro": "O Renan precisa de alguém para apresentar os dados da semana na reunião geral do Movimento.",
+  "if_neutralized": {
+   "text": "Sem a Júlia, ele olha em volta. “Espectro Cinza, você pode apresentar? Você sempre traz… nuance.”",
+   "public": "Claro, Renan. Será uma honra institucional.",
+   "inner": "ELE DISSE MEU NOME. EM VOZ ALTA. NA FRENTE DE TODOS. ISSO É PRATICAMENTE UM NOIVADO.",
+   "effects": {
+    "internal_support": 8,
+    "renan_attention": 10,
+    "obsession": 6
+   }
+  },
+  "if_active": {
+   "text": "“Júlia, apresenta você? Seu gráfico de pizza ficou ótimo.” A Júlia sorri. Você também. Por fora.",
+   "choices": [
+    {
+     "label": "Pedir para “complementar com uma visão qualitativa”",
+     "public": "Posso só complementar com uma visão qualitativa?",
+     "inner": "Vou complementar até sobrar só eu na tela.",
+     "effects": {
+      "internal_support": 3,
+      "rival_attention": -10,
+      "suspicion": 3
+     }
+    },
+    {
+     "label": "Aplaudir de pé (sozinha)",
+     "public": "Bravo! Bravíssimo! Dados são fundamentais!",
+     "inner": "Aplaudindo por fora. Por dentro também, mas com sarcasmo.",
+     "effects": {
+      "credibility": -2,
+      "obsession": 4,
+      "rival_attention": 5
+     }
+    },
+    {
+     "label": "Respirar fundo e deixar passar",
+     "public": "Ótimo, Júlia.",
+     "inner": "Tons de cinza. Tons de cinza. Tons de cinza.",
+     "effects": {
+      "credibility": 2,
+      "obsession": 6
+     }
+    }
+   ]
+  }
+ },
+ "sunday": {
+  "moment_text": "Domingo. Você vê no story da Júlia: ela e o Renan, cinco minutos olhando juntos para uma planilha. Legenda: “Trabalho de domingo 💪📊”.",
+  "moment_effects": {
+   "obsession": 15
+  },
+  "calm_text": "Domingo. O Renan passa o dia offline. “Retiro estratégico da Missão.” Você também passa o dia offline. Estrategicamente."
+ },
+ "monologue": {
+  "neutralized": [
+   {
+    "stage": "Palco. Holofote cinza. Uma fatia de pizza solitária desce do teto num fio dourado. É um lustre. Um lustre de pizza."
+   },
+   {
+    "inner": "Júlia, vá em paz. Lisboa é linda nesta época do ano. Todas as épocas, aliás. Fique em todas elas."
+   },
+   {
+    "inner": "Eu não fiz nada errado. Eu fiz networking. Networking é ciência."
+   },
+   {
+    "inner": "Uma a menos. Agora é só eu, o Renan… e a Missão."
+   },
+   {
+    "stage": "A palavra “MISSÃO” acende em neon atrás dela. Ela estreita os olhos."
+   }
+  ],
+  "active": [
+   {
+    "stage": "Palco. Holofote cinza. Uma pizza inteira gira no teto, como uma bola de espelhos."
+   },
+   {
+    "inner": "Ela ainda está lá. Com os gráficos dela. Com as fatias dela."
+   },
+   {
+    "inner": "Tudo bem. Tudo bem. A ciência é feita de tentativas. A próxima tentativa vai ser… mais científica."
+   },
+   {
+    "stage": "As pétalas cinza começam a cair com um leve tom de rosa. Ninguém percebe. Ela percebe."
+   }
+  ],
+  "teaser": "🎭 SEMANA 2 — “O Fio de 47 Tweets” (em breve)"
+ }
+}

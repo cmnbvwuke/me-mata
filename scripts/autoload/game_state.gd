@@ -16,6 +16,8 @@ var metrics := {}
 var confidant := {"trust": 30.0, "loyalty": 60.0, "favors_paid": 0}
 var archive: Array[Recording] = []
 var rivals := {}            # rival_id -> "active" | "neutralized:<method_id>"
+var rival_attention := {}   # rival_id -> 0..100 (Atenção do Renan para o rival)
+var intel := {}             # rival_id -> int (observações acumuladas)
 var flags := {}             # StringName -> true
 var extreme_methods_used := 0
 var inventory: Array[NarrativeAsset] = []
@@ -40,6 +42,8 @@ func new_run() -> void:
 	confidant = {"trust": 30.0, "loyalty": 60.0, "favors_paid": 0}
 	archive.clear()
 	rivals.clear()
+	rival_attention.clear()
+	intel.clear()
 	flags.clear()
 	extreme_methods_used = 0
 	inventory.clear()
@@ -85,6 +89,7 @@ func to_dict() -> Dictionary:
 		"week": week, "day": day, "phase": phase,
 		"metrics": metrics.duplicate(), "confidant": confidant.duplicate(),
 		"archive": arch, "rivals": rivals.duplicate(), "flags": flags.keys(),
+		"rival_attention": rival_attention.duplicate(), "intel": intel.duplicate(),
 		"extreme_methods_used": extreme_methods_used,
 	}
 
@@ -102,6 +107,8 @@ func from_dict(d: Dictionary) -> void:
 		r.week = a.w; r.day = a.d; r.severity = a.sev; r.transcript_key = a.get("key", "")
 		archive.append(r)
 	rivals = d.get("rivals", {})
+	rival_attention = d.get("rival_attention", {})
+	intel = d.get("intel", {})
 	for f in d.get("flags", []):
 		flags[StringName(f)] = true
 	extreme_methods_used = d.get("extreme_methods_used", 0)
