@@ -8,6 +8,7 @@ run/main_scene="res://scenes/boot/fiction_disclaimer.tscn"
 config/features=PackedStringArray("4.3")
 
 [autoload]
+UiFonts="*res://scripts/autoload/ui_fonts.gd"
 EventBus="*res://scripts/autoload/event_bus.gd"
 GameState="*res://scripts/autoload/game_state.gd"
 ObsessionSystem="*res://scripts/autoload/obsession_system.gd"
