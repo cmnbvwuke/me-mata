@@ -131,6 +131,14 @@ func method_chance(m: Dictionary) -> float:
 	return clampf(c, 0.05, 0.95)
 
 
+func find_action(id: String) -> Dictionary:
+	return _find(data.hq_actions, id)
+
+
+func find_method(id: String) -> Dictionary:
+	return _find(data.methods, id)
+
+
 func _find(list: Array, id: String) -> Dictionary:
 	for x in list:
 		if x.id == id:
@@ -147,12 +155,15 @@ func do_action(id: String) -> Dictionary:
 
 
 ## Retorna {ok, witnessed, locked, text, public, inner}.
-func try_method(id: String) -> Dictionary:
+## witnessed_override: -1 sorteia pela witness_chance; 0/1 vem do mapa (testemunhas reais).
+func try_method(id: String, witnessed_override := -1) -> Dictionary:
 	var m := _find(data.methods, id)
 	if not method_unlocked(m) or not requirements_met(m) or not rival_active():
 		return {"locked": true, "text": m.get("locked_text", "Ainda não dá.")}
 	var ok := rng.randf() < method_chance(m)
 	var witnessed := rng.randf() < float(m.get("witness_chance", 0.0))
+	if witnessed_override >= 0:
+		witnessed = witnessed_override == 1
 	var eff: Dictionary = (m.on_success if ok else m.on_fail).duplicate()
 	var neutral := bool(eff.get("neutralize", false))
 	eff.erase("neutralize")

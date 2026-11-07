@@ -2,6 +2,8 @@ extends Control
 ## Protótipo jogável da semana (texto + botões). Toda a regra fica no WeekRunner.
 
 @export_file("*.json") var week_path := "res://data/weeks/week_01.json"
+## true: a Tarde acontece no mapa explorável da sede. false: menu de texto (testes).
+@export var use_map := true
 
 const COLOR_PUBLIC := "#d2d2d6"
 const COLOR_INNER := "#ffb8dc"
@@ -55,6 +57,9 @@ func _on_post(i: int) -> void:
 
 
 func _hq() -> void:
+	if use_map:
+		_enter_map()
+		return
 	_clear()
 	var slots := runner.hq_slots()
 	if _slot >= slots.size():
@@ -69,6 +74,30 @@ func _hq() -> void:
 		var opt: Dictionary = o
 		opts.append([label, func(): _on_hq(opt), not o.enabled])
 	_choose(opts)
+
+
+var _map: HQMap
+
+
+func _enter_map() -> void:
+	for c in get_children():
+		if c is CanvasItem:
+			c.visible = false
+	_map = load("res://scenes/world/hq_map.tscn").instantiate()
+	_map.setup(runner)
+	_map.finished.connect(_leave_map)
+	add_child(_map)
+
+
+func _leave_map() -> void:
+	# espera um instante para o jogador ler a última linha do log
+	await get_tree().create_timer(1.0).timeout
+	_map.queue_free()
+	_map = null
+	for c in get_children():
+		if c is CanvasItem:
+			c.visible = true
+	_evening()
 
 
 func _on_hq(o: Dictionary) -> void:

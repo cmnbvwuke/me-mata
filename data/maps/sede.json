@@ -1,0 +1,646 @@
+{
+ "id": "sede",
+ "name": "Sede do Movimento",
+ "clock": {
+  "start": "13:00",
+  "end": "18:00",
+  "game_minutes_per_second": 2.0
+ },
+ "door_width": 80,
+ "rooms": [
+  {
+   "id": "sala_missao",
+   "name": "Sala da Missão",
+   "rect": [
+    0,
+    0,
+    400,
+    300
+   ],
+   "floor": "#5b5b63",
+   "desc": "A sala do Renan. Um quadro branco com uma palavra só: MISSÃO. Uma cadeira de visita que ninguém nunca usou."
+  },
+  {
+   "id": "sala_reuniao",
+   "name": "Sala de Reunião",
+   "rect": [
+    400,
+    0,
+    400,
+    300
+   ],
+   "floor": "#55555c",
+   "desc": "Mesa comprida, 12 cadeiras e um projetor que só funciona com o cabo do Renan."
+  },
+  {
+   "id": "juridico",
+   "name": "Jurídico",
+   "rect": [
+    800,
+    0,
+    300,
+    300
+   ],
+   "floor": "#4e4f57",
+   "desc": "Sala do Dr. Hélio. Pilhas de notas de repúdio pré-impressas, só falta preencher o nome."
+  },
+  {
+   "id": "terraco",
+   "name": "Terraço",
+   "rect": [
+    1100,
+    0,
+    500,
+    300
+   ],
+   "floor": "#56625a",
+   "desc": "Vista para outro prédio cinza. Um tapete de yoga cinza. Uma pomba julgadora."
+  },
+  {
+   "id": "corredor",
+   "name": "Corredor",
+   "rect": [
+    0,
+    300,
+    1600,
+    120
+   ],
+   "floor": "#4a4a50",
+   "desc": "Corredor com o bebedouro, o centro nervoso da fofoca."
+  },
+  {
+   "id": "redacao",
+   "name": "Redação (open space)",
+   "rect": [
+    0,
+    420,
+    800,
+    480
+   ],
+   "floor": "#606068",
+   "desc": "Open space com mesas coladas. Todo mundo vê todo mundo. Péssimo para métodos discretos, ótimo para plateia."
+  },
+  {
+   "id": "copa",
+   "name": "Copa",
+   "rect": [
+    800,
+    420,
+    300,
+    480
+   ],
+   "floor": "#5e5a55",
+   "desc": "Cafeteira institucional e uma geladeira com um aviso passivo-agressivo."
+  },
+  {
+   "id": "almoxarifado",
+   "name": "Almoxarifado",
+   "rect": [
+    1100,
+    420,
+    200,
+    480
+   ],
+   "floor": "#45454b",
+   "desc": "Ninguém entra aqui. Caixas de panfletos de 2019 e um totem do Renan em tamanho real."
+  },
+  {
+   "id": "recepcao",
+   "name": "Recepção",
+   "rect": [
+    1300,
+    420,
+    300,
+    480
+   ],
+   "floor": "#5a5a62",
+   "desc": "Entrada e saída da sede. A Dona Neusa vê tudo, mas acha que não é da conta dela."
+  }
+ ],
+ "doors": [
+  [
+   200,
+   300
+  ],
+  [
+   600,
+   300
+  ],
+  [
+   950,
+   300
+  ],
+  [
+   1350,
+   300
+  ],
+  [
+   400,
+   150
+  ],
+  [
+   200,
+   420
+  ],
+  [
+   650,
+   420
+  ],
+  [
+   950,
+   420
+  ],
+  [
+   1200,
+   420
+  ],
+  [
+   1450,
+   420
+  ]
+ ],
+ "spots": {
+  "mesa_renan": {
+   "room": "sala_missao",
+   "pos": [
+    200,
+    110
+   ]
+  },
+  "reuniao_cabeceira": {
+   "room": "sala_reuniao",
+   "pos": [
+    560,
+    140
+   ]
+  },
+  "reuniao_lado": {
+   "room": "sala_reuniao",
+   "pos": [
+    650,
+    160
+   ]
+  },
+  "mesa_helio": {
+   "room": "juridico",
+   "pos": [
+    950,
+    110
+   ]
+  },
+  "terraco_yoga": {
+   "room": "terraco",
+   "pos": [
+    1420,
+    140
+   ]
+  },
+  "bebedouro": {
+   "room": "corredor",
+   "pos": [
+    760,
+    345
+   ]
+  },
+  "porta_renan": {
+   "room": "corredor",
+   "pos": [
+    200,
+    350
+   ]
+  },
+  "mesa_julia": {
+   "room": "redacao",
+   "pos": [
+    160,
+    560
+   ]
+  },
+  "mesa_kleber": {
+   "room": "redacao",
+   "pos": [
+    420,
+    560
+   ]
+  },
+  "redacao_fundo": {
+   "room": "redacao",
+   "pos": [
+    420,
+    800
+   ]
+  },
+  "mesa_panfletos": {
+   "room": "redacao",
+   "pos": [
+    660,
+    780
+   ]
+  },
+  "cafeteira": {
+   "room": "copa",
+   "pos": [
+    950,
+    500
+   ]
+  },
+  "copa_mesa": {
+   "room": "copa",
+   "pos": [
+    950,
+    760
+   ]
+  },
+  "prateleira": {
+   "room": "almoxarifado",
+   "pos": [
+    1200,
+    760
+   ]
+  },
+  "balcao": {
+   "room": "recepcao",
+   "pos": [
+    1450,
+    560
+   ]
+  },
+  "saida": {
+   "room": "recepcao",
+   "pos": [
+    1450,
+    860
+   ]
+  }
+ },
+ "player_start": "saida",
+ "props": [
+  {
+   "rect": [
+    80,
+    60,
+    240,
+    40
+   ],
+   "label": "MESA DO RENAN"
+  },
+  {
+   "rect": [
+    500,
+    110,
+    220,
+    70
+   ],
+   "label": "MESA DE REUNIÃO"
+  },
+  {
+   "rect": [
+    880,
+    60,
+    140,
+    40
+   ],
+   "label": "NOTAS DE REPÚDIO"
+  },
+  {
+   "rect": [
+    100,
+    600,
+    120,
+    40
+   ],
+   "label": "MESA DA JÚLIA 📊"
+  },
+  {
+   "rect": [
+    360,
+    600,
+    120,
+    40
+   ],
+   "label": "MESA"
+  },
+  {
+   "rect": [
+    600,
+    810,
+    120,
+    40
+   ],
+   "label": "PANFLETOS"
+  },
+  {
+   "rect": [
+    900,
+    450,
+    100,
+    30
+   ],
+   "label": "CAFETEIRA"
+  },
+  {
+   "rect": [
+    890,
+    790,
+    120,
+    50
+   ],
+   "label": "MESA DA COPA"
+  },
+  {
+   "rect": [
+    1130,
+    800,
+    140,
+    60
+   ],
+   "label": "TOTEM DO RENAN"
+  },
+  {
+   "rect": [
+    1380,
+    590,
+    140,
+    30
+   ],
+   "label": "BALCÃO"
+  },
+  {
+   "rect": [
+    740,
+    310,
+    40,
+    20
+   ],
+   "label": "💧"
+  }
+ ],
+ "hotspots": [
+  {
+   "id": "porta_renan",
+   "spot": "porta_renan",
+   "name": "Porta da Sala da Missão"
+  },
+  {
+   "id": "mesa_panfletos",
+   "spot": "mesa_panfletos",
+   "name": "Mesa de panfletos"
+  },
+  {
+   "id": "terraco_yoga",
+   "spot": "terraco_yoga",
+   "name": "Tapete de yoga"
+  },
+  {
+   "id": "cafeteira",
+   "spot": "cafeteira",
+   "name": "Cafeteira",
+   "flavor": {
+    "label": "Tomar um café institucional (15 min)",
+    "minutes": 15,
+    "inner": "O Renan toma café às 15h30. Eu tomo café às 15h29. Coincidência.",
+    "effects": {
+     "obsession": 1
+    }
+   }
+  },
+  {
+   "id": "prateleira",
+   "spot": "prateleira",
+   "name": "Totem do Renan",
+   "flavor": {
+    "label": "Contemplar o totem do Renan (10 min)",
+    "minutes": 10,
+    "inner": "Ele é ainda mais institucional em papelão. Ninguém precisa saber que eu vim aqui.",
+    "effects": {
+     "obsession": 3
+    }
+   }
+  },
+  {
+   "id": "saida",
+   "spot": "saida",
+   "name": "Saída",
+   "exit": true
+  }
+ ],
+ "npcs": [
+  {
+   "id": "renan",
+   "name": "Renan Santos",
+   "color": "#c9a227",
+   "is_senpai": true,
+   "vision": 260,
+   "routine": [
+    {
+     "at": "13:00",
+     "spot": "mesa_renan"
+    },
+    {
+     "at": "14:00",
+     "spot": "reuniao_cabeceira"
+    },
+    {
+     "at": "14:45",
+     "spot": "mesa_renan"
+    },
+    {
+     "at": "15:30",
+     "spot": "cafeteira"
+    },
+    {
+     "at": "15:50",
+     "spot": "mesa_renan"
+    },
+    {
+     "at": "16:30",
+     "spot": "reuniao_cabeceira"
+    },
+    {
+     "at": "17:15",
+     "spot": "mesa_renan"
+    }
+   ],
+   "barks": [
+    "Oi. Tudo certo? Foco na Missão.",
+    "Agora não dá, estou num documento da Missão.",
+    "Bom trabalho na live. Aliás, viu o relatório da Júlia?"
+   ]
+  },
+  {
+   "id": "julia_planilha",
+   "name": "Júlia Planilha",
+   "color": "#4fa3d9",
+   "is_rival": true,
+   "vision": 260,
+   "routine": [
+    {
+     "at": "13:00",
+     "spot": "mesa_julia"
+    },
+    {
+     "at": "15:00",
+     "spot": "bebedouro"
+    },
+    {
+     "at": "15:20",
+     "spot": "mesa_julia"
+    },
+    {
+     "at": "16:30",
+     "spot": "reuniao_lado"
+    },
+    {
+     "at": "17:15",
+     "spot": "mesa_julia"
+    }
+   ],
+   "barks": [
+    "Oi! Quer ver meu dashboard novo? Tem 14 abas!",
+    "Você acha que pizza é melhor que barra? Eu acho que pizza.",
+    "O Renan disse que meus dados são fundamentais 🥹"
+   ]
+  },
+  {
+   "id": "helio",
+   "name": "Dr. Hélio Nota-de-Repúdio",
+   "color": "#8a5a44",
+   "vision": 300,
+   "routine": [
+    {
+     "at": "13:00",
+     "spot": "mesa_helio"
+    },
+    {
+     "at": "14:30",
+     "spot": "copa_mesa"
+    },
+    {
+     "at": "15:15",
+     "spot": "mesa_helio"
+    }
+   ],
+   "barks": [
+    "Tudo o que você disser pode virar nota de repúdio.",
+    "Juridicamente, um café não é um compromisso.",
+    "Estou de olho no seu Risco Jurídico. Com carinho."
+   ]
+  },
+  {
+   "id": "kleber",
+   "name": "Kleber Figurinha",
+   "color": "#7cb85a",
+   "vision": 220,
+   "routine": [
+    {
+     "at": "13:00",
+     "spot": "mesa_kleber"
+    },
+    {
+     "at": "14:00",
+     "spot": "cafeteira"
+    },
+    {
+     "at": "14:20",
+     "spot": "mesa_kleber"
+    },
+    {
+     "at": "16:00",
+     "spot": "bebedouro"
+    },
+    {
+     "at": "16:15",
+     "spot": "mesa_kleber"
+    }
+   ],
+   "barks": [
+    "*manda figurinha de capivara*",
+    "Já viu o grupo? Tem 412 mensagens novas.",
+    "Kkkkkkk o Renan mandou ‘ok.’ com ponto final kkkk"
+   ]
+  },
+  {
+   "id": "thiago",
+   "name": "Thiago Pauta",
+   "color": "#9a7bc4",
+   "vision": 240,
+   "routine": [
+    {
+     "at": "13:00",
+     "spot": "redacao_fundo"
+    },
+    {
+     "at": "14:00",
+     "spot": "reuniao_lado"
+    },
+    {
+     "at": "14:45",
+     "spot": "redacao_fundo"
+    },
+    {
+     "at": "16:00",
+     "spot": "copa_mesa"
+    },
+    {
+     "at": "16:20",
+     "spot": "redacao_fundo"
+    }
+   ],
+   "barks": [
+    "Isso tá na pauta? Se não tá na pauta, não existe.",
+    "Reunião às 14h. Pauta: marcar a próxima reunião.",
+    "Anotei aqui. Não sei o quê, mas anotei."
+   ]
+  },
+  {
+   "id": "neusa",
+   "name": "Dona Neusa",
+   "color": "#c46b8a",
+   "vision": 200,
+   "routine": [
+    {
+     "at": "13:00",
+     "spot": "balcao"
+    }
+   ],
+   "barks": [
+    "Boa tarde, minha filha. O Renan tá lá em cima. Como sempre.",
+    "Eu não vejo nada. Eu só trabalho aqui.",
+    "Tem bolo na copa. Mas não fala que fui eu."
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "reuniao_a_dois",
+   "at": "16:45",
+   "type": "rival_with_senpai",
+   "room": "sala_reuniao",
+   "text": "📊 A Júlia e o Renan passaram 15 minutos sozinhos na Sala de Reunião olhando uma planilha.",
+   "inner": "Quinze minutos. Uma planilha. Duas pessoas. Isso é praticamente um encontro com Excel de testemunha.",
+   "effects": {
+    "rival_attention": 8,
+    "obsession": 6
+   },
+   "interrupted_text": "Você entrou “sem querer” na reunião e ficou. A reunião a dois virou uma reunião a três. Ninguém sabe o que dizer.",
+   "interrupted_effects": {
+    "obsession": 2,
+    "suspicion": 3
+   }
+  }
+ ],
+ "thoughts": {
+  "renan_seen": [
+   "Ele está a 4,2 metros. Não que eu esteja medindo.",
+   "Ele piscou. Na minha direção. Mais ou menos.",
+   "Postura institucional impecável. Tons de cinza perfeitos."
+  ],
+  "rival_near_senpai": [
+   "Por que ela está a menos de 3 metros dele?",
+   "Distância Júlia–Renan: inaceitável."
+  ],
+  "watched": [
+   "Estão olhando. Sorria. Ponderada. Ponderada."
+  ]
+ }
+}

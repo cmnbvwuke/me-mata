@@ -90,6 +90,10 @@
  "hq_actions": [
   {
    "id": "observar_julia",
+   "map": {
+    "observe": "julia_planilha",
+    "minutes": 30
+   },
    "label": "Observar a Júlia de longe (com um livro de cabeça para baixo)",
    "kind": "intel",
    "public": "Só lendo aqui. Epistemologia.",
@@ -102,6 +106,10 @@
   },
   {
    "id": "perto_renan",
+   "map": {
+    "hotspot": "porta_renan",
+    "minutes": 15
+   },
    "label": "“Passar por acaso” perto da sala do Renan (pela 4ª vez)",
    "kind": "proximity",
    "public": "Oi, Renan! Nossa, que coincidência.",
@@ -114,6 +122,10 @@
   },
   {
    "id": "ajudar_movimento",
+   "map": {
+    "hotspot": "mesa_panfletos",
+    "minutes": 60
+   },
    "label": "Ajudar a revisar o texto de um panfleto do Movimento",
    "kind": "support",
    "public": "Posso sugerir uma vírgula? E uma nuance?",
@@ -126,6 +138,10 @@
   },
   {
    "id": "yoga",
+   "map": {
+    "hotspot": "terraco_yoga",
+    "minutes": 45
+   },
    "label": "Yoga epistemológica no terraço (hobby saudável)",
    "kind": "rest",
    "public": "Inspira… tons de cinza… expira…",
@@ -139,6 +155,10 @@
  "methods": [
   {
    "id": "seminario_infinito",
+   "map": {
+    "target": "julia_planilha",
+    "minutes": 120
+   },
    "category": "SOCIAL",
    "label": "O Seminário Infinito",
    "desc": "Puxar a Júlia para uma conversa de 2 horas sobre “a epistemologia dos gráficos de pizza”.",
@@ -166,6 +186,11 @@
   },
   {
    "id": "elogio_constrangedor",
+   "map": {
+    "target": "julia_planilha",
+    "minutes": 15,
+    "needs_audience": 2
+   },
    "category": "SOCIAL",
    "label": "O Elogio Constrangedor",
    "desc": "Elogiar a Júlia na frente de todo mundo, com tanta intensidade que ela fica sem graça de aparecer.",
@@ -192,6 +217,10 @@
   },
   {
    "id": "vaga_dos_sonhos",
+   "map": {
+    "target": "julia_planilha",
+    "minutes": 30
+   },
    "category": "SOCIAL",
    "label": "A Vaga dos Sonhos",
    "desc": "Apresentar a Júlia a um “contato” que oferece uma vaga de Head de Dados num instituto em Lisboa.",
@@ -224,6 +253,9 @@
   },
   {
    "id": "thread_com_nuance",
+   "map": {
+    "target": "julia_planilha"
+   },
    "category": "NARRATIVE",
    "min_obsession": 50,
    "label": "🔒 Thread “Uma reflexão sobre a Júlia (com nuance)”",

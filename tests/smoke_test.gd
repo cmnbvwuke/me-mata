@@ -71,6 +71,8 @@ func _ready() -> void:
 
 	# Semana 1: lógica completa com escolhas fixas
 	_test_week_1(gs, obs)
+	# Mapa da sede: rotinas, testemunhas, métodos no espaço
+	await _test_hq_map(gs)
 	# Semana 1: a UI percorre a semana inteira clicando sempre no 1º botão habilitado
 	await _test_week_hub_ui(gs)
 
@@ -121,6 +123,7 @@ func _test_week_1(gs, obs) -> void:
 func _test_week_hub_ui(gs) -> void:
 	gs.new_run()
 	var hub = load("res://scenes/story/week_hub.tscn").instantiate()
+	hub.use_map = false
 	add_child(hub)
 	await get_tree().process_frame
 	var clicks := 0
@@ -137,3 +140,51 @@ func _test_week_hub_ui(gs) -> void:
 		await get_tree().process_frame
 	check(gs.has_flag(&"week_1_done"), "UI percorre a semana 1 até o monólogo (%d cliques)" % clicks)
 	hub.queue_free()
+
+
+func _test_hq_map(gs) -> void:
+	gs.new_run()
+	var r := WeekRunner.new()
+	r.rng.seed = 3
+	r.load_week("res://data/weeks/week_01.json")
+	r.start_week()
+	var m: HQMap = load("res://scenes/world/hq_map.tscn").instantiate()
+	m.setup(r)
+	add_child(m)
+	await get_tree().process_frame
+	# planta: cada porta liga 2 salas, toda sala alcança a recepção
+	check(m.graph.doors.size() == 10, "10 portas válidas (%d)" % m.graph.doors.size())
+	for room in m.graph.rooms:
+		if room != "recepcao":
+			check(not m.graph.path_points(room, "recepcao").is_empty(), "caminho %s → recepção" % room)
+	var julia: WorldNPC = m._npc("julia_planilha")
+	check(julia != null and julia.current_spot == "mesa_julia", "Júlia começa na mesa dela")
+	# 15h: Júlia vai ao bebedouro andando
+	m._advance_minutes(125)
+	check(julia.spot_for_time(m.clock) == "bebedouro", "rotina das 15h = bebedouro")
+	# perto da Júlia: opções de método aparecem
+	m.player.position = julia.position + Vector2(40, 0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var labels := m.interaction_options().map(func(o): return o.label)
+	check(labels.any(func(l): return l.contains("Seminário")), "método disponível perto da Júlia")
+	# a Sala da Missão bloqueia visão do corredor? parede entre (200,200) e (200,560)
+	var space := m.get_world_2d().direct_space_state
+	check(not m._clear_line(space, Vector2(100, 150), Vector2(100, 600)), "parede bloqueia linha de visão")
+	# Elogio sem plateia é recusado
+	m.player.position = Vector2(1250, 650)
+	julia.position = Vector2(1220, 650)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var att := r.rival_attention()
+	m._do_method(r.find_method("elogio_constrangedor"), julia)
+	check(r.rival_attention() == att, "elogio sem plateia não acontece")
+	m.close_panel()
+	# fim da tarde
+	var done := [false]
+	m.finished.connect(func(): done[0] = true)
+	m._advance_minutes(600)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(done[0], "tarde termina às 18h")
+	m.queue_free()
