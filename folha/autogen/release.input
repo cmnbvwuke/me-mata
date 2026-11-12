@@ -1,0 +1,9 @@
+--enable-release-build
+--with-vendor=Folha
+--with-package-format=deb rpm
+--without-java
+--with-help=html
+--enable-skia
+--enable-qt6
+--enable-gtk3
+--disable-gtk4

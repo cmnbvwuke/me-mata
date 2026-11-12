@@ -1,0 +1,10 @@
+--without-java
+--without-help
+--without-myspell-dicts
+--without-doxygen
+--enable-ccache
+--enable-skia
+--enable-qt6
+--enable-gtk3
+--disable-gtk4
+--disable-cve-tests

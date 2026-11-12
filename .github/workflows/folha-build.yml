@@ -1,0 +1,78 @@
+name: Folha build (Linux)
+
+# Compila o Folha (fork do LibreOffice) a cada push que mexa em folha/.
+# O primeiro build sem cache leva ~4–6 h num runner de 4 núcleos; com ccache cai bastante.
+# Variáveis de repositório (Settings → Secrets and variables → Actions → Variables):
+#   FOLHA_CI_ON_PUSH=true  liga o build automático a cada push (sem ela, só roda manualmente
+#                          em Actions → "Folha build" → Run workflow, para não gastar minutos à toa)
+#   FOLHA_RUNNER           runner próprio, ex.: "self-hosted" (recomendado). Padrão: ubuntu-24.04.
+
+on:
+  push:
+    paths:
+      - 'folha/**'
+      - '.github/workflows/folha-build.yml'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Perfil do autogen (ci | dev | release)'
+        default: 'ci'
+
+concurrency:
+  group: folha-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.FOLHA_CI_ON_PUSH == 'true' }}
+    runs-on: ${{ vars.FOLHA_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 355
+    env:
+      PROFILE: ${{ inputs.profile || 'ci' }}
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 8G
+      CCACHE_COMPRESS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Liberar disco (runner hospedado)
+        if: ${{ !vars.FOLHA_RUNNER }}
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h /
+
+      - name: Dependências
+        run: sudo folha/scripts/install-deps.sh
+
+      - name: Cache do ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-${{ env.PROFILE }}-${{ hashFiles('folha/folha.conf') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ env.PROFILE }}-${{ hashFiles('folha/folha.conf') }}-
+            ccache-${{ env.PROFILE }}-
+
+      - name: Bootstrap (upstream + patches)
+        run: folha/scripts/bootstrap.sh "$PROFILE"
+
+      - name: Configure
+        working-directory: folha/core
+        run: ./autogen.sh
+
+      - name: Build
+        working-directory: folha/core
+        run: make build
+
+      - name: Smoke test (headless)
+        working-directory: folha/core
+        run: |
+          printf 'Folha smoke test\n' > /tmp/smoke.txt
+          instdir/program/soffice --headless --convert-to docx --outdir /tmp /tmp/smoke.txt
+          instdir/program/soffice --headless --convert-to pdf  --outdir /tmp /tmp/smoke.docx
+          pdftotext /tmp/smoke.pdf - | grep -q 'Folha smoke test'
+
+      - name: Estatísticas do ccache
+        if: always()
+        run: ccache -s || true
