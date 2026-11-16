@@ -12,6 +12,7 @@ Abra `index.html` no navegador. Não precisa de instalação nem de servidor.
 - A **tensão** sobe com o tempo e a cada provocação. Lançamentos só ficam liberados a partir de 50.
 - Cada ataque alimenta o **Inverno**, que escurece o mapa e deixa os rivais mais cautelosos. Ele não encerra a partida.
 - **Pesquisa**: Economia (+30% de renda por nível), Alcance, Propulsão, Escudos e Ogivas, três níveis cada.
-- **Vitória**: ter a maior população quando a Cúpula de Paz se reunir (10 minutos de jogo) ou ser a última nação de pé.
+- **Modo Cúpula**: vence quem tiver a maior população quando a Cúpula de Paz se reunir (10 minutos de jogo) ou a última nação de pé.
+- **Modo Sobrevivência**: sem relógio. A partida só acaba quando sobrar uma única nação. Depois de 8 minutos a guerra escala: o alcance dos mísseis e a agressividade de todos crescem com o tempo, e ruínas com radiação acima de 30% não podem ser reocupadas.
 
 Controles: toque/clique numa região para agir. Botões no topo: Pesquisa, velocidade (1×/2×/3×) e pausa. No teclado, espaço pausa e Esc fecha o painel.
