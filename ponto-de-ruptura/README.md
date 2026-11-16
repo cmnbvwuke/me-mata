@@ -10,7 +10,7 @@ Abra `index.html` no navegador. Não precisa de instalação nem de servidor.
 - **Silos** guardam até 3 mísseis e recarregam sozinhos. **Escudos** já nascem com 1 míssil de defesa, guardam até 2 (recarga de 10 s) e disparam contra mísseis estrangeiros que passam por perto.
 - **Anexe** regiões neutras ou em ruínas que façam fronteira com as suas.
 - A **tensão** sobe com o tempo e a cada provocação. Lançamentos só ficam liberados a partir de 50.
-- Cada ataque alimenta o **Inverno**. Se chegar a 100%, todas as nações perdem.
+- Cada ataque alimenta o **Inverno**, que escurece o mapa e deixa os rivais mais cautelosos. Ele não encerra a partida.
 - **Pesquisa**: Economia (+30% de renda por nível), Alcance, Propulsão, Escudos e Ogivas, três níveis cada.
 - **Vitória**: ter a maior população quando a Cúpula de Paz se reunir (10 minutos de jogo) ou ser a última nação de pé.
 

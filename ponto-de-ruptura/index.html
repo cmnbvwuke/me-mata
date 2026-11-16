@@ -123,7 +123,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
 <div class="overlay" id="ovStart">
   <div class="card">
     <h1><small>Simulação de dissuasão</small>Ponto de Ruptura</h1>
-    <p>Um arquipélago, quatro potências e um relógio. Em dez minutos a Cúpula de Paz se reúne, e a nação com mais gente viva dita os termos. Até lá, construa, anexe, ameace. Se o céu escurecer de vez, ninguém vence.</p>
+    <p>Um arquipélago, quatro potências e um relógio. Em dez minutos a Cúpula de Paz se reúne, e a nação com mais gente viva dita os termos. Até lá, construa, anexe, ameace. Cada bomba escurece o céu, e os rivais pensam duas vezes quando o inverno aperta.</p>
     <h3>Sua nação</h3>
     <div class="choices" id="factionChoices"></div>
     <h3>Dificuldade</h3>
@@ -146,7 +146,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
       <li>Pesquise <b>Economia</b> para o tesouro crescer mais rápido.</li>
       <li><b>Anexe</b> regiões neutras ou em ruínas que façam fronteira (por terra ou mar próximo) com as suas.</li>
       <li>A <b>tensão</b> sobe com o tempo e a cada provocação. Lançamentos só são possíveis a partir de 50.</li>
-      <li>Cada ataque alimenta o <b>Inverno</b>. Se chegar a 100%, todas as nações perdem.</li>
+      <li>Cada ataque alimenta o <b>Inverno</b>, que escurece o mapa e deixa os rivais mais cautelosos.</li>
       <li>Vitória: ter a maior população quando a Cúpula se reunir, ou ser a última nação de pé.</li>
       <li>Toque num alvo inimigo e escolha <b>Lançar</b> (um míssil) ou <b>Salva</b> (todos os silos ao alcance).</li>
     </ul>
@@ -479,7 +479,6 @@ function update(dt){
 function checkEnd(){
   if(G.over)return;
   const P=G.factions[G.player];
-  if(G.winter>=100)return endGame('lose','Inverno nuclear','A fuligem cobriu o céu. Plantações falharam em todo o arquipélago e nenhuma bandeira sobreviveu ao frio.');
   if(!P.alive)return endGame('lose','Sua nação caiu','Nenhuma região responde mais ao seu comando.');
   const rivals=G.factions.filter(f=>f.alive&&!f.isPlayer);
   if(!rivals.length)return endGame('win','Última nação de pé','Você venceu, mas olhe para o mapa antes de comemorar.');
