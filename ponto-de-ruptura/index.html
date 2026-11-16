@@ -142,7 +142,8 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
     <h3>Como jogar</h3>
     <ul>
       <li>Toque numa região para ver detalhes e agir.</li>
-      <li><b>Silos</b> guardam até 3 mísseis e recarregam sozinhos. <b>Escudos</b> disparam interceptadores contra mísseis estrangeiros que passam por perto.</li>
+      <li><b>Silos</b> guardam até 3 mísseis e recarregam sozinhos. <b>Escudos</b> já nascem com 1 míssil de defesa, guardam até 2 e disparam contra mísseis estrangeiros que passam por perto.</li>
+      <li>Pesquise <b>Economia</b> para o tesouro crescer mais rápido.</li>
       <li><b>Anexe</b> regiões neutras ou em ruínas que façam fronteira (por terra ou mar próximo) com as suas.</li>
       <li>A <b>tensão</b> sobe com o tempo e a cada provocação. Lançamentos só são possíveis a partir de 50.</li>
       <li>Cada ataque alimenta o <b>Inverno</b>. Se chegar a 100%, todas as nações perdem.</li>
@@ -155,7 +156,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
 
 <div class="overlay" id="ovTech" hidden>
   <div class="card">
-    <h3>Pesquisa militar</h3>
+    <h3>Pesquisa</h3>
     <div id="techList"></div>
     <button id="bTechClose" type="button">Fechar</button>
   </div>
@@ -202,13 +203,14 @@ const DIFF=[
 ];
 const COST={silo:60, shield:45};
 const TECH=[
+  {id:'economy',name:'Economia',    desc:'O tesouro cresce 30% mais rápido por nível.'},
   {id:'range',  name:'Alcance',     desc:'Mísseis voam mais longe.'},
   {id:'speed',  name:'Propulsão',   desc:'Mísseis chegam mais rápido e escapam de escudos.'},
   {id:'shield', name:'Escudos',     desc:'Interceptação mais precisa e com raio maior.'},
   {id:'warhead',name:'Ogivas',      desc:'Cada impacto causa mais dano.'},
 ];
 const techCost=l=>[80,140,220][l];
-const LAUNCH_AT=50, GAME_LEN=600, SILO_RELOAD=14, SILO_MAX=3, SHIELD_CD=5;
+const LAUNCH_AT=50, GAME_LEN=600, SILO_RELOAD=14, SILO_MAX=3, SHIELD_CD=1.2, SHIELD_MAX=2, SHIELD_RELOAD=10;
 const SYL=['var','ol','te','ra','nis','ka','mo','ri','zan','do','bel','ur','sa','qui','ten','lo','mar','vi','gra','nor','es','tal','ve','ru','li','an','co','ba','del','ira'];
 
 let G=null, chosenFaction=0, chosenDiff=1, muted=false;
@@ -282,7 +284,7 @@ function newGame(){
   do{world=genWorld(cols,rows,portrait?20:24);tries++}while(world.regions.length<14&&tries<8);
   const regions=world.regions, nF=4;
   const factions=FACTIONS.map((d,i)=>({id:i,...d,isPlayer:i===chosenFaction,money:i===chosenFaction?90:90,alive:true,
-    tech:{range:0,speed:0,shield:0,warhead:0},grudge:[0,0,0,0],aiT:rnd(1,3),launched:0,killed:0,lost:0}));
+    tech:{economy:0,range:0,speed:0,shield:0,warhead:0},grudge:[0,0,0,0],aiT:rnd(1,3),launched:0,killed:0,lost:0}));
   // distribuição de territórios
   const starts=[pick(regions)];
   while(starts.length<nF){let best=null,bd=-1;for(const r of regions){if(starts.includes(r))continue;const m=Math.min(...starts.map(s=>rdist(s,r)));if(m>bd){bd=m;best=r}}starts.push(best)}
@@ -299,7 +301,7 @@ function newGame(){
   for(const r of regions){r.maxPop=+(2+r.size/avg*5+rnd(0,3)).toFixed(1);r.pop=r.maxPop*(r.owner<0?.8:1)}
   // cada nação começa com um silo e um escudo
   for(let f=0;f<nF;f++){const own=regions.filter(r=>r.owner===f).sort((a,b)=>b.pop-a.pop);
-    own[0].shield={cd:0};(own[1]||own[0]).silo={ammo:1,reload:0}}
+    own[0].shield=newShield();(own[1]||own[0]).silo={ammo:1,reload:0}}
   const diag=Math.hypot(cols,rows);
   G={...world,factions,diag,diff:DIFF[chosenDiff],time:0,tension:0,winter:0,speed:1,paused:false,over:false,
     missiles:[],intercepts:[],fx:[],sel:-1,player:chosenFaction,shake:0,dirty:true,
@@ -321,11 +323,14 @@ const popOf=fid=>owned(fid).reduce((s,r)=>s+r.pop,0);
 const canAnnex=(fid,r)=>r.owner<0&&G.regions.some(o=>o.owner===fid&&o.adj.has(r.id));
 
 // ---------- ações ----------
+// o escudo já nasce com 1 míssil de defesa pronto
+const newShield=()=>({ammo:1,reload:0,cd:0});
+const incomeOf=f=>popOf(f.id)*.042*(1+.3*f.tech.economy)*(f.isPlayer?1:G.diff.income);
 function build(r,kind){
   const f=G.factions[r.owner];
   if(r[kind]||f.money<COST[kind])return false;
   f.money-=COST[kind];
-  r[kind]=kind==='silo'?{ammo:0,reload:0}:{cd:0};
+  r[kind]=kind==='silo'?{ammo:0,reload:0}:newShield();
   G.tension=Math.min(100,G.tension+(kind==='silo'?2.5:1));
   G.dirty=true;return true;
 }
@@ -426,7 +431,7 @@ function update(dt){
   G.winter=Math.max(0,G.winter-.06*dt);
   for(const f of G.factions){
     if(!f.alive)continue;
-    f.money+=popOf(f.id)*.042*dt*(f.isPlayer?1:G.diff.income);
+    f.money+=incomeOf(f)*dt;
     for(let i=0;i<4;i++)f.grudge[i]*=1-.025*dt;
     if(!f.isPlayer){f.aiT-=dt;if(f.aiT<=0){f.aiT=rnd(1.6,3);aiThink(f)}}
   }
@@ -434,7 +439,7 @@ function update(dt){
     if(r.owner>=0&&!r.ruin)r.pop=Math.min(r.maxPop,r.pop+(r.maxPop-r.pop)*.004*dt*(1-r.rad));
     r.rad=Math.max(0,r.rad-dt*.02);r.hit=Math.max(0,r.hit-dt*.8);
     if(r.silo&&r.silo.ammo<SILO_MAX){r.silo.reload+=dt;if(r.silo.reload>=SILO_RELOAD){r.silo.reload=0;r.silo.ammo++}}
-    if(r.shield)r.shield.cd=Math.max(0,r.shield.cd-dt);
+    if(r.shield){r.shield.cd=Math.max(0,r.shield.cd-dt);if(r.shield.ammo<SHIELD_MAX){r.shield.reload+=dt;if(r.shield.reload>=SHIELD_RELOAD){r.shield.reload=0;r.shield.ammo++}}}
   }
   // mísseis
   for(const m of G.missiles){
@@ -445,11 +450,11 @@ function update(dt){
   }
   // escudos
   for(const r of G.regions){
-    if(!r.shield||r.shield.cd>0||r.owner<0)continue;
+    if(!r.shield||r.shield.cd>0||r.shield.ammo<=0||r.owner<0)continue;
     const f=G.factions[r.owner], rad=shieldR(f);
     const m=G.missiles.find(m=>!m.dead&&!m.engaged&&m.owner!==r.owner&&m.t>.08&&m.t<.94&&d2(m.x,m.y,r.cx,r.cy)<rad);
     if(!m)continue;
-    r.shield.cd=SHIELD_CD;m.engaged=true;
+    r.shield.cd=SHIELD_CD;r.shield.ammo--;m.engaged=true;
     const ms=G.factions[m.owner];
     G.intercepts.push({x:r.cx,y:r.cy,sx:r.cx,sy:r.cy,m,owner:r.owner,p:interceptP(f)-.06*ms.tech.speed,dead:false});
   }
@@ -585,9 +590,10 @@ function draw(now){
       ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.2;ctx.stroke();
     }else{ctx.strokeStyle='#ff8a50';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-4,y-4);ctx.lineTo(x+4,y+4);ctx.moveTo(x+4,y-4);ctx.lineTo(x-4,y+4);ctx.stroke()}
     if(r.shield&&f){
-      const ready=r.shield.cd<=0;
+      const ready=r.shield.ammo>0;
       ctx.strokeStyle=ready?'rgba(255,255,255,.85)':'rgba(255,255,255,.3)';ctx.lineWidth=1.5;
       ctx.beginPath();ctx.arc(x,y,9,Math.PI*1.05,Math.PI*1.95);ctx.stroke();
+      for(let a=0;a<SHIELD_MAX;a++){ctx.fillStyle=a<r.shield.ammo?'#ffffff':'rgba(255,255,255,.18)';ctx.fillRect(x-17+a*4,y-12,3,3)}
     }
     if(r.silo&&f){
       const bx=x+11, by=y-6;
@@ -648,7 +654,7 @@ function ring(x,y,r,color,alpha,dash){
 function tensionLabel(v){return v<25?'Calma':v<LAUNCH_AT?'Atrito':v<80?'Crise':'Guerra aberta'}
 function updateHUD(){
   const P=G.factions[G.player];
-  $('#hMoney').textContent='¤ '+Math.floor(P.money);
+  $('#hMoney').textContent='¤ '+Math.floor(P.money)+' +'+incomeOf(P).toFixed(1)+'/s';
   $('#hPop').textContent=fmtM(popOf(G.player));
   const tv=G.tension, te=$('#hTens');
   te.style.width=tv+'%';te.style.background=tv<25?'#5fe0a0':tv<LAUNCH_AT?'#ffd34d':tv<80?'#ff9640':'#ff4d5e';
@@ -670,7 +676,7 @@ function updatePanel(){
   $('#pOwner').textContent=r.ruin?'Ruínas · sem governo':f?(f.isPlayer?'Sua nação · ':'')+f.name:'Território neutro';
   let st='<span>Pop. <b>'+fmtM(r.pop)+'</b></span>';
   if(r.silo)st+='<span>Silo <b>'+r.silo.ammo+'/'+SILO_MAX+'</b>'+(r.silo.ammo<SILO_MAX?' <b>'+Math.ceil(SILO_RELOAD-r.silo.reload)+'s</b>':'')+'</span>';
-  if(r.shield)st+='<span>Escudo <b>'+(r.shield.cd>0?Math.ceil(r.shield.cd)+'s':'pronto')+'</b></span>';
+  if(r.shield)st+='<span>Escudo <b>'+r.shield.ammo+'/'+SHIELD_MAX+'</b>'+(r.shield.ammo<SHIELD_MAX?' <b>'+Math.ceil(SHIELD_RELOAD-r.shield.reload)+'s</b>':'')+'</span>';
   if(r.rad>.05)st+='<span style="color:var(--warn)">Radiação <b>'+Math.round(r.rad*100)+'%</b></span>';
   $('#pStats').innerHTML=st;
   const acts=[];let hint='';
