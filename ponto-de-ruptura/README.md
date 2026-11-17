@@ -15,4 +15,6 @@ Abra `index.html` no navegador. Não precisa de instalação nem de servidor.
 - **Modo Cúpula**: vence quem tiver a maior população quando a Cúpula de Paz se reunir (10 minutos de jogo) ou a última nação de pé.
 - **Modo Sobrevivência**: sem relógio. A partida só acaba quando sobrar uma única nação. Depois de 8 minutos a guerra escala: o alcance dos mísseis e a agressividade de todos crescem com o tempo, e ruínas com radiação acima de 30% não podem ser reocupadas.
 
+- **Rota do míssil**: ao mirar num alvo, escolha reta, curva leve ou forte para cada lado, ou **Ponto** (toque no mapa por onde o míssil deve passar). A prévia mostra em vermelho os trechos que cruzam escudos inimigos prontos. Rotas mais longas demoram mais.
+
 Controles: toque/clique numa região para agir. Botões no topo: Pesquisa, velocidade (1×/2×/3×) e pausa. No teclado, espaço pausa e Esc fecha o painel.

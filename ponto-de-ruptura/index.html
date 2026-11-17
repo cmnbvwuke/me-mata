@@ -49,6 +49,11 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
 #pStats{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px}
 #pStats b{font-family:var(--f-mono);font-weight:500}
 #pActs{display:flex;gap:6px;flex-wrap:wrap}
+#pRoute{display:flex;flex-direction:column;gap:5px}
+#pRoute .lbl{font:500 9.5px var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+#pRoute .opts{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+#pRoute button{padding:7px 2px;font-size:11.5px}
+#pRoute button.sel{border-color:var(--accent);background:#0e2e45;color:#e9f9ff}
 #pActs button{flex:1 1 auto}
 #pHint{font-size:11.5px;color:var(--dim);min-height:0}
 #pHint:empty{display:none}
@@ -115,6 +120,17 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
     <h2><span class="sw" id="pSw"></span><span id="pName"></span><button class="x" id="pClose" type="button" aria-label="Fechar">✕</button></h2>
     <div id="pOwner"></div>
     <div id="pStats"></div>
+    <div id="pRoute" hidden>
+      <span class="lbl">Rota do míssil</span>
+      <div class="opts">
+        <button type="button" data-b="-0.45" aria-label="Curva forte à esquerda">⟲⟲</button>
+        <button type="button" data-b="-0.22" aria-label="Curva à esquerda">⟲</button>
+        <button type="button" data-b="0" aria-label="Reta">Reta</button>
+        <button type="button" data-b="0.22" aria-label="Curva à direita">⟳</button>
+        <button type="button" data-b="0.45" aria-label="Curva forte à direita">⟳⟳</button>
+        <button type="button" data-b="way" aria-label="Marcar ponto de passagem no mapa">Ponto</button>
+      </div>
+    </div>
     <div id="pActs"></div>
     <div id="pHint"></div>
   </div>
@@ -156,6 +172,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
       <li>Modo <b>Cúpula</b>: vence quem tiver a maior população aos 10 minutos, ou a última nação de pé.</li>
       <li>Modo <b>Sobrevivência</b>: sem relógio. A partida só acaba quando sobrar uma nação. Depois de 8 minutos a guerra escala: os mísseis vão mais longe e todos atacam mais. Ruínas com radiação acima de 30% não podem ser reocupadas.</li>
       <li>Toque num alvo inimigo e escolha <b>Lançar</b> (um míssil) ou <b>Salva</b> (todos os silos ao alcance).</li>
+      <li>Escolha a <b>rota</b> antes de lançar: reta, curvas para os lados ou <b>Ponto</b> (toque no mapa por onde o míssil deve passar). O trecho vermelho da prévia cruza escudos inimigos. Rotas mais longas demoram mais.</li>
     </ul>
     <button class="primary" id="bHowClose" type="button">Entendi</button>
   </div>
@@ -311,7 +328,7 @@ function newGame(){
     own[0].shield=newShield();(own[1]||own[0]).silo={ammo:1,reload:0}}
   const diag=Math.hypot(cols,rows);
   G={...world,factions,diag,diff:DIFF[chosenDiff],mode:chosenMode,time:0,tension:0,winter:0,speed:1,paused:false,over:false,
-    missiles:[],intercepts:[],fx:[],sel:-1,player:chosenFaction,shake:0,dirty:true,
+    missiles:[],intercepts:[],fx:[],sel:-1,route:{bend:0},pickWay:false,player:chosenFaction,shake:0,dirty:true,
     totalPop0:regions.reduce((s,r)=>s+r.pop,0)};
   layout();
   closePanel();
@@ -366,13 +383,33 @@ function readySilos(fid,target){
   const f=G.factions[fid];
   return owned(fid).filter(r=>r.silo&&r.silo.ammo>0&&rdist(r,target)<=rangeOf(f)).sort((a,b)=>rdist(a,target)-rdist(b,target));
 }
-function launch(from,target){
+// ---------- rotas ----------
+// rota = {bend:-0.45..0.45} (curva lateral) ou {way:{x,y}} (o míssil passa por esse ponto)
+function routeCtrl(ax,ay,bx,by,route){
+  if(route&&route.way)return [2*route.way.x-(ax+bx)/2, 2*route.way.y-(ay+by)/2];
+  const d=d2(ax,ay,bx,by)||1, nx=-(by-ay)/d, ny=(bx-ax)/d;
+  const bend=route?route.bend:rnd(.18,.3)*(R()<.5?-1:1);
+  return [(ax+bx)/2+nx*d*bend,(ay+by)/2+ny*d*bend];
+}
+function bezLen(m){let L=0,px=m.ax,py=m.ay;for(let i=1;i<=16;i++){const [x,y]=bez(m,i/16);L+=d2(px,py,x,y);px=x;py=y}return L}
+// escudos inimigos (com interceptor pronto) que a rota atravessa
+function shieldsOnPath(m,fid){
+  const hit=new Set(), pts=[];
+  for(let i=0;i<=30;i++){const t=i/30, [x,y]=bez(m,t);let danger=false;
+    if(t>.08&&t<.94)for(const r of G.regions){if(!r.shield||r.owner<0||r.owner===fid||r.shield.ammo<=0)continue;
+      if(d2(x,y,r.cx,r.cy)<shieldR(G.factions[r.owner])){danger=true;hit.add(r.id)}}
+    pts.push([x,y,danger])}
+  return {hit,pts};
+}
+function launch(from,target,route){
   const f=G.factions[from.owner];
   if(!from.silo||from.silo.ammo<=0||G.tension<LAUNCH_AT)return false;
   from.silo.ammo--;
-  const ax=from.cx, ay=from.cy, bx=target.cx+rnd(-.5,.5), by=target.cy+rnd(-.5,.5);
-  const d=d2(ax,ay,bx,by)||1, nx=-(by-ay)/d, ny=(bx-ax)/d, bend=d*rnd(.18,.3)*(R()<.5?-1:1);
-  const m={ax,ay,bx,by,cx:(ax+bx)/2+nx*bend,cy:(ay+by)/2+ny*bend,owner:f.id,target:target.id,t:0,dur:d/speedOf(f),x:ax,y:ay,dead:false};
+  const j=route?.25:.5;
+  const ax=from.cx, ay=from.cy, bx=target.cx+rnd(-j,j), by=target.cy+rnd(-j,j);
+  const [cx,cy]=routeCtrl(ax,ay,bx,by,route);
+  const m={ax,ay,bx,by,cx,cy,owner:f.id,target:target.id,t:0,dur:1,x:ax,y:ay,dead:false};
+  m.dur=bezLen(m)/speedOf(f);
   G.missiles.push(m);f.launched++;
   G.tension=Math.min(100,G.tension+3.5);
   if(target.owner>=0)G.factions[target.owner].grudge[f.id]+=3;
@@ -588,9 +625,20 @@ function draw(now){
     if(sel.silo){ring(sel.cx,sel.cy,rangeOf(f),f.color,.35,[6,6])}
     if(sel.shield){ring(sel.cx,sel.cy,shieldR(f),'#ffffff',.25,[2,4])}
   }
+  // prévia da rota escolhida
   if(sel&&sel.owner>=0&&sel.owner!==G.player){
-    for(const s of owned(G.player))if(s.silo&&rdist(s,sel)<=rangeOf(P)){
-      ctx.strokeStyle='rgba(70,210,255,.35)';ctx.setLineDash([3,5]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx(s.cx),sy(s.cy));ctx.lineTo(sx(sel.cx),sy(sel.cy));ctx.stroke();ctx.setLineDash([])}
+    for(const s0 of owned(G.player)){
+      if(!s0.silo||rdist(s0,sel)>rangeOf(P))continue;
+      const [cx,cy]=routeCtrl(s0.cx,s0.cy,sel.cx,sel.cy,G.route);
+      const {pts}=shieldsOnPath({ax:s0.cx,ay:s0.cy,bx:sel.cx,by:sel.cy,cx,cy},G.player);
+      ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.lineDashOffset=-t*20;
+      for(let i=1;i<pts.length;i++){ctx.strokeStyle=pts[i][2]?'rgba(255,77,94,.9)':'rgba(70,210,255,'+(s0.silo.ammo>0?.75:.3)+')';
+        ctx.beginPath();ctx.moveTo(sx(pts[i-1][0]),sy(pts[i-1][1]));ctx.lineTo(sx(pts[i][0]),sy(pts[i][1]));ctx.stroke()}
+      ctx.setLineDash([]);ctx.lineDashOffset=0;
+    }
+    if(G.route.way){const x=sx(G.route.way.x),y=sy(G.route.way.y);ctx.strokeStyle='#46d2ff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-7);ctx.lineTo(x+7,y);ctx.lineTo(x,y+7);ctx.lineTo(x-7,y);ctx.closePath();ctx.stroke()}
+    // escudos inimigos visíveis enquanto mira
+    for(const r of G.regions)if(r.shield&&r.owner>=0&&r.owner!==G.player&&r.shield.ammo>0)ring(r.cx,r.cy,shieldR(G.factions[r.owner]),'#ff4d5e',.35,[2,4]);
   }
   // cidades e estruturas
   const fs=Math.max(9,Math.min(12,CS*1.6));
@@ -684,7 +732,10 @@ function updateHUD(){
 
 // ---------- painel ----------
 let panelSig=null;
-function closePanel(){if(G)G.sel=-1;$('#panel').hidden=true;panelSig=null}
+$('#pRoute').addEventListener('click',e=>{const b=e.target.closest('button[data-b]');if(!b||!G)return;
+  if(b.dataset.b==='way'){G.pickWay=true}else{G.route={bend:+b.dataset.b};G.pickWay=false}
+  sfx('tick');updatePanel()});
+function closePanel(){if(G){G.sel=-1;G.pickWay=false}$('#panel').hidden=true;panelSig=null}
 function openPanel(id){G.sel=id;$('#panel').hidden=false;panelSig=null;updatePanel();sfx('tick')}
 function updatePanel(){
   if(!G||G.sel<0)return;
@@ -706,11 +757,16 @@ function updatePanel(){
   }else if(r.owner>=0){
     const rs=readySilos(G.player,r), inRange=owned(G.player).filter(s=>s.silo&&rdist(s,r)<=rangeOf(P)).length;
     const ok=G.tension>=LAUNCH_AT&&rs.length>0;
-    acts.push({id:'fire',label:'Lançar míssil',cls:'danger',ok,fn:()=>{launch(rs[0],r)}});
-    acts.push({id:'salvo',label:'Salva ('+rs.length+')',cls:'danger',ok:ok&&rs.length>1,fn:()=>{for(const s of rs)launch(s,r)}});
+    acts.push({id:'fire',label:'Lançar míssil',cls:'danger',ok,fn:()=>{launch(rs[0],r,G.route)}});
+    acts.push({id:'salvo',label:'Salva ('+rs.length+')',cls:'danger',ok:ok&&rs.length>1,fn:()=>{for(const s of rs)launch(s,r,G.route)}});
     if(G.tension<LAUNCH_AT)hint='Lançamentos liberados quando a tensão chegar a '+LAUNCH_AT+' (agora '+Math.floor(G.tension)+').';
     else if(!inRange)hint='Nenhum silo seu alcança esta região. Pesquise Alcance ou construa silos mais perto.';
     else if(!rs.length)hint='Seus silos ao alcance estão recarregando.';
+    if(G.pickWay)hint='Toque no mapa para marcar por onde o míssil vai passar.';
+    else if(inRange){
+      const hits=new Set();for(const s0 of owned(G.player).filter(s=>s.silo&&rdist(s,r)<=rangeOf(P))){const [cx,cy]=routeCtrl(s0.cx,s0.cy,r.cx,r.cy,G.route);shieldsOnPath({ax:s0.cx,ay:s0.cy,bx:r.cx,by:r.cy,cx,cy},G.player).hit.forEach(h=>hits.add(h))}
+      hint=(hint?hint+' ':'')+(hits.size?'A rota cruza '+hits.size+(hits.size>1?' escudos inimigos':' escudo inimigo')+' (trecho vermelho). Tente outra curva.':'Rota livre de escudos inimigos prontos.');
+    }
   }else{
     const c=annexCost(r), adj=canAnnex(G.player,r);
     acts.push({id:'annex',label:(r.ruin?'Reocupar':'Anexar')+' · ¤'+c,cls:'primary',ok:adj&&P.money>=c,fn:()=>{annex(G.player,r)&&sfx('build')}});
@@ -726,6 +782,10 @@ function updatePanel(){
   }
   [...box.children].forEach((b,i)=>{b.disabled=!acts[i].ok;b.onclick=()=>{if(acts[i].ok&&!G.paused){acts[i].fn();updatePanel()}}});
   $('#pHint').textContent=hint;
+  const showRoute=r.owner>=0&&r.owner!==G.player;
+  $('#pRoute').hidden=!showRoute;
+  if(showRoute)$('#pRoute').querySelectorAll('button').forEach(b=>{const v=b.dataset.b;
+    b.classList.toggle('sel',v==='way'?(!!G.route.way||G.pickWay):(!G.route.way&&!G.pickWay&&+v===G.route.bend))});
 }
 
 // ---------- pesquisa ----------
@@ -774,6 +834,7 @@ cv.addEventListener('pointerup',e=>{
   const moved=d2(down.x,down.y,e.clientX,e.clientY);down=null;
   if(moved>12)return;
   const gx=(e.clientX-OX)/CS, gy=(e.clientY-OY)/CS;
+  if(G.pickWay){G.route={way:{x:gx,y:gy}};G.pickWay=false;sfx('tick');updatePanel();return}
   let id=-1;
   const cx=Math.floor(gx), cy=Math.floor(gy);
   if(cx>=0&&cy>=0&&cx<G.cols&&cy<G.rows)id=G.reg[cy*G.cols+cx];
