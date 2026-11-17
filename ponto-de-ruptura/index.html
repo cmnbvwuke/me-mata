@@ -150,7 +150,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
       <li>Toque numa região para ver detalhes e agir.</li>
       <li><b>Silos</b> guardam até 3 mísseis e recarregam sozinhos. <b>Escudos</b> já nascem com 1 míssil de defesa, guardam até 2 e disparam contra mísseis estrangeiros que passam por perto.</li>
       <li>Pesquise <b>Economia</b> para o tesouro crescer mais rápido.</li>
-      <li><b>Anexe</b> regiões neutras ou em ruínas que façam fronteira (por terra ou mar próximo) com as suas.</li>
+      <li><b>Anexe</b> regiões neutras ou em ruínas que façam fronteira (por terra ou mar próximo) com as suas. Cada território coletado rende ¤4 por milhão de habitantes na hora, além de aumentar sua renda.</li>
       <li>A <b>tensão</b> sobe com o tempo e a cada provocação. Lançamentos só são possíveis a partir de 50.</li>
       <li>Cada ataque alimenta o <b>Inverno</b>, que escurece o mapa e deixa os rivais mais cautelosos.</li>
       <li>Modo <b>Cúpula</b>: vence quem tiver a maior população aos 10 minutos, ou a última nação de pé.</li>
@@ -208,7 +208,7 @@ const DIFF=[
   {aggr:.26, income:1.0, label:'Tensa'},
   {aggr:.42, income:1.2, label:'Implacável'},
 ];
-const COST={silo:60, shield:45};
+const COST={silo:60, shield:45}, BONUS_PER_MI=4;
 const TECH=[
   {id:'economy',name:'Economia',    desc:'O tesouro cresce 30% mais rápido por nível.'},
   {id:'range',  name:'Alcance',     desc:'Mísseis voam mais longe.'},
@@ -350,7 +350,11 @@ function annex(fid,r){
   f.money-=c;
   if(r.ruin){r.ruin=false;r.maxPop=Math.max(1.5,r.maxPop*.5);r.pop=.6}
   r.owner=fid;G.dirty=true;G.tension=Math.min(100,G.tension+1);
-  if(fid===G.player)toast(r.name+' agora faz parte da sua nação.','good');
+  // bônus imediato no tesouro, proporcional à população do território coletado
+  const bonus=Math.round(r.pop*BONUS_PER_MI);
+  f.money+=bonus;
+  if(fid===G.player){G.fx.push({type:'text',x:r.cx,y:r.cy,t:0,dur:1.8,txt:'+¤'+bonus});sfx('build')}
+  if(fid===G.player)toast(r.name+' agora faz parte da sua nação. +¤'+bonus+' no tesouro.','good');
   else if(R()<.5)toast(f.name+' anexou '+r.name+'.');
   return true;
 }
@@ -644,6 +648,10 @@ function draw(now){
       ctx.fillStyle='rgba(255,240,200,'+Math.max(0,.9-k*2.2)+')';ctx.beginPath();ctx.arc(x,y,R1*.6,0,7);ctx.fill();
       ctx.strokeStyle='rgba(255,140,60,'+(1-k)+')';ctx.lineWidth=3*(1-k)+1;ctx.beginPath();ctx.arc(x,y,R1,0,7);ctx.stroke();
       ctx.strokeStyle='rgba(255,255,255,'+(1-k)*.5+')';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,R1*1.35,0,7);ctx.stroke();
+    }else if(e.type==='text'){
+      ctx.font='700 15px "IBM Plex Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.globalAlpha=1-k;ctx.lineWidth=3;ctx.strokeStyle='rgba(3,8,15,.9)';ctx.strokeText(e.txt,x,y-14-k*22);
+      ctx.fillStyle='#5fe0a0';ctx.fillText(e.txt,x,y-14-k*22);ctx.globalAlpha=1;
     }else if(e.type==='pop'){
       ctx.strokeStyle='rgba(180,240,255,'+(1-k)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,4+k*14,0,7);ctx.stroke();
     }else{
@@ -708,7 +716,7 @@ function updatePanel(){
     acts.push({id:'annex',label:(r.ruin?'Reocupar':'Anexar')+' · ¤'+c,cls:'primary',ok:adj&&P.money>=c,fn:()=>{annex(G.player,r)&&sfx('build')}});
     if(G.mode==='survival'&&r.ruin&&r.rad>.3)hint='Radiação alta demais. Espere baixar de 30% para reocupar.';
     else if(!adj)hint='Precisa fazer fronteira com uma região sua.';
-    else if(r.ruin)hint='Ruínas voltam a crescer devagar, com metade da capacidade.';
+    else hint='Ao anexar, você recebe ¤'+Math.round((r.ruin?.6:r.pop)*BONUS_PER_MI)+' na hora (¤'+BONUS_PER_MI+' por milhão de habitantes).'+(r.ruin?' Ruínas voltam com metade da capacidade.':'');
   }
   const sig=acts.map(a=>a.id+a.label).join('|');
   const box=$('#pActs');
