@@ -95,7 +95,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
 <div id="alarm"></div>
 
 <div id="hud">
-  <div class="stat"><span class="k">Regiões livres</span><span class="v" id="hMoney">0</span></div>
+  <div class="stat"><span class="k">Tesouro</span><span class="v" id="hMoney">0</span></div>
   <div class="stat"><span class="k">População</span><span class="v" id="hPop">0</span></div>
   <div class="stat"><span class="k" id="hTensK">Tensão</span><span class="meter"><i id="hTens"></i></span></div>
   <div class="stat"><span class="k">Inverno</span><span class="meter"><i id="hWinter" style="background:#b8d4ff"></i></span></div>
@@ -148,9 +148,8 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
     <h3>Como jogar</h3>
     <ul>
       <li>Toque numa região para ver detalhes e agir.</li>
-      <li>Não há dinheiro. Cada região sua faz <b>uma ação por vez</b>, e cada ação leva alguns segundos: construir, fabricar, anexar ou pesquisar. Regiões mais populosas trabalham mais rápido.</li>
-      <li><b>Silos</b> guardam até 3 mísseis, fabricados um a um. <b>Escudos</b> já nascem com 1 interceptor, guardam até 2 e disparam contra mísseis estrangeiros que passam por perto.</li>
-      <li>Pesquise <b>Indústria</b> para todas as ações ficarem mais rápidas.</li>
+      <li><b>Silos</b> guardam até 3 mísseis e recarregam sozinhos. <b>Escudos</b> já nascem com 1 míssil de defesa, guardam até 2 e disparam contra mísseis estrangeiros que passam por perto.</li>
+      <li>Pesquise <b>Economia</b> para o tesouro crescer mais rápido.</li>
       <li><b>Anexe</b> regiões neutras ou em ruínas que façam fronteira (por terra ou mar próximo) com as suas.</li>
       <li>A <b>tensão</b> sobe com o tempo e a cada provocação. Lançamentos só são possíveis a partir de 50.</li>
       <li>Cada ataque alimenta o <b>Inverno</b>, que escurece o mapa e deixa os rivais mais cautelosos.</li>
@@ -205,28 +204,20 @@ const FACTIONS=[
   {name:'União Solar',       color:'#b58cff', dark:'#2c2050', mid:'#433277'},
 ];
 const DIFF=[
-  {aggr:.14, work:.85, label:'Diplomática'},
-  {aggr:.26, work:1.0, label:'Tensa'},
-  {aggr:.42, work:1.2, label:'Implacável'},
+  {aggr:.14, income:.85, label:'Diplomática'},
+  {aggr:.26, income:1.0, label:'Tensa'},
+  {aggr:.42, income:1.2, label:'Implacável'},
 ];
-// Sem tesouro: cada região faz uma ação por vez, e cada ação leva tempo.
-const ACT={
-  silo:       {dur:20, label:'Construir silo',       doing:'Construindo silo'},
-  shield:     {dur:16, label:'Construir escudo',     doing:'Construindo escudo'},
-  missile:    {dur:15, label:'Fabricar míssil',      doing:'Fabricando míssil'},
-  interceptor:{dur:7,  label:'Fabricar interceptor', doing:'Fabricando interceptor'},
-  annex:      {dur:15, label:'Anexar',               doing:'Anexando'},
-  research:   {dur:0,  label:'Pesquisar',            doing:'Pesquisando'},
-};
-const RESEARCH_DUR=[25,40,60];
+const COST={silo:60, shield:45};
 const TECH=[
-  {id:'industry',name:'Indústria',  desc:'Todas as ações ficam 15% mais rápidas por nível.'},
+  {id:'economy',name:'Economia',    desc:'O tesouro cresce 30% mais rápido por nível.'},
   {id:'range',  name:'Alcance',     desc:'Mísseis voam mais longe.'},
   {id:'speed',  name:'Propulsão',   desc:'Mísseis chegam mais rápido e escapam de escudos.'},
   {id:'shield', name:'Escudos',     desc:'Interceptação mais precisa e com raio maior.'},
   {id:'warhead',name:'Ogivas',      desc:'Cada impacto causa mais dano.'},
 ];
-const LAUNCH_AT=50, GAME_LEN=600, SILO_MAX=3, SHIELD_CD=1.2, SHIELD_MAX=2;
+const techCost=l=>[80,140,220][l];
+const LAUNCH_AT=50, GAME_LEN=600, SILO_RELOAD=14, SILO_MAX=3, SHIELD_CD=1.2, SHIELD_MAX=2, SHIELD_RELOAD=10;
 const SYL=['var','ol','te','ra','nis','ka','mo','ri','zan','do','bel','ur','sa','qui','ten','lo','mar','vi','gra','nor','es','tal','ve','ru','li','an','co','ba','del','ira'];
 
 let G=null, chosenFaction=0, chosenDiff=1, chosenMode='cupula', muted=false;
@@ -276,7 +267,7 @@ function genWorld(cols,rows,N){
   for(let i=0;i<n;i++)if(reg[i]>=0)reg[i]=remap[reg[i]];
   const regions=[];const used=new Set();
   for(let k=0;k<next;k++){let nm;do{nm='';const c=ri(2,3);for(let s=0;s<c;s++)nm+=pick(SYL)}while(used.has(nm)||nm.length>9);used.add(nm);
-    regions.push({id:k,name:nm[0].toUpperCase()+nm.slice(1),cells:[],adj:new Set(),owner:-1,pop:0,maxPop:0,silo:null,shield:null,task:null,ruin:false,rad:0,hit:0})}
+    regions.push({id:k,name:nm[0].toUpperCase()+nm.slice(1),cells:[],adj:new Set(),owner:-1,pop:0,maxPop:0,silo:null,shield:null,ruin:false,rad:0,hit:0})}
   for(let i=0;i<n;i++)if(reg[i]>=0)regions[reg[i]].cells.push(i);
   for(const r of regions){
     let sx=0,sy=0;for(const i of r.cells){sx+=i%cols;sy+=(i/cols)|0}
@@ -299,8 +290,8 @@ function newGame(){
   let world, tries=0;
   do{world=genWorld(cols,rows,portrait?20:24);tries++}while(world.regions.length<14&&tries<8);
   const regions=world.regions, nF=4;
-  const factions=FACTIONS.map((d,i)=>({id:i,...d,isPlayer:i===chosenFaction,alive:true,
-    tech:{industry:0,range:0,speed:0,shield:0,warhead:0},grudge:[0,0,0,0],aiT:rnd(1,3),launched:0,killed:0,lost:0}));
+  const factions=FACTIONS.map((d,i)=>({id:i,...d,isPlayer:i===chosenFaction,money:i===chosenFaction?90:90,alive:true,
+    tech:{economy:0,range:0,speed:0,shield:0,warhead:0},grudge:[0,0,0,0],aiT:rnd(1,3),launched:0,killed:0,lost:0}));
   // distribuição de territórios
   const starts=[pick(regions)];
   while(starts.length<nF){let best=null,bd=-1;for(const r of regions){if(starts.includes(r))continue;const m=Math.min(...starts.map(s=>rdist(s,r)));if(m>bd){bd=m;best=r}}starts.push(best)}
@@ -317,7 +308,7 @@ function newGame(){
   for(const r of regions){r.maxPop=+(2+r.size/avg*5+rnd(0,3)).toFixed(1);r.pop=r.maxPop*(r.owner<0?.8:1)}
   // cada nação começa com um silo e um escudo
   for(let f=0;f<nF;f++){const own=regions.filter(r=>r.owner===f).sort((a,b)=>b.pop-a.pop);
-    own[0].shield=newShield();(own[1]||own[0]).silo={ammo:1}}
+    own[0].shield=newShield();(own[1]||own[0]).silo={ammo:1,reload:0}}
   const diag=Math.hypot(cols,rows);
   G={...world,factions,diag,diff:DIFF[chosenDiff],mode:chosenMode,time:0,tension:0,winter:0,speed:1,paused:false,over:false,
     missiles:[],intercepts:[],fx:[],sel:-1,player:chosenFaction,shake:0,dirty:true,
@@ -333,6 +324,7 @@ const speedOf=f=>G.diag*(.042+.018*f.tech.speed);
 const shieldR=f=>G.diag*(.1+.025*f.tech.shield);
 const interceptP=f=>.42+.15*f.tech.shield;
 const dmgOf=f=>.42+.12*f.tech.warhead;
+const annexCost=r=>r.ruin?25:Math.round(30+r.pop*5);
 const owned=fid=>G.regions.filter(r=>r.owner===fid);
 const popOf=fid=>owned(fid).reduce((s,r)=>s+r.pop,0);
 // Sobrevivência: a partir dos 8 min a guerra escala e ruínas radioativas não podem ser reocupadas
@@ -342,52 +334,29 @@ const canAnnex=(fid,r)=>r.owner<0&&!(G.mode==='survival'&&r.ruin&&r.rad>.3)&&G.r
 
 // ---------- ações ----------
 // o escudo já nasce com 1 míssil de defesa pronto
-const newShield=()=>({ammo:1,cd:0});
-// regiões mais populosas trabalham mais rápido
-const workSpeed=r=>{const f=G.factions[r.owner];return (1+.15*f.tech.industry)*clamp(.8+r.pop/20,.8,1.3)*(f.isPlayer?1:G.diff.work)};
-const idle=fid=>owned(fid).filter(r=>!r.task);
-const busyOn=(fid,kind,key,val)=>G.regions.some(o=>o.owner===fid&&o.task&&o.task.kind===kind&&o.task[key]===val);
-function canStart(r,kind,extra){
-  if(!r||r.owner<0||r.ruin||r.task)return false;
+const newShield=()=>({ammo:1,reload:0,cd:0});
+const incomeOf=f=>popOf(f.id)*.042*(1+.3*f.tech.economy)*(f.isPlayer?1:G.diff.income);
+function build(r,kind){
   const f=G.factions[r.owner];
-  switch(kind){
-    case 'silo':return !r.silo;
-    case 'shield':return !r.shield;
-    case 'missile':return !!r.silo&&r.silo.ammo<SILO_MAX;
-    case 'interceptor':return !!r.shield&&r.shield.ammo<SHIELD_MAX;
-    case 'annex':{const t=G.regions[extra];return !!t&&canAnnex(r.owner,t)&&r.adj.has(t.id)&&!busyOn(r.owner,'annex','target',extra)}
-    case 'research':return f.tech[extra]<3&&!busyOn(r.owner,'research','tech',extra);
-  }
-  return false;
-}
-function startTask(r,kind,extra){
-  if(!canStart(r,kind,extra))return false;
-  const f=G.factions[r.owner];
-  let dur=ACT[kind].dur;
-  if(kind==='research')dur=RESEARCH_DUR[f.tech[extra]];
-  if(kind==='annex'&&G.regions[extra].ruin)dur=20;
-  r.task={kind,t:0,dur,target:kind==='annex'?extra:null,tech:kind==='research'?extra:null};
-  return true;
-}
-function finishTask(r){
-  const tk=r.task, f=G.factions[r.owner], me=f.isPlayer;r.task=null;
-  if(tk.kind==='silo'){r.silo={ammo:0};G.tension=Math.min(100,G.tension+2.5);if(me)toast('Silo pronto em '+r.name+'.','good')}
-  else if(tk.kind==='shield'){r.shield=newShield();G.tension=Math.min(100,G.tension+1);if(me)toast('Escudo pronto em '+r.name+'.','good')}
-  else if(tk.kind==='missile'){if(r.silo)r.silo.ammo=Math.min(SILO_MAX,r.silo.ammo+1)}
-  else if(tk.kind==='interceptor'){if(r.shield)r.shield.ammo=Math.min(SHIELD_MAX,r.shield.ammo+1)}
-  else if(tk.kind==='annex')annex(f.id,G.regions[tk.target]);
-  else if(tk.kind==='research'){if(f.tech[tk.tech]<3)f.tech[tk.tech]++;if(me)toast(TECH.find(x=>x.id===tk.tech).name+' chegou ao nível '+f.tech[tk.tech]+'.','good')}
-  if(me)sfx('build');
-  G.dirty=true;
+  if(!f||r.ruin||r[kind]||f.money<COST[kind])return false;
+  f.money-=COST[kind];
+  r[kind]=kind==='silo'?{ammo:0,reload:0}:newShield();
+  G.tension=Math.min(100,G.tension+(kind==='silo'?2.5:1));
+  G.dirty=true;return true;
 }
 function annex(fid,r){
-  const f=G.factions[fid];
-  if(!canAnnex(fid,r)){if(f.isPlayer)toast('Não foi possível anexar '+r.name+'.','warn');return false}
+  const f=G.factions[fid], c=annexCost(r);
+  if(!canAnnex(fid,r)||f.money<c)return false;
+  f.money-=c;
   if(r.ruin){r.ruin=false;r.maxPop=Math.max(1.5,r.maxPop*.5);r.pop=.6}
-  r.owner=fid;r.task=null;G.dirty=true;G.tension=Math.min(100,G.tension+1);
+  r.owner=fid;G.dirty=true;G.tension=Math.min(100,G.tension+1);
   if(fid===G.player)toast(r.name+' agora faz parte da sua nação.','good');
   else if(R()<.5)toast(f.name+' anexou '+r.name+'.');
   return true;
+}
+function research(f,id){
+  const l=f.tech[id];if(l>=3||f.money<techCost(l))return false;
+  f.money-=techCost(l);f.tech[id]++;return true;
 }
 function readySilos(fid,target){
   const f=G.factions[fid];
@@ -421,7 +390,7 @@ function impact(m){
   if(r.silo&&R()<.5)r.silo=null;
   if(r.shield&&R()<.5)r.shield=null;
   if(r.pop<.35){
-    r.pop=0;r.ruin=true;r.owner=-1;r.silo=null;r.shield=null;r.task=null;G.dirty=true;
+    r.pop=0;r.ruin=true;r.owner=-1;r.silo=null;r.shield=null;G.dirty=true;
     toast(r.name+' foi reduzida a ruínas.',victim===G.player?'bad':'warn');
     if(victim>=0&&!owned(victim).length){G.factions[victim].alive=false;if(victim!==G.player)toast(G.factions[victim].name+' deixou de existir.','warn')}
   }
@@ -452,15 +421,16 @@ function aiThink(f){
   }
   const silos=mine.filter(r=>r.silo).length, shields=mine.filter(r=>r.shield).length;
   const wantSilo=1+Math.floor(mine.length/3)+(G.tension>40?1:0), wantShield=Math.ceil(mine.length*.55);
-  for(const r of idle(f.id).sort(()=>R()-.5)){
-    if(r.silo&&r.silo.ammo<SILO_MAX&&R()<(G.tension>30?.45:.25)){startTask(r,'missile');continue}
-    if(r.shield&&r.shield.ammo<SHIELD_MAX&&R()<.8){startTask(r,'interceptor');continue}
-    if(!r.silo&&silos<wantSilo&&R()<.5){startTask(r,'silo');continue}
-    if(!r.shield&&shields<wantShield&&R()<.5){startTask(r,'shield');continue}
-    const tgt=G.regions.filter(t=>canStart(r,'annex',t.id));
-    if(tgt.length&&R()<.6){startTask(r,'annex',pick(tgt).id);continue}
-    const tech=TECH.filter(t=>canStart(r,'research',t.id));
-    if(tech.length&&R()<.35){startTask(r,'research',pick(tech).id);continue}
+  const roll=R();
+  if(silos<wantSilo&&f.money>=COST.silo&&roll<.55){
+    const c=mine.filter(r=>!r.silo).sort((a,b)=>b.size-a.size);if(c.length)build(c[ri(0,Math.min(2,c.length-1))],'silo');
+  }else if(shields<wantShield&&f.money>=COST.shield&&roll<.75){
+    const c=mine.filter(r=>!r.shield).sort((a,b)=>b.pop-a.pop);if(c.length)build(c[0],'shield');
+  }else if(roll<.9){
+    const c=G.regions.filter(r=>canAnnex(f.id,r)&&annexCost(r)<=f.money).sort((a,b)=>annexCost(a)-annexCost(b));
+    if(c.length)annex(f.id,c[0]);
+  }else{
+    const opts=TECH.filter(t=>f.tech[t.id]<3&&techCost(f.tech[t.id])<=f.money);if(opts.length)research(f,pick(opts).id);
   }
 }
 
@@ -471,14 +441,15 @@ function update(dt){
   G.winter=Math.max(0,G.winter-.06*dt);
   for(const f of G.factions){
     if(!f.alive)continue;
+    f.money+=incomeOf(f)*dt;
     for(let i=0;i<4;i++)f.grudge[i]*=1-.025*dt;
     if(!f.isPlayer){f.aiT-=dt;if(f.aiT<=0){f.aiT=rnd(1.6,3);aiThink(f)}}
   }
   for(const r of G.regions){
     if(r.owner>=0&&!r.ruin)r.pop=Math.min(r.maxPop,r.pop+(r.maxPop-r.pop)*.004*dt*(1-r.rad));
     r.rad=Math.max(0,r.rad-dt*.02);r.hit=Math.max(0,r.hit-dt*.8);
-    if(r.shield)r.shield.cd=Math.max(0,r.shield.cd-dt);
-    if(r.task&&r.owner>=0){r.task.t+=dt*workSpeed(r);if(r.task.t>=r.task.dur)finishTask(r)}
+    if(r.silo&&r.silo.ammo<SILO_MAX){r.silo.reload+=dt;if(r.silo.reload>=SILO_RELOAD){r.silo.reload=0;r.silo.ammo++}}
+    if(r.shield){r.shield.cd=Math.max(0,r.shield.cd-dt);if(r.shield.ammo<SHIELD_MAX){r.shield.reload+=dt;if(r.shield.reload>=SHIELD_RELOAD){r.shield.reload=0;r.shield.ammo++}}}
   }
   // mísseis
   for(const m of G.missiles){
@@ -627,12 +598,6 @@ function draw(now){
       ctx.fillStyle=r.hit>0?'#ffffff':'#e9f2fb';ctx.beginPath();ctx.arc(x,y,rad,0,7);ctx.fill();
       ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.2;ctx.stroke();
     }else{ctx.strokeStyle='#ff8a50';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-4,y-4);ctx.lineTo(x+4,y+4);ctx.moveTo(x+4,y-4);ctx.lineTo(x-4,y+4);ctx.stroke()}
-    if(r.task&&f){
-      const k=clamp(r.task.t/r.task.dur,0,1);
-      ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,13,0,7);ctx.stroke();
-      ctx.strokeStyle=f.color;ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(x,y,13,-Math.PI/2,-Math.PI/2+k*Math.PI*2);ctx.stroke();
-      if(r.task.kind==='annex'){const t=G.regions[r.task.target];ctx.save();ctx.globalAlpha=.6;ctx.strokeStyle=f.color;ctx.setLineDash([2,4]);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(sx(t.cx),sy(t.cy));ctx.stroke();ctx.restore()}
-    }
     if(r.shield&&f){
       const ready=r.shield.ammo>0;
       ctx.strokeStyle=ready?'rgba(255,255,255,.85)':'rgba(255,255,255,.3)';ctx.lineWidth=1.5;
@@ -698,7 +663,7 @@ function ring(x,y,r,color,alpha,dash){
 function tensionLabel(v){return v<25?'Calma':v<LAUNCH_AT?'Atrito':v<80?'Crise':'Guerra aberta'}
 function updateHUD(){
   const P=G.factions[G.player];
-  $('#hMoney').textContent=idle(G.player).length+' / '+owned(G.player).length;
+  $('#hMoney').textContent='¤ '+Math.floor(P.money)+' +'+incomeOf(P).toFixed(1)+'/s';
   $('#hPop').textContent=fmtM(popOf(G.player));
   const tv=G.tension, te=$('#hTens');
   te.style.width=tv+'%';te.style.background=tv<25?'#5fe0a0':tv<LAUNCH_AT?'#ffd34d':tv<80?'#ff9640':'#ff4d5e';
@@ -720,29 +685,16 @@ function updatePanel(){
   $('#pSw').style.background=r.ruin?'#6b3a26':f?f.color:'#6f7d8c';
   $('#pOwner').textContent=r.ruin?'Ruínas · sem governo':f?(f.isPlayer?'Sua nação · ':'')+f.name:'Território neutro';
   let st='<span>Pop. <b>'+fmtM(r.pop)+'</b></span>';
-  if(r.silo)st+='<span>Silo <b>'+r.silo.ammo+'/'+SILO_MAX+'</b></span>';
-  if(r.shield)st+='<span>Interceptores <b>'+r.shield.ammo+'/'+SHIELD_MAX+'</b></span>';
+  if(r.silo)st+='<span>Silo <b>'+r.silo.ammo+'/'+SILO_MAX+'</b>'+(r.silo.ammo<SILO_MAX?' <b>'+Math.ceil(SILO_RELOAD-r.silo.reload)+'s</b>':'')+'</span>';
+  if(r.shield)st+='<span>Escudo <b>'+r.shield.ammo+'/'+SHIELD_MAX+'</b>'+(r.shield.ammo<SHIELD_MAX?' <b>'+Math.ceil(SHIELD_RELOAD-r.shield.reload)+'s</b>':'')+'</span>';
   if(r.rad>.05)st+='<span style="color:var(--warn)">Radiação <b>'+Math.round(r.rad*100)+'%</b></span>';
-  if(r.task&&r.owner===G.player){
-    const tk=r.task, k=Math.floor(tk.t/tk.dur*100), left=Math.ceil((tk.dur-tk.t)/workSpeed(r));
-    const what=tk.kind==='annex'?'Anexando '+G.regions[tk.target].name:tk.kind==='research'?'Pesquisando '+TECH.find(x=>x.id===tk.tech).name:ACT[tk.kind].doing;
-    st+='<span style="color:var(--accent)">'+what+' · <b>'+k+'%</b> · '+left+'s</span>';
-  }
   $('#pStats').innerHTML=st;
   const acts=[];let hint='';
-  const secs=(r0,kind)=>Math.ceil(ACT[kind].dur/workSpeed(r0))+'s';
   if(r.owner===G.player){
-    if(r.task){
-      acts.push({id:'cancel',label:'Cancelar ação',ok:true,fn:()=>{r.task=null}});
-      hint='Cada região faz uma coisa por vez. Use outras regiões enquanto esta trabalha.';
-    }else{
-      if(r.silo)acts.push({id:'missile',label:'Fabricar míssil · '+secs(r,'missile'),cls:'primary',ok:canStart(r,'missile'),fn:()=>startTask(r,'missile')});
-      else acts.push({id:'silo',label:'Construir silo · '+secs(r,'silo'),ok:canStart(r,'silo'),fn:()=>startTask(r,'silo')});
-      if(r.shield)acts.push({id:'interceptor',label:'Fabricar interceptor · '+secs(r,'interceptor'),ok:canStart(r,'interceptor'),fn:()=>startTask(r,'interceptor')});
-      else acts.push({id:'shield',label:'Construir escudo · '+secs(r,'shield'),ok:canStart(r,'shield'),fn:()=>startTask(r,'shield')});
-      if(r.silo&&r.silo.ammo>=SILO_MAX&&r.shield&&r.shield.ammo>=SHIELD_MAX)hint='Silo e escudo cheios. Use esta região para pesquisar ou anexar vizinhos.';
-      else hint='Regiões mais populosas trabalham mais rápido.';
-    }
+    if(!r.silo)acts.push({id:'silo',label:'Construir silo · ¤'+COST.silo,ok:P.money>=COST.silo,fn:()=>build(r,'silo')&&sfx('build')});
+    if(!r.shield)acts.push({id:'shield',label:'Construir escudo · ¤'+COST.shield,ok:P.money>=COST.shield,fn:()=>build(r,'shield')&&sfx('build')});
+    if(r.silo&&r.shield)hint='Região totalmente fortificada. Toque num alvo inimigo para atacar.';
+    else if(r.silo)hint='Silos aumentam a tensão global ao serem construídos.';
   }else if(r.owner>=0){
     const rs=readySilos(G.player,r), inRange=owned(G.player).filter(s=>s.silo&&rdist(s,r)<=rangeOf(P)).length;
     const ok=G.tension>=LAUNCH_AT&&rs.length>0;
@@ -750,21 +702,13 @@ function updatePanel(){
     acts.push({id:'salvo',label:'Salva ('+rs.length+')',cls:'danger',ok:ok&&rs.length>1,fn:()=>{for(const s of rs)launch(s,r)}});
     if(G.tension<LAUNCH_AT)hint='Lançamentos liberados quando a tensão chegar a '+LAUNCH_AT+' (agora '+Math.floor(G.tension)+').';
     else if(!inRange)hint='Nenhum silo seu alcança esta região. Pesquise Alcance ou construa silos mais perto.';
-    else if(!rs.length)hint='Seus silos ao alcance estão vazios. Fabrique mísseis neles.';
+    else if(!rs.length)hint='Seus silos ao alcance estão recarregando.';
   }else{
-    const mine=G.regions.find(o=>o.owner===G.player&&o.task&&o.task.kind==='annex'&&o.task.target===r.id);
-    if(mine){
-      st+='';hint='Sua região '+mine.name+' está anexando este território ('+Math.floor(mine.task.t/mine.task.dur*100)+'%).';
-      acts.push({id:'cancelannex',label:'Cancelar anexação',ok:true,fn:()=>{mine.task=null}});
-    }else{
-      const by=idle(G.player).filter(o=>canStart(o,'annex',r.id)).sort((a,b)=>workSpeed(b)-workSpeed(a));
-      const dur=r.ruin?20:ACT.annex.dur;
-      acts.push({id:'annex',label:(r.ruin?'Reocupar':'Anexar')+(by.length?' · '+Math.ceil(dur/workSpeed(by[0]))+'s':''),cls:'primary',ok:by.length>0,fn:()=>startTask(by[0],'annex',r.id)});
-      if(G.mode==='survival'&&r.ruin&&r.rad>.3)hint='Radiação alta demais. Espere baixar de 30% para reocupar.';
-      else if(!canAnnex(G.player,r))hint='Precisa fazer fronteira com uma região sua.';
-      else if(!by.length)hint='Suas regiões vizinhas estão ocupadas com outras ações.';
-      else hint='A região vizinha '+by[0].name+' fará a anexação.'+(r.ruin?' Ruínas voltam com metade da capacidade.':'');
-    }
+    const c=annexCost(r), adj=canAnnex(G.player,r);
+    acts.push({id:'annex',label:(r.ruin?'Reocupar':'Anexar')+' · ¤'+c,cls:'primary',ok:adj&&P.money>=c,fn:()=>{annex(G.player,r)&&sfx('build')}});
+    if(G.mode==='survival'&&r.ruin&&r.rad>.3)hint='Radiação alta demais. Espere baixar de 30% para reocupar.';
+    else if(!adj)hint='Precisa fazer fronteira com uma região sua.';
+    else if(r.ruin)hint='Ruínas voltam a crescer devagar, com metade da capacidade.';
   }
   const sig=acts.map(a=>a.id+a.label).join('|');
   const box=$('#pActs');
@@ -777,35 +721,13 @@ function updatePanel(){
 }
 
 // ---------- pesquisa ----------
-function researchLab(){return idle(G.player).sort((a,b)=>workSpeed(b)-workSpeed(a))[0]}
-let techSig=null;
 function renderTech(){
-  const P=G.factions[G.player], lab=researchLab();
-  const rows=TECH.map(t=>{const l=P.tech[t.id];
-    const run=G.regions.find(o=>o.owner===G.player&&o.task&&o.task.kind==='research'&&o.task.tech===t.id);
-    return {t,l,run,state:l>=3?'max':run?'run':lab?'ok':'busy'}});
-  const sig=(lab?lab.name:'-')+'|'+rows.map(x=>x.t.id+x.l+x.state+(x.run?x.run.name:'')).join('|');
-  const box=$('#techList');
-  if(sig!==techSig){
-    techSig=sig;
-    box.innerHTML=rows.map(({t,l,run,state})=>{
-      const btn=state==='max'?'<button type="button" disabled>Máx.</button>':
-        state==='run'?'<button type="button" disabled data-run="'+t.id+'"></button>':
-        state==='ok'?'<button type="button" data-t="'+t.id+'"></button>':'<button type="button" disabled>Ocupado</button>';
-      return '<div class="tech"><span class="n">'+t.name+'</span><span class="d">'+t.desc+(run?' Em '+run.name+'.':'')+'</span><span class="pips">'+[0,1,2].map(i=>'<i class="'+(i<l?'on':'')+'"></i>').join('')+'</span>'+btn+'</div>'}).join('')+
-      '<p style="font-size:12px;margin-top:8px">'+(lab?'A pesquisa usa sua região livre mais produtiva ('+lab.name+').':'Todas as suas regiões estão ocupadas. Espere uma ficar livre.')+'</p>';
-  }
-  for(const {t,l,run,state} of rows){
-    if(state==='run'){const b=box.querySelector('[data-run="'+t.id+'"]');if(b)b.textContent=Math.floor(run.task.t/run.task.dur*100)+'%'}
-    if(state==='ok'){const b=box.querySelector('[data-t="'+t.id+'"]');if(b)b.textContent='Pesquisar · '+Math.ceil(RESEARCH_DUR[l]/workSpeed(lab))+'s'}
-  }
+  const P=G.factions[G.player];
+  $('#techList').innerHTML=TECH.map(t=>{const l=P.tech[t.id];
+    return '<div class="tech"><span class="n">'+t.name+'</span><span class="d">'+t.desc+'</span><span class="pips">'+[0,1,2].map(i=>'<i class="'+(i<l?'on':'')+'"></i>').join('')+'</span>'+
+      (l<3?'<button type="button" data-t="'+t.id+'"'+(P.money<techCost(l)?' disabled':'')+'>¤ '+techCost(l)+'</button>':'<button type="button" disabled>Máx.</button>')+'</div>'}).join('');
+  $('#techList').querySelectorAll('button[data-t]').forEach(b=>b.onclick=()=>{if(research(P,b.dataset.t)){sfx('build');toast(TECH.find(x=>x.id===b.dataset.t).name+' aprimorado.','good')}renderTech()});
 }
-$('#techList').addEventListener('click',e=>{
-  const b=e.target.closest('button[data-t]');if(!b||!G||G.paused)return;
-  const lab=researchLab();
-  if(lab&&startTask(lab,'research',b.dataset.t)){sfx('tick');toast('Pesquisa de '+TECH.find(x=>x.id===b.dataset.t).name+' iniciada em '+lab.name+'.')}
-  renderTech();
-});
 
 // ---------- toasts ----------
 function toast(msg,kind){
@@ -853,7 +775,7 @@ cv.addEventListener('pointerup',e=>{
 $('#pClose').onclick=closePanel;
 $('#bSpeed').onclick=()=>{G.speed=G.speed>=3?1:G.speed+1;$('#bSpeed').textContent=G.speed+'×'};
 $('#bPause').onclick=()=>{G.paused=!G.paused;$('#bPause').textContent=G.paused?'▶':'II';$('#bPause').setAttribute('aria-label',G.paused?'Continuar':'Pausar');toast(G.paused?'Jogo pausado.':'Jogo retomado.')};
-$('#bTech').onclick=()=>{techSig=null;renderTech();$('#ovTech').hidden=false};
+$('#bTech').onclick=()=>{renderTech();$('#ovTech').hidden=false};
 $('#bTechClose').onclick=()=>$('#ovTech').hidden=true;
 $('#bHow').onclick=()=>$('#ovHow').hidden=false;
 $('#bHowClose').onclick=()=>$('#ovHow').hidden=true;
@@ -885,9 +807,10 @@ function tick(now){
     while(dt>0){const s=Math.min(.05,dt);update(s);dt-=s;if(G.over)break}
     G.shake=Math.max(0,G.shake-real*1.5);
   }
-  if(G){hudT-=real;if(hudT<=0){hudT=.2;updateHUD();updatePanel();if(!$('#ovTech').hidden)renderTech()}}
+  if(G){hudT-=real;if(hudT<=0){hudT=.2;updateHUD();updatePanel();if(!$('#ovTech').hidden)renderTechLight()}}
   draw(now);
 }
+function renderTechLight(){const P=G.factions[G.player];$('#techList').querySelectorAll('button[data-t]').forEach(b=>{b.disabled=P.money<techCost(P.tech[b.dataset.t])})}
 layout();requestAnimationFrame(frame);
 
 })();
