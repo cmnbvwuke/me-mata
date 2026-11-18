@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: mapa em tela cheia (canvas) + HUD fixo no topo + painel de região no rodapé. Visual único: sala de crise noturna. */
+/* Layout: globo 3D em tela cheia (WebGL + canvas 2D por cima) + HUD fixo no topo + painel de região no rodapé. Visual único: sala de crise noturna. */
 :root{
   color-scheme:dark;
   --bg:#050a12; --sea:#081424; --panel:rgba(9,17,30,.94); --line:#1c3150; --line-hi:#2f5582;
@@ -16,9 +16,11 @@
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:14px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-#map{position:fixed;inset:0;display:block;width:100%;height:100%}
+#globe,#map{position:fixed;inset:0;display:block;width:100%;height:100%}
+#map{cursor:grab;touch-action:none}
 button{font:600 13px var(--f-body);color:var(--text);background:#11223a;border:1px solid var(--line-hi);border-radius:7px;padding:9px 12px;cursor:pointer;touch-action:manipulation}
 button:hover:not(:disabled){border-color:var(--accent)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -96,6 +98,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
 @media (max-width:420px){.card h1{font-size:28px}.stat .v{font-size:13.5px}.meter{width:64px}#hud{gap:10px}}
 </style>
 
+<canvas id="globe"></canvas>
 <canvas id="map"></canvas>
 <div id="alarm"></div>
 
@@ -107,6 +110,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
   <div class="stat"><span class="k" id="hClockK">Cúpula em</span><span class="v" id="hClock">10:00</span></div>
   <div class="spacer"></div>
   <div class="btns">
+    <button id="bHome" type="button" aria-label="Centralizar na sua nação" title="Centralizar na sua nação">⌖</button>
     <button id="bTech" type="button">Pesquisa</button>
     <button id="bSpeed" type="button">1×</button>
     <button id="bPause" type="button" aria-label="Pausar">II</button>
@@ -128,7 +132,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
         <button type="button" data-b="0" aria-label="Reta">Reta</button>
         <button type="button" data-b="0.22" aria-label="Curva à direita">⟳</button>
         <button type="button" data-b="0.45" aria-label="Curva forte à direita">⟳⟳</button>
-        <button type="button" data-b="way" aria-label="Marcar ponto de passagem no mapa">Ponto</button>
+        <button type="button" data-b="way" aria-label="Marcar ponto de passagem no globo">Ponto</button>
       </div>
     </div>
     <div id="pActs"></div>
@@ -139,7 +143,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
 <div class="overlay" id="ovStart">
   <div class="card">
     <h1><small>Simulação de dissuasão</small>Ponto de Ruptura</h1>
-    <p>Um arquipélago, quatro potências e nenhuma confiança entre elas. Construa, anexe, ameace. Cada bomba escurece o céu, e os rivais pensam duas vezes quando o inverno aperta.</p>
+    <p>Um planeta, quatro potências e nenhuma confiança entre elas. Construa, anexe, ameace. Cada bomba escurece o céu, e os rivais pensam duas vezes quando o inverno aperta.</p>
     <h3>Sua nação</h3>
     <div class="choices" id="factionChoices"></div>
     <h3>Modo</h3>
@@ -163,6 +167,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
   <div class="card">
     <h3>Como jogar</h3>
     <ul>
+      <li>Arraste para girar o globo e use pinça (ou a roda do mouse) para zoom. O botão ⌖ volta para a sua nação.</li>
       <li>Toque numa região para ver detalhes e agir.</li>
       <li><b>Silos</b> guardam até 3 mísseis e recarregam sozinhos. <b>Escudos</b> já nascem com 1 míssil de defesa, guardam até 2 e disparam contra mísseis estrangeiros que passam por perto.</li>
       <li>Pesquise <b>Economia</b> para o tesouro crescer mais rápido.</li>
@@ -172,7 +177,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
       <li>Modo <b>Cúpula</b>: vence quem tiver a maior população aos 10 minutos, ou a última nação de pé.</li>
       <li>Modo <b>Sobrevivência</b>: sem relógio. A partida só acaba quando sobrar uma nação. Depois de 8 minutos a guerra escala: os mísseis vão mais longe e todos atacam mais. Ruínas com radiação acima de 30% não podem ser reocupadas.</li>
       <li>Toque num alvo inimigo e escolha <b>Lançar</b> (um míssil) ou <b>Salva</b> (todos os silos ao alcance).</li>
-      <li>Escolha a <b>rota</b> antes de lançar: reta, curvas para os lados ou <b>Ponto</b> (toque no mapa por onde o míssil deve passar). O trecho vermelho da prévia cruza escudos inimigos. Rotas mais longas demoram mais.</li>
+      <li>Escolha a <b>rota</b> antes de lançar: reta, curvas para os lados ou <b>Ponto</b> (toque no globo por onde o míssil deve passar). O trecho vermelho da prévia cruza escudos inimigos. Rotas mais longas demoram mais.</li>
     </ul>
     <button class="primary" id="bHowClose" type="button">Entendi</button>
   </div>
@@ -201,8 +206,9 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
 (()=>{
 'use strict';
 const $=s=>document.querySelector(s);
-const cv=$('#map'), ctx=cv.getContext('2d');
+const gcv=$('#globe'), cv=$('#map'), ctx=cv.getContext('2d');
 const mapLayer=document.createElement('canvas'), mctx=mapLayer.getContext('2d');
+const TS=8, TAU=Math.PI*2;
 
 // ---------- utilidades ----------
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -210,8 +216,22 @@ let R=Math.random;
 const rnd=(a,b)=>a+R()*(b-a), ri=(a,b)=>Math.floor(rnd(a,b+1)), pick=a=>a[Math.floor(R()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const d2=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
-const rdist=(a,b)=>d2(a.cx,a.cy,b.cx,b.cy);
 const fmtM=v=>v>=10?v.toFixed(0)+' mi':v.toFixed(1)+' mi';
+
+// ---------- vetores na esfera ----------
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+const len=a=>Math.hypot(a[0],a[1],a[2]);
+const norm=a=>mul(a,1/(len(a)||1));
+const vecLL=(lon,lat)=>{const c=Math.cos(lat);return[c*Math.cos(lon),Math.sin(lat),c*Math.sin(lon)]};
+const toLL=v=>[Math.atan2(v[2],v[0]),Math.asin(clamp(v[1],-1,1))];
+const arc=(a,b)=>Math.acos(clamp(dot(a,b),-1,1));
+let K=30;                       // células por radiano (no equador)
+const gd=(a,b)=>arc(a,b)*K;     // distância sobre o globo, em células
+const rdist=(a,b)=>gd(a.v,b.v);
 
 // ---------- definições ----------
 const FACTIONS=[
@@ -239,77 +259,91 @@ const SYL=['var','ol','te','ra','nis','ka','mo','ri','zan','do','bel','ur','sa',
 
 let G=null, chosenFaction=0, chosenDiff=1, chosenMode='cupula', muted=false;
 
-// ---------- geração de mundo ----------
+// ---------- geração do planeta ----------
+// A grade é equirretangular (x = longitude, y = latitude) e dá a volta no eixo x.
 function lattice(cols,rows,scale){
-  const gw=Math.ceil(cols/scale)+2, gh=Math.ceil(rows/scale)+2, g=new Float32Array(gw*gh);
+  const gw=Math.max(3,Math.round(cols/scale)), gh=Math.ceil(rows/scale)+2, g=new Float32Array(gw*gh);
   for(let i=0;i<g.length;i++)g[i]=R();
-  return (x,y)=>{const fx=x/scale, fy=y/scale, ix=fx|0, iy=fy|0;let tx=fx-ix, ty=fy-iy;tx=tx*tx*(3-2*tx);ty=ty*ty*(3-2*ty);
-    const a=g[iy*gw+ix], b=g[iy*gw+ix+1], c=g[(iy+1)*gw+ix], d=g[(iy+1)*gw+ix+1];
+  return (x,y)=>{const fx=x/cols*gw, fy=y/scale, ix=Math.floor(fx), iy=Math.floor(fy);let tx=fx-ix, ty=fy-iy;tx=tx*tx*(3-2*tx);ty=ty*ty*(3-2*ty);
+    const x0=((ix%gw)+gw)%gw, x1=(x0+1)%gw;
+    const a=g[iy*gw+x0], b=g[iy*gw+x1], c=g[(iy+1)*gw+x0], d=g[(iy+1)*gw+x1];
     return a+(b-a)*tx+(c-a)*ty+(a-b-c+d)*tx*ty;};
 }
 function genWorld(cols,rows,N){
-  const n=cols*rows, h=new Float32Array(n);
-  const base=Math.min(cols,rows);
+  K=cols/TAU;
+  const n=cols*rows, h=new Float32Array(n), CV=new Array(n), W=new Float32Array(n);
+  for(let y=0;y<rows;y++){const lat=Math.PI/2-(y+.5)/rows*Math.PI;
+    for(let x=0;x<cols;x++){const i=y*cols+x;CV[i]=vecLL((x+.5)/cols*TAU-Math.PI,lat);W[i]=Math.cos(lat)}}
+  const base=rows;
   const oct=[[base/3.2,1],[base/6,.65],[base/12,.32],[base/24,.14]].map(([s,a])=>[lattice(cols,rows,s),a]);
   const ch1=lattice(cols,rows,base/3.5), ch2=lattice(cols,rows,base/2.5);
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     let v=0;for(const [f,a] of oct)v+=f(x,y)*a;
-    // canais de mar que partem o continente em ilhas
     const c1=1-Math.abs(ch1(x,y)*2-1), c2=1-Math.abs(ch2(x,y)*2-1);
     v-=Math.pow(c1,7)*.9+Math.pow(c2,7)*.7;
-    const dx=(x+.5)/cols*2-1, dy=(y+.5)/rows*2-1, d=Math.max(Math.hypot(dx,dy)*.82,Math.abs(dx),Math.abs(dy));
-    const e=clamp((d-.45)/.5,0,1);v-=e*e*(3-2*e)*1.5;
+    // polos viram mar aberto
+    const la=Math.abs((y+.5)/rows*2-1), e=clamp((la-.5)/.32,0,1);v-=e*e*(3-2*e)*1.6;
     h[y*cols+x]=v;
   }
   const sorted=Array.from(h).sort((a,b)=>a-b), thr=sorted[Math.floor(n*.6)];
-  const land=new Uint8Array(n);let landCells=[];
-  for(let i=0;i<n;i++)if(h[i]>thr){land[i]=1;landCells.push(i)}
-  // sementes
-  const spacing=Math.sqrt(landCells.length/N);
-  let seeds=[];
-  for(let tries=0;tries<6000&&seeds.length<N;tries++){
-    const i=pick(landCells), x=i%cols, y=(i/cols)|0;
-    if(seeds.every(s=>d2(s.x,s.y,x,y)>=spacing*.9))seeds.push({x,y,i});
+  const land=new Uint8Array(n), landCells=[];let area=0;
+  for(let i=0;i<n;i++)if(h[i]>thr){land[i]=1;landCells.push(i);area+=W[i]}
+  const spacing=Math.sqrt(area/N);
+  const seeds=[];
+  for(let tries=0;tries<8000&&seeds.length<N;tries++){
+    const i=pick(landCells);
+    if(seeds.every(s=>gd(CV[s],CV[i])>=spacing*.9))seeds.push(i);
   }
   const reg=new Int16Array(n).fill(-1), q=[];
-  seeds.forEach((s,k)=>{reg[s.i]=k;q.push(s.i)});
-  for(let qi=0;qi<q.length;qi++){
-    const i=q[qi], x=i%cols, y=(i/cols)|0, k=reg[i];
-    const nb=[x>0?i-1:-1,x<cols-1?i+1:-1,y>0?i-cols:-1,y<rows-1?i+cols:-1];
-    for(const j of nb)if(j>=0&&land[j]&&reg[j]<0){reg[j]=k;q.push(j)}
-  }
-  const sizes=new Array(seeds.length).fill(0);for(let i=0;i<n;i++)if(reg[i]>=0)sizes[reg[i]]++;
-  const minSize=Math.max(10,spacing*spacing*.28), remap=new Array(seeds.length).fill(-1);let next=0;
+  const nbOf=i=>{const x=i%cols, y=(i/cols)|0;return[y*cols+(x+cols-1)%cols,y*cols+(x+1)%cols,y>0?i-cols:-1,y<rows-1?i+cols:-1]};
+  seeds.forEach((s,k)=>{reg[s]=k;q.push(s)});
+  for(let qi=0;qi<q.length;qi++){const i=q[qi],k=reg[i];for(const j of nbOf(i))if(j>=0&&land[j]&&reg[j]<0){reg[j]=k;q.push(j)}}
+  const sizes=new Array(seeds.length).fill(0);for(let i=0;i<n;i++)if(reg[i]>=0)sizes[reg[i]]+=W[i];
+  const minSize=Math.max(8,spacing*spacing*.28), remap=new Array(seeds.length).fill(-1);let next=0;
   sizes.forEach((s,k)=>{if(s>=minSize)remap[k]=next++});
   for(let i=0;i<n;i++)if(reg[i]>=0)reg[i]=remap[reg[i]];
-  const regions=[];const used=new Set();
+  const regions=[], used=new Set();
   for(let k=0;k<next;k++){let nm;do{nm='';const c=ri(2,3);for(let s=0;s<c;s++)nm+=pick(SYL)}while(used.has(nm)||nm.length>9);used.add(nm);
     regions.push({id:k,name:nm[0].toUpperCase()+nm.slice(1),cells:[],adj:new Set(),owner:-1,pop:0,maxPop:0,silo:null,shield:null,ruin:false,rad:0,hit:0})}
   for(let i=0;i<n;i++)if(reg[i]>=0)regions[reg[i]].cells.push(i);
   for(const r of regions){
-    let sx=0,sy=0;for(const i of r.cells){sx+=i%cols;sy+=(i/cols)|0}
-    sx/=r.cells.length;sy/=r.cells.length;
-    let best=r.cells[0],bd=1e9;for(const i of r.cells){const dd=d2(i%cols,(i/cols)|0,sx,sy);if(dd<bd){bd=dd;best=i}}
-    r.cx=best%cols+.5;r.cy=((best/cols)|0)+.5;r.size=r.cells.length;
+    let s=[0,0,0],sz=0;for(const i of r.cells){s=add(s,mul(CV[i],W[i]));sz+=W[i]}
+    s=norm(s);let best=r.cells[0],bd=-2;for(const i of r.cells){const dd=dot(CV[i],s);if(dd>bd){bd=dd;best=i}}
+    r.v=CV[best];r.cx=best%cols+.5;r.cy=((best/cols)|0)+.5;r.size=sz;
   }
-  for(let i=0;i<n;i++){const a=reg[i];if(a<0)continue;const x=i%cols;
-    if(x<cols-1){const b=reg[i+1];if(b>=0&&b!==a){regions[a].adj.add(b);regions[b].adj.add(a)}}
-    if(i+cols<n){const b=reg[i+cols];if(b>=0&&b!==a){regions[a].adj.add(b);regions[b].adj.add(a)}}}
+  for(let i=0;i<n;i++){const a=reg[i];if(a<0)continue;
+    for(const j of nbOf(i).slice(1)){if(j<0)continue;const b=reg[j];if(b>=0&&b!==a){regions[a].adj.add(b);regions[b].adj.add(a)}}}
   for(const a of regions)for(const b of regions)if(a!==b&&rdist(a,b)<spacing*1.45){a.adj.add(b.id);b.adj.add(a.id)}
-  return {cols,rows,land,reg,regions,spacing};
+  return {cols,rows,land,reg,regions,spacing,nbOf};
 }
+
+// ---------- câmera ----------
+const CAM={lon:0,lat:.2,zoom:1,base:200,R:200,cx:0,cy:0,E:[0,0,1],N:[0,1,0],F:[1,0,0]};
+function camUpdate(){
+  CAM.F=vecLL(CAM.lon,CAM.lat);CAM.E=[-Math.sin(CAM.lon),0,Math.cos(CAM.lon)];CAM.N=cross(CAM.E,CAM.F);
+  CAM.R=CAM.base*CAM.zoom;
+}
+function lookAt(v){const [lo,la]=toLL(v);CAM.lon=lo;CAM.lat=clamp(la,-1.25,1.25)}
+function proj(v,h){const s=1+(h||0), x=dot(v,CAM.E)*s, y=dot(v,CAM.N)*s, z=dot(v,CAM.F)*s;
+  return {x:CAM.cx+x*CAM.R, y:CAM.cy-y*CAM.R, z, vis:z>0||x*x+y*y>1}}
+function unproject(px,py){
+  const qx=(px-CAM.cx)/CAM.R, qy=-(py-CAM.cy)/CAM.R, r2=qx*qx+qy*qy;
+  if(r2>1)return null;
+  return norm(add(add(mul(CAM.E,qx),mul(CAM.N,qy)),mul(CAM.F,Math.sqrt(1-r2))));
+}
+function cellOf(v){const [lo,la]=toLL(v);
+  return clamp(Math.floor((Math.PI/2-la)/Math.PI*G.rows),0,G.rows-1)*G.cols+((Math.floor((lo+Math.PI)/TAU*G.cols)%G.cols+G.cols)%G.cols)}
+const CS=()=>CAM.R/K;   // pixels por célula no centro do globo
 
 // ---------- nova partida ----------
 function newGame(){
   R=mulberry32((Math.random()*1e9)|0);
-  const vw=innerWidth, vh=innerHeight, portrait=vh>vw;
-  const cols=portrait?84:160, rows=Math.max(40,Math.round(cols*(vh-60)/vw));
+  const cols=192, rows=96;
   let world, tries=0;
-  do{world=genWorld(cols,rows,portrait?20:24);tries++}while(world.regions.length<14&&tries<8);
+  do{world=genWorld(cols,rows,24);tries++}while(world.regions.length<14&&tries<8);
   const regions=world.regions, nF=4;
-  const factions=FACTIONS.map((d,i)=>({id:i,...d,isPlayer:i===chosenFaction,money:i===chosenFaction?90:90,alive:true,
+  const factions=FACTIONS.map((d,i)=>({id:i,...d,isPlayer:i===chosenFaction,money:90,alive:true,
     tech:{economy:0,range:0,speed:0,shield:0,warhead:0},grudge:[0,0,0,0],aiT:rnd(1,3),launched:0,killed:0,lost:0}));
-  // distribuição de territórios
   const starts=[pick(regions)];
   while(starts.length<nF){let best=null,bd=-1;for(const r of regions){if(starts.includes(r))continue;const m=Math.min(...starts.map(s=>rdist(s,r)));if(m>bd){bd=m;best=r}}starts.push(best)}
   starts.forEach((r,i)=>r.owner=i);
@@ -323,19 +357,21 @@ function newGame(){
   }
   const avg=regions.reduce((s,r)=>s+r.size,0)/regions.length;
   for(const r of regions){r.maxPop=+(2+r.size/avg*5+rnd(0,3)).toFixed(1);r.pop=r.maxPop*(r.owner<0?.8:1)}
-  // cada nação começa com um silo e um escudo
   for(let f=0;f<nF;f++){const own=regions.filter(r=>r.owner===f).sort((a,b)=>b.pop-a.pop);
     own[0].shield=newShield();(own[1]||own[0]).silo={ammo:1,reload:0}}
-  const diag=Math.hypot(cols,rows);
-  G={...world,factions,diag,diff:DIFF[chosenDiff],mode:chosenMode,time:0,tension:0,winter:0,speed:1,paused:false,over:false,
-    missiles:[],intercepts:[],fx:[],sel:-1,route:{bend:0},pickWay:false,player:chosenFaction,shake:0,dirty:true,
-    totalPop0:regions.reduce((s,r)=>s+r.pop,0)};
+  G={...world,factions,diag:cols*.75,diff:DIFF[chosenDiff],mode:chosenMode,time:0,tension:0,winter:0,speed:1,paused:false,over:false,
+    missiles:[],intercepts:[],fx:[],sel:-1,route:{bend:0},pickWay:false,player:chosenFaction,shake:0,dirty:true,texDirty:true,
+    home:starts[chosenFaction].v,totalPop0:regions.reduce((s,r)=>s+r.pop,0)};
+  CAM.zoom=1;lookAt(G.home);
   layout();
   closePanel();
   toast('Você comanda a '+factions[G.player].name+'. '+(G.mode==='cupula'?'A Cúpula se reúne em 10 minutos.':'Sobreviva até ser a última nação.'),'good');
+  toast('Arraste para girar o globo. Use pinça ou a roda do mouse para zoom.');
 }
 
 // ---------- parâmetros por nação ----------
+const lateGame=()=>G.mode==='survival'&&G.time>480;
+const escalation=()=>lateGame()?1+(G.time-480)/240:1;
 const rangeOf=f=>G.diag*(.3+.11*f.tech.range)*(lateGame()?Math.min(2.5,escalation()):1);
 const speedOf=f=>G.diag*(.042+.018*f.tech.speed);
 const shieldR=f=>G.diag*(.1+.025*f.tech.shield);
@@ -344,9 +380,7 @@ const dmgOf=f=>.42+.12*f.tech.warhead;
 const annexCost=r=>r.ruin?25:Math.round(30+r.pop*5);
 const owned=fid=>G.regions.filter(r=>r.owner===fid);
 const popOf=fid=>owned(fid).reduce((s,r)=>s+r.pop,0);
-// Sobrevivência: a partir dos 8 min a guerra escala e ruínas radioativas não podem ser reocupadas
-const lateGame=()=>G.mode==='survival'&&G.time>480;
-const escalation=()=>lateGame()?1+(G.time-480)/240:1;
+// Sobrevivência: ruínas radioativas não podem ser reocupadas
 const canAnnex=(fid,r)=>r.owner<0&&!(G.mode==='survival'&&r.ruin&&r.rad>.3)&&G.regions.some(o=>o.owner===fid&&o.adj.has(r.id));
 
 // ---------- ações ----------
@@ -370,8 +404,7 @@ function annex(fid,r){
   // bônus imediato no tesouro, proporcional à população do território coletado
   const bonus=Math.round(r.pop*BONUS_PER_MI);
   f.money+=bonus;
-  if(fid===G.player){G.fx.push({type:'text',x:r.cx,y:r.cy,t:0,dur:1.8,txt:'+¤'+bonus});sfx('build')}
-  if(fid===G.player)toast(r.name+' agora faz parte da sua nação. +¤'+bonus+' no tesouro.','good');
+  if(fid===G.player){G.fx.push({type:'text',v:r.v,t:0,dur:1.8,txt:'+¤'+bonus});sfx('build');toast(r.name+' agora faz parte da sua nação. +¤'+bonus+' no tesouro.','good')}
   else if(R()<.5)toast(f.name+' anexou '+r.name+'.');
   return true;
 }
@@ -383,33 +416,39 @@ function readySilos(fid,target){
   const f=G.factions[fid];
   return owned(fid).filter(r=>r.silo&&r.silo.ammo>0&&rdist(r,target)<=rangeOf(f)).sort((a,b)=>rdist(a,target)-rdist(b,target));
 }
-// ---------- rotas ----------
-// rota = {bend:-0.45..0.45} (curva lateral) ou {way:{x,y}} (o míssil passa por esse ponto)
-function routeCtrl(ax,ay,bx,by,route){
-  if(route&&route.way)return [2*route.way.x-(ax+bx)/2, 2*route.way.y-(ay+by)/2];
-  const d=d2(ax,ay,bx,by)||1, nx=-(by-ay)/d, ny=(bx-ax)/d;
-  const bend=route?route.bend:rnd(.18,.3)*(R()<.5?-1:1);
-  return [(ax+bx)/2+nx*d*bend,(ay+by)/2+ny*d*bend];
+
+// ---------- rotas sobre o globo ----------
+// rota = {bend:-0.45..0.45} (curva lateral) ou {way:vetor} (o míssil passa por esse ponto)
+function makePath(a,b,route){
+  const ang=arc(a,b)||1e-3;
+  let mid=add(a,b);if(len(mid)<1e-3)mid=cross(a,[0,1,0]);mid=norm(mid);
+  let w;
+  if(route&&route.way)w=route.way;
+  else{const nrm=norm(cross(a,b)), bend=route?route.bend:rnd(.18,.3)*(R()<.5?-1:1);
+    w=norm(add(mid,mul(nrm,Math.tan(clamp(ang*bend/2,-1.2,1.2)))))}
+  return {a,b,c:sub(mul(w,2),mul(add(a,b),.5)),h:.03+ang*.1,t:0};
 }
-function bezLen(m){let L=0,px=m.ax,py=m.ay;for(let i=1;i<=16;i++){const [x,y]=bez(m,i/16);L+=d2(px,py,x,y);px=x;py=y}return L}
+function pathPt(m,t){const u=1-t;return norm(add(add(mul(m.a,u*u),mul(m.c,2*u*t)),mul(m.b,t*t)))}
+const altAt=(m,t)=>m.h*Math.sin(Math.PI*t);
+function pathLen(m){let L=0,p=m.a;for(let i=1;i<=24;i++){const q=pathPt(m,i/24);L+=arc(p,q);p=q}return L*K}
 // escudos inimigos (com interceptor pronto) que a rota atravessa
 function shieldsOnPath(m,fid){
   const hit=new Set(), pts=[];
-  for(let i=0;i<=30;i++){const t=i/30, [x,y]=bez(m,t);let danger=false;
+  for(let i=0;i<=30;i++){const t=i/30, p=pathPt(m,t);let danger=false;
     if(t>.08&&t<.94)for(const r of G.regions){if(!r.shield||r.owner<0||r.owner===fid||r.shield.ammo<=0)continue;
-      if(d2(x,y,r.cx,r.cy)<shieldR(G.factions[r.owner])){danger=true;hit.add(r.id)}}
-    pts.push([x,y,danger])}
+      if(gd(p,r.v)<shieldR(G.factions[r.owner])){danger=true;hit.add(r.id)}}
+    pts.push({v:p,h:altAt(m,t),danger})}
   return {hit,pts};
 }
 function launch(from,target,route){
   const f=G.factions[from.owner];
   if(!from.silo||from.silo.ammo<=0||G.tension<LAUNCH_AT)return false;
   from.silo.ammo--;
-  const j=route?.25:.5;
-  const ax=from.cx, ay=from.cy, bx=target.cx+rnd(-j,j), by=target.cy+rnd(-j,j);
-  const [cx,cy]=routeCtrl(ax,ay,bx,by,route);
-  const m={ax,ay,bx,by,cx,cy,owner:f.id,target:target.id,t:0,dur:1,x:ax,y:ay,dead:false};
-  m.dur=bezLen(m)/speedOf(f);
+  const j=(route?.25:.5)/K;
+  const b=norm(add(target.v,[rnd(-j,j),rnd(-j,j),rnd(-j,j)]));
+  const m=makePath(from.v,b,route);
+  Object.assign(m,{owner:f.id,target:target.id,p:from.v,dead:false});
+  m.dur=pathLen(m)/speedOf(f);
   G.missiles.push(m);f.launched++;
   G.tension=Math.min(100,G.tension+3.5);
   if(target.owner>=0)G.factions[target.owner].grudge[f.id]+=3;
@@ -417,11 +456,10 @@ function launch(from,target,route){
   else if(f.id===G.player)sfx('launch');
   return true;
 }
-function bez(m,t){const u=1-t;return[u*u*m.ax+2*u*t*m.cx+t*t*m.bx,u*u*m.ay+2*u*t*m.cy+t*t*m.by]}
 
 function impact(m){
   const r=G.regions[m.target], f=G.factions[m.owner];
-  G.fx.push({type:'boom',x:m.bx,y:m.by,t:0,dur:1.6,big:true});
+  G.fx.push({type:'boom',v:m.b,t:0,dur:1.6});
   if(r.owner===G.player){G.shake=.6;sfx('boom')}else sfx('boomfar');
   if(r.ruin||r.pop<=0)return;
   const victim=r.owner, killed=r.pop*dmgOf(f);
@@ -431,7 +469,7 @@ function impact(m){
   if(r.silo&&R()<.5)r.silo=null;
   if(r.shield&&R()<.5)r.shield=null;
   if(r.pop<.35){
-    r.pop=0;r.ruin=true;r.owner=-1;r.silo=null;r.shield=null;G.dirty=true;
+    r.pop=0;r.ruin=true;r.owner=-1;r.silo=null;r.shield=null;
     toast(r.name+' foi reduzida a ruínas.',victim===G.player?'bad':'warn');
     if(victim>=0&&!owned(victim).length){G.factions[victim].alive=false;if(victim!==G.player)toast(G.factions[victim].name+' deixou de existir.','warn')}
   }
@@ -497,27 +535,27 @@ function update(dt){
     if(m.dead)continue;
     m.t+=dt/m.dur;
     if(m.t>=1){m.dead=true;impact(m);continue}
-    [m.x,m.y]=bez(m,m.t);
+    m.p=pathPt(m,m.t);
   }
   // escudos
   for(const r of G.regions){
     if(!r.shield||r.shield.cd>0||r.shield.ammo<=0||r.owner<0)continue;
     const f=G.factions[r.owner], rad=shieldR(f);
-    const m=G.missiles.find(m=>!m.dead&&!m.engaged&&m.owner!==r.owner&&m.t>.08&&m.t<.94&&d2(m.x,m.y,r.cx,r.cy)<rad);
+    const m=G.missiles.find(m=>!m.dead&&!m.engaged&&m.owner!==r.owner&&m.t>.08&&m.t<.94&&gd(m.p,r.v)<rad);
     if(!m)continue;
     r.shield.cd=SHIELD_CD;r.shield.ammo--;m.engaged=true;
     const ms=G.factions[m.owner];
-    G.intercepts.push({x:r.cx,y:r.cy,sx:r.cx,sy:r.cy,m,owner:r.owner,p:interceptP(f)-.06*ms.tech.speed,dead:false});
+    G.intercepts.push({pos:r.v,start:r.v,m,owner:r.owner,p:interceptP(f)-.06*ms.tech.speed,dead:false});
   }
   for(const it of G.intercepts){
     if(it.dead)continue;
     const m=it.m;if(m.dead){it.dead=true;continue}
-    const dx=m.x-it.x, dy=m.y-it.y, d=Math.hypot(dx,dy), step=G.diag*.22*dt;
+    const tgt=mul(m.p,1+altAt(m,m.t)), diff=sub(tgt,it.pos), d=len(diff)*K, step=G.diag*.22*dt;
     if(d<=step+.3){
       it.dead=true;
-      if(R()<it.p){m.dead=true;G.fx.push({type:'pop',x:m.x,y:m.y,t:0,dur:.7});if(it.owner===G.player||m.owner===G.player)sfx('pop')}
-      else{m.engaged=false;G.fx.push({type:'miss',x:m.x,y:m.y,t:0,dur:.5})}
-    }else{it.x+=dx/d*step;it.y+=dy/d*step}
+      if(R()<it.p){m.dead=true;G.fx.push({type:'pop',v:m.p,h:altAt(m,m.t),t:0,dur:.7});if(it.owner===G.player||m.owner===G.player)sfx('pop')}
+      else{m.engaged=false;G.fx.push({type:'miss',v:m.p,h:altAt(m,m.t),t:0,dur:.5})}
+    }else it.pos=add(it.pos,mul(diff,step/d));
   }
   G.missiles=G.missiles.filter(m=>!m.dead);
   G.intercepts=G.intercepts.filter(i=>!i.dead);
@@ -532,7 +570,7 @@ function checkEnd(){
   const P=G.factions[G.player];
   if(!P.alive)return endGame('lose','Sua nação caiu','Nenhuma região responde mais ao seu comando.');
   const rivals=G.factions.filter(f=>f.alive&&!f.isPlayer);
-  if(!rivals.length)return endGame('win','Última nação de pé','Você venceu, mas olhe para o mapa antes de comemorar.');
+  if(!rivals.length)return endGame('win','Última nação de pé','Você venceu, mas olhe para o globo antes de comemorar.');
   if(G.mode==='cupula'&&G.time>=GAME_LEN){
     const top=G.factions.filter(f=>f.alive).sort((a,b)=>popOf(b.id)-popOf(a.id))[0];
     if(top.isPlayer)return endGame('win','A Cúpula é sua','Sua nação chega à mesa com a maior população e dita os termos da paz.');
@@ -551,37 +589,29 @@ function endGame(kind,title,text){
   sfx(kind==='win'?'win':'lose');
 }
 
-// ---------- layout e desenho ----------
-let VW=0,VH=0,DPR=1,CS=1,OX=0,OY=0;
-let TOP=56;
+// ---------- layout ----------
+let VW=0,VH=0,DPR=1,TOP=56;
 function layout(){
   DPR=Math.min(2,devicePixelRatio||1);VW=innerWidth;VH=innerHeight;TOP=$('#hud').offsetHeight+4;
-  cv.width=VW*DPR;cv.height=VH*DPR;
-  if(!G)return;
-  CS=Math.min(VW/G.cols,(VH-TOP)/G.rows);
-  OX=(VW-G.cols*CS)/2;OY=TOP+(VH-TOP-G.rows*CS)/2;
-  mapLayer.width=VW*DPR;mapLayer.height=VH*DPR;G.dirty=true;
+  cv.width=VW*DPR;cv.height=VH*DPR;gcv.width=VW*DPR;gcv.height=VH*DPR;
+  CAM.cx=VW/2;CAM.cy=TOP+(VH-TOP)/2;CAM.base=Math.min(VW,VH-TOP)*.44;
 }
-const sx=x=>OX+x*CS, sy=y=>OY+y*CS;
 
+// ---------- textura do planeta (equirretangular) ----------
 function drawMapLayer(){
-  const c=mctx;c.setTransform(DPR,0,0,DPR,0,0);
-  const gr=c.createRadialGradient(VW/2,VH/2,0,VW/2,VH/2,Math.max(VW,VH)*.7);
-  gr.addColorStop(0,'#0b1a2e');gr.addColorStop(1,'#040910');
-  c.fillStyle=gr;c.fillRect(0,0,VW,VH);
-  // grade de latitude/longitude
-  c.strokeStyle='rgba(70,140,210,.07)';c.lineWidth=1;c.beginPath();
-  const step=Math.max(6,Math.round(G.cols/12));
-  for(let x=0;x<=G.cols;x+=step){c.moveTo(sx(x),sy(0));c.lineTo(sx(x),sy(G.rows))}
-  for(let y=0;y<=G.rows;y+=step){c.moveTo(sx(0),sy(y));c.lineTo(sx(G.cols),sy(y))}
+  const {cols,rows,land,reg,regions,nbOf}=G;
+  if(mapLayer.width!==cols*TS){mapLayer.width=cols*TS;mapLayer.height=rows*TS}
+  const c=mctx;c.setTransform(1,0,0,1,0,0);
+  c.fillStyle='#0b1d33';c.fillRect(0,0,cols*TS,rows*TS);
+  c.strokeStyle='rgba(90,160,230,.14)';c.lineWidth=1.5;c.beginPath();
+  for(let k=0;k<24;k++){const x=k/24*cols*TS;c.moveTo(x,0);c.lineTo(x,rows*TS)}
+  for(let k=1;k<12;k++){const y=k/12*rows*TS;c.moveTo(0,y);c.lineTo(cols*TS,y)}
   c.stroke();
-  const {cols,rows,land,reg,regions}=G, s=CS+.6;
-  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
-    const i=y*cols+x;if(!land[i])continue;
-    const k=reg[i], r=k>=0?regions[k]:null, own=r?r.owner:-2;
+  for(let i=0;i<cols*rows;i++){
+    if(!land[i])continue;
+    const x=i%cols, y=(i/cols)|0, k=reg[i], r=k>=0?regions[k]:null, own=r?r.owner:-2;
     let edgeOwner=false, edgeRegion=false;
-    const nb=[x>0?i-1:-1,x<cols-1?i+1:-1,y>0?i-cols:-1,y<rows-1?i+cols:-1];
-    for(const j of nb){
+    for(const j of nbOf(i)){
       if(j<0||!land[j]){edgeOwner=true;continue}
       const k2=reg[j];if(k2!==k){edgeRegion=true;const o2=k2>=0?regions[k2].owner:-2;if(o2!==own||(r&&regions[k2]&&regions[k2].ruin!==r.ruin))edgeOwner=true}
     }
@@ -590,69 +620,131 @@ function drawMapLayer(){
     else if(r.ruin)col=edgeOwner?'#6b3a26':edgeRegion?'#3a2620':'#211816';
     else if(own<0)col=edgeOwner?'#6f7d8c':edgeRegion?'#46525f':'#36404c';
     else{const f=G.factions[own];col=edgeOwner?f.color:edgeRegion?f.mid:f.dark}
-    c.fillStyle=col;c.fillRect(sx(x),sy(y),s,s);
+    c.fillStyle=col;c.fillRect(x*TS,y*TS,TS,TS);
+    if(r&&r.id===G.sel){c.fillStyle='rgba(255,255,255,.22)';c.fillRect(x*TS,y*TS,TS,TS)}
   }
-  // escombros em ruínas
-  for(const r of regions){if(!r.ruin)continue;c.fillStyle='rgba(255,120,60,.25)';
-    for(let n=0;n<r.cells.length;n+=7){const i=r.cells[n];c.fillRect(sx(i%cols)+CS*.3,sy((i/cols)|0)+CS*.3,CS*.35,CS*.35)}}
-  G.dirty=false;
+  for(const r of regions){if(!r.ruin)continue;c.fillStyle='rgba(255,120,60,.3)';
+    for(let n=0;n<r.cells.length;n+=7){const i=r.cells[n];c.fillRect((i%cols)*TS+TS*.3,((i/cols)|0)*TS+TS*.3,TS*.35,TS*.35)}}
+  G.dirty=false;G.texDirty=true;
 }
 
+// ---------- WebGL: o globo ----------
+let gl=null, glU=null, glTex=null;
+function initGL(){
+  try{gl=gcv.getContext('webgl',{antialias:false,alpha:false})||gcv.getContext('experimental-webgl')}catch(e){gl=null}
+  if(!gl)return false;
+  const vs='attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+  const fs=`precision highp float;
+uniform vec3 C;uniform vec3 E;uniform vec3 Nn;uniform vec3 F;uniform sampler2D tex;uniform float winter;uniform float hasTex;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+void main(){
+  vec2 q=(gl_FragCoord.xy-C.xy)/C.z;float r2=dot(q,q);
+  vec3 bg=vec3(.02,.04,.07);
+  if(r2>1.||hasTex<.5){
+    float d=sqrt(r2)-1.;vec3 col=bg;
+    float st=hash(floor(gl_FragCoord.xy/2.));if(st>.996)col+=vec3(.55)*(st-.996)/.004;
+    if(hasTex>.5)col=mix(col,vec3(.2,.5,.9),exp(-max(d,0.)*16.)*.45);
+    gl_FragColor=vec4(col,1.);return;}
+  float z=sqrt(1.-r2);vec3 w=E*q.x+Nn*q.y+F*z;
+  float lon=atan(w.z,w.x),lat=asin(clamp(w.y,-1.,1.));
+  vec2 uv=vec2((lon+3.14159265)/6.28318531,(1.57079633-lat)/3.14159265);
+  vec3 col=texture2D(tex,uv).rgb;
+  float g=dot(col,vec3(.3,.59,.11));col=mix(col,vec3(g)*.8+.06,winter*.55);
+  col*=.48+.52*z;col+=vec3(.12,.3,.55)*pow(1.-z,2.5)*.7;
+  gl_FragColor=vec4(col,1.);
+}`;
+  const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s};
+  const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);
+  if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pr));
+  gl.useProgram(pr);
+  const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  glU={};for(const n of ['C','E','Nn','F','tex','winter','hasTex'])glU[n]=gl.getUniformLocation(pr,n);
+  glTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,glTex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.uniform1i(glU.tex,0);
+  return true;
+}
+function renderGL(){
+  if(!gl)return;
+  gl.viewport(0,0,gcv.width,gcv.height);
+  if(G&&G.texDirty){gl.bindTexture(gl.TEXTURE_2D,glTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,mapLayer);G.texDirty=false}
+  gl.uniform3f(glU.C,CAM.cx*DPR,(VH-CAM.cy)*DPR,CAM.R*DPR);
+  gl.uniform3fv(glU.E,CAM.E);gl.uniform3fv(glU.Nn,CAM.N);gl.uniform3fv(glU.F,CAM.F);
+  gl.uniform1f(glU.winter,G?G.winter/100:0);gl.uniform1f(glU.hasTex,G?1:0);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+}
+
+// ---------- camada 2D sobre o globo ----------
+function sphereCircle(center,ang,color,alpha,dash){
+  let u=cross(center,[0,1,0]);if(len(u)<.1)u=cross(center,[1,0,0]);u=norm(u);const w=cross(center,u);
+  const ca=Math.cos(ang), sa=Math.sin(ang);
+  ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=1.3;ctx.setLineDash(dash);ctx.beginPath();
+  let pen=false;
+  for(let i=0;i<=72;i++){const th=i/72*TAU;
+    const p=add(mul(center,ca),mul(add(mul(u,Math.cos(th)),mul(w,Math.sin(th))),sa)), P=proj(p);
+    if(P.z>0){pen?ctx.lineTo(P.x,P.y):ctx.moveTo(P.x,P.y);pen=true}else pen=false}
+  ctx.stroke();ctx.restore();
+}
+function polyline(pts,colorFn,width){
+  ctx.lineWidth=width;
+  let prev=null;
+  for(const pt of pts){const P=proj(pt.v,pt.h);
+    if(prev&&P.vis&&prev.vis){ctx.strokeStyle=colorFn(pt);ctx.beginPath();ctx.moveTo(prev.x,prev.y);ctx.lineTo(P.x,P.y);ctx.stroke()}
+    prev=P}
+}
 function draw(now){
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  if(!G){ctx.fillStyle='#050a12';ctx.fillRect(0,0,VW,VH);return}
-  if(G.dirty)drawMapLayer();
-  let shx=0,shy=0;if(G.shake>0){shx=rnd(-4,4)*G.shake;shy=rnd(-4,4)*G.shake}
-  ctx.setTransform(DPR,0,0,DPR,shx*DPR,shy*DPR);
-  ctx.drawImage(mapLayer,0,0,VW,VH);
-  const P=G.factions[G.player], t=now/1000;
-  // seleção
+  const t=now/1000;
+  let shx=0,shy=0;if(G&&G.shake>0){shx=rnd(-4,4)*G.shake;shy=rnd(-4,4)*G.shake}
+  CAM.cx+=shx;CAM.cy+=shy;camUpdate();
+  if(G&&G.dirty)drawMapLayer();
+  renderGL();
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,VW,VH);
+  if(!G){CAM.cx-=shx;CAM.cy-=shy;return}
+  const P=G.factions[G.player], cs=CS();
   const sel=G.sel>=0?G.regions[G.sel]:null;
-  if(sel){
-    ctx.fillStyle='rgba(255,255,255,'+(.1+.06*Math.sin(t*4))+')';
-    for(const i of sel.cells)ctx.fillRect(sx(i%G.cols),sy((i/G.cols)|0),CS+.5,CS+.5);
-  }
   // radiação
   for(const r of G.regions){
-    if(r.rad<=0.02)continue;
-    const g=ctx.createRadialGradient(sx(r.cx),sy(r.cy),0,sx(r.cx),sy(r.cy),CS*G.spacing*.7);
-    g.addColorStop(0,'rgba(255,150,60,'+(r.rad*.45)+')');g.addColorStop(1,'rgba(255,150,60,0)');
-    ctx.fillStyle=g;ctx.fillRect(sx(r.cx)-CS*G.spacing,sy(r.cy)-CS*G.spacing,CS*G.spacing*2,CS*G.spacing*2);
+    if(r.rad<=0.02)continue;const Q=proj(r.v);if(Q.z<=0)continue;
+    const rr=cs*G.spacing*.7;
+    const g=ctx.createRadialGradient(Q.x,Q.y,0,Q.x,Q.y,rr);
+    g.addColorStop(0,'rgba(255,150,60,'+(r.rad*.45*Q.z).toFixed(3)+')');g.addColorStop(1,'rgba(255,150,60,0)');
+    ctx.fillStyle=g;ctx.fillRect(Q.x-rr,Q.y-rr,rr*2,rr*2);
   }
-  // raios: alcance de silo e escudo da região selecionada
+  // alcances da região selecionada
   if(sel&&sel.owner>=0){
     const f=G.factions[sel.owner];
-    if(sel.silo){ring(sel.cx,sel.cy,rangeOf(f),f.color,.35,[6,6])}
-    if(sel.shield){ring(sel.cx,sel.cy,shieldR(f),'#ffffff',.25,[2,4])}
+    if(sel.silo)sphereCircle(sel.v,rangeOf(f)/K,f.color,.45,[6,6]);
+    if(sel.shield)sphereCircle(sel.v,shieldR(f)/K,'#ffffff',.3,[2,4]);
   }
   // prévia da rota escolhida
   if(sel&&sel.owner>=0&&sel.owner!==G.player){
+    for(const r of G.regions)if(r.shield&&r.owner>=0&&r.owner!==G.player&&r.shield.ammo>0)sphereCircle(r.v,shieldR(G.factions[r.owner])/K,'#ff4d5e',.35,[2,4]);
+    ctx.setLineDash([5,4]);ctx.lineDashOffset=-t*20;
     for(const s0 of owned(G.player)){
       if(!s0.silo||rdist(s0,sel)>rangeOf(P))continue;
-      const [cx,cy]=routeCtrl(s0.cx,s0.cy,sel.cx,sel.cy,G.route);
-      const {pts}=shieldsOnPath({ax:s0.cx,ay:s0.cy,bx:sel.cx,by:sel.cy,cx,cy},G.player);
-      ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.lineDashOffset=-t*20;
-      for(let i=1;i<pts.length;i++){ctx.strokeStyle=pts[i][2]?'rgba(255,77,94,.9)':'rgba(70,210,255,'+(s0.silo.ammo>0?.75:.3)+')';
-        ctx.beginPath();ctx.moveTo(sx(pts[i-1][0]),sy(pts[i-1][1]));ctx.lineTo(sx(pts[i][0]),sy(pts[i][1]));ctx.stroke()}
-      ctx.setLineDash([]);ctx.lineDashOffset=0;
+      const {pts}=shieldsOnPath(makePath(s0.v,sel.v,G.route),G.player), a=s0.silo.ammo>0?.8:.3;
+      polyline(pts,pt=>pt.danger?'rgba(255,77,94,.95)':'rgba(70,210,255,'+a+')',2);
     }
-    if(G.route.way){const x=sx(G.route.way.x),y=sy(G.route.way.y);ctx.strokeStyle='#46d2ff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-7);ctx.lineTo(x+7,y);ctx.lineTo(x,y+7);ctx.lineTo(x-7,y);ctx.closePath();ctx.stroke()}
-    // escudos inimigos visíveis enquanto mira
-    for(const r of G.regions)if(r.shield&&r.owner>=0&&r.owner!==G.player&&r.shield.ammo>0)ring(r.cx,r.cy,shieldR(G.factions[r.owner]),'#ff4d5e',.35,[2,4]);
+    ctx.setLineDash([]);ctx.lineDashOffset=0;
+    if(G.route.way){const Q=proj(G.route.way);if(Q.z>0){ctx.strokeStyle='#46d2ff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(Q.x,Q.y-7);ctx.lineTo(Q.x+7,Q.y);ctx.lineTo(Q.x,Q.y+7);ctx.lineTo(Q.x-7,Q.y);ctx.closePath();ctx.stroke()}}
   }
   // cidades e estruturas
-  const fs=Math.max(9,Math.min(12,CS*1.6));
+  const fs=Math.round(clamp(cs*1.1,9,13));
   ctx.textAlign='center';ctx.textBaseline='top';
   for(const r of G.regions){
-    const x=sx(r.cx), y=sy(r.cy), f=r.owner>=0?G.factions[r.owner]:null;
+    const Q=proj(r.v);if(Q.z<.06)continue;
+    const x=Q.x, y=Q.y, f=r.owner>=0?G.factions[r.owner]:null;
+    ctx.globalAlpha=clamp(Q.z*4,0,1);
     if(!r.ruin){
       const rad=2+Math.sqrt(r.pop)*1.3;
       ctx.fillStyle=r.hit>0?'#ffffff':'#e9f2fb';ctx.beginPath();ctx.arc(x,y,rad,0,7);ctx.fill();
       ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.2;ctx.stroke();
     }else{ctx.strokeStyle='#ff8a50';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-4,y-4);ctx.lineTo(x+4,y+4);ctx.moveTo(x+4,y-4);ctx.lineTo(x-4,y+4);ctx.stroke()}
     if(r.shield&&f){
-      const ready=r.shield.ammo>0;
-      ctx.strokeStyle=ready?'rgba(255,255,255,.85)':'rgba(255,255,255,.3)';ctx.lineWidth=1.5;
+      ctx.strokeStyle=r.shield.ammo>0?'rgba(255,255,255,.85)':'rgba(255,255,255,.3)';ctx.lineWidth=1.5;
       ctx.beginPath();ctx.arc(x,y,9,Math.PI*1.05,Math.PI*1.95);ctx.stroke();
       for(let a=0;a<SHIELD_MAX;a++){ctx.fillStyle=a<r.shield.ammo?'#ffffff':'rgba(255,255,255,.18)';ctx.fillRect(x-17+a*4,y-12,3,3)}
     }
@@ -664,55 +756,55 @@ function draw(now){
     }
     ctx.font='600 '+fs+'px "IBM Plex Sans",system-ui,sans-serif';
     ctx.lineWidth=3;ctx.strokeStyle='rgba(3,8,15,.85)';
-    const label=r.name;ctx.strokeText(label,x,y+8);ctx.fillStyle=r.ruin?'#c98a6a':f?'#f1f6fb':'#a8b5c4';ctx.fillText(label,x,y+8);
+    ctx.strokeText(r.name,x,y+8);ctx.fillStyle=r.ruin?'#c98a6a':f?'#f1f6fb':'#a8b5c4';ctx.fillText(r.name,x,y+8);
+    ctx.globalAlpha=1;
   }
   // alvos ameaçando o jogador
   let threat=false;
   for(const m of G.missiles){
     const tr=G.regions[m.target];
     if(tr.owner===G.player&&m.owner!==G.player){threat=true;
-      const a=.5+.5*Math.sin(t*10);ctx.strokeStyle='rgba(255,77,94,'+a+')';ctx.lineWidth=2;
-      const x=sx(m.bx),y=sy(m.by);ctx.beginPath();ctx.arc(x,y,12,0,7);ctx.moveTo(x-17,y);ctx.lineTo(x-7,y);ctx.moveTo(x+7,y);ctx.lineTo(x+17,y);ctx.moveTo(x,y-17);ctx.lineTo(x,y-7);ctx.moveTo(x,y+7);ctx.lineTo(x,y+17);ctx.stroke()}
+      const Q=proj(m.b);if(Q.z<=0)continue;
+      const a=.5+.5*Math.sin(t*10);ctx.strokeStyle='rgba(255,77,94,'+a.toFixed(3)+')';ctx.lineWidth=2;
+      const x=Q.x,y=Q.y;ctx.beginPath();ctx.arc(x,y,12,0,7);ctx.moveTo(x-17,y);ctx.lineTo(x-7,y);ctx.moveTo(x+7,y);ctx.lineTo(x+17,y);ctx.moveTo(x,y-17);ctx.lineTo(x,y-7);ctx.moveTo(x,y+7);ctx.lineTo(x,y+17);ctx.stroke()}
   }
   $('#toasts').style.top=(TOP+6)+'px';
   $('#alarm').classList.toggle('on',threat&&!G.over);
-  // mísseis
+  // mísseis: rastro em arco acima da superfície
   for(const m of G.missiles){
-    const f=G.factions[m.owner];
-    ctx.strokeStyle=f.color;ctx.lineWidth=1.8;ctx.globalAlpha=.85;ctx.beginPath();
-    const steps=24;for(let i=0;i<=steps;i++){const tt=m.t*i/steps;const [px,py]=bez(m,tt);i?ctx.lineTo(sx(px),sy(py)):ctx.moveTo(sx(px),sy(py))}
-    ctx.stroke();ctx.globalAlpha=1;
-    ctx.fillStyle='#fff';ctx.shadowColor=f.color;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(sx(m.x),sy(m.y),2.6,0,7);ctx.fill();ctx.shadowBlur=0;
+    const f=G.factions[m.owner], pts=[];
+    for(let i=0;i<=24;i++){const tt=m.t*i/24;pts.push({v:pathPt(m,tt),h:altAt(m,tt)})}
+    ctx.globalAlpha=.85;polyline(pts,()=>f.color,1.8);ctx.globalAlpha=1;
+    const Q=proj(m.p,altAt(m,m.t));
+    if(Q.vis){ctx.fillStyle='#fff';ctx.shadowColor=f.color;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(Q.x,Q.y,2.6,0,7);ctx.fill();ctx.shadowBlur=0}
   }
   for(const it of G.intercepts){
-    ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx(it.sx),sy(it.sy));ctx.lineTo(sx(it.x),sy(it.y));ctx.stroke();
-    ctx.fillStyle='#fff';ctx.fillRect(sx(it.x)-1.5,sy(it.y)-1.5,3,3);
+    const A=proj(it.start), B=proj(norm(it.pos),len(it.pos)-1);
+    if(!A.vis||!B.vis)continue;
+    ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.fillRect(B.x-1.5,B.y-1.5,3,3);
   }
   // efeitos
   for(const e of G.fx){
-    const k=e.t/e.dur, x=sx(e.x), y=sy(e.y);
+    const k=e.t/e.dur, Q=proj(e.v,e.h);if(!Q.vis)continue;
+    const x=Q.x, y=Q.y;
     if(e.type==='boom'){
-      const R1=CS*G.spacing*.9*Math.sqrt(k);
-      ctx.fillStyle='rgba(255,240,200,'+Math.max(0,.9-k*2.2)+')';ctx.beginPath();ctx.arc(x,y,R1*.6,0,7);ctx.fill();
-      ctx.strokeStyle='rgba(255,140,60,'+(1-k)+')';ctx.lineWidth=3*(1-k)+1;ctx.beginPath();ctx.arc(x,y,R1,0,7);ctx.stroke();
-      ctx.strokeStyle='rgba(255,255,255,'+(1-k)*.5+')';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,R1*1.35,0,7);ctx.stroke();
+      const R1=cs*G.spacing*.9*Math.sqrt(k)*Math.max(.3,Q.z);
+      ctx.fillStyle='rgba(255,240,200,'+Math.max(0,.9-k*2.2).toFixed(3)+')';ctx.beginPath();ctx.arc(x,y,R1*.6,0,7);ctx.fill();
+      ctx.strokeStyle='rgba(255,140,60,'+(1-k).toFixed(3)+')';ctx.lineWidth=3*(1-k)+1;ctx.beginPath();ctx.arc(x,y,R1,0,7);ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,'+((1-k)*.5).toFixed(3)+')';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,R1*1.35,0,7);ctx.stroke();
     }else if(e.type==='text'){
       ctx.font='700 15px "IBM Plex Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.globalAlpha=1-k;ctx.lineWidth=3;ctx.strokeStyle='rgba(3,8,15,.9)';ctx.strokeText(e.txt,x,y-14-k*22);
       ctx.fillStyle='#5fe0a0';ctx.fillText(e.txt,x,y-14-k*22);ctx.globalAlpha=1;
     }else if(e.type==='pop'){
-      ctx.strokeStyle='rgba(180,240,255,'+(1-k)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,4+k*14,0,7);ctx.stroke();
+      ctx.strokeStyle='rgba(180,240,255,'+(1-k).toFixed(3)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,4+k*14,0,7);ctx.stroke();
     }else{
-      ctx.fillStyle='rgba(255,255,255,'+(1-k)*.6+')';ctx.beginPath();ctx.arc(x,y,2+k*6,0,7);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,'+((1-k)*.6).toFixed(3)+')';ctx.beginPath();ctx.arc(x,y,2+k*6,0,7);ctx.fill();
     }
   }
-  // névoa do inverno
-  if(G.winter>5){ctx.fillStyle='rgba(150,165,185,'+(G.winter/100*.28)+')';ctx.fillRect(0,0,VW,VH)}
-  ctx.setTransform(1,0,0,1,0,0);
-}
-function ring(x,y,r,color,alpha,dash){
-  ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=1.2;ctx.setLineDash(dash);
-  ctx.beginPath();ctx.arc(sx(x),sy(y),r*CS,0,7);ctx.stroke();ctx.restore();
+  if(G.pickWay){ctx.font='600 13px "IBM Plex Sans",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='#46d2ff';ctx.fillText('Toque no globo para marcar o ponto de passagem',VW/2,CAM.cy-CAM.R-8>TOP?CAM.cy-CAM.R-8:TOP+24)}
+  CAM.cx-=shx;CAM.cy-=shy;
 }
 
 // ---------- HUD ----------
@@ -735,8 +827,8 @@ let panelSig=null;
 $('#pRoute').addEventListener('click',e=>{const b=e.target.closest('button[data-b]');if(!b||!G)return;
   if(b.dataset.b==='way'){G.pickWay=true}else{G.route={bend:+b.dataset.b};G.pickWay=false}
   sfx('tick');updatePanel()});
-function closePanel(){if(G){G.sel=-1;G.pickWay=false}$('#panel').hidden=true;panelSig=null}
-function openPanel(id){G.sel=id;$('#panel').hidden=false;panelSig=null;updatePanel();sfx('tick')}
+function closePanel(){if(G){if(G.sel>=0)G.dirty=true;G.sel=-1;G.pickWay=false}$('#panel').hidden=true;panelSig=null}
+function openPanel(id){G.sel=id;G.dirty=true;$('#panel').hidden=false;panelSig=null;updatePanel();sfx('tick')}
 function updatePanel(){
   if(!G||G.sel<0)return;
   const r=G.regions[G.sel], P=G.factions[G.player], f=r.owner>=0?G.factions[r.owner]:null;
@@ -755,21 +847,21 @@ function updatePanel(){
     if(r.silo&&r.shield)hint='Região totalmente fortificada. Toque num alvo inimigo para atacar.';
     else if(r.silo)hint='Silos aumentam a tensão global ao serem construídos.';
   }else if(r.owner>=0){
-    const rs=readySilos(G.player,r), inRange=owned(G.player).filter(s=>s.silo&&rdist(s,r)<=rangeOf(P)).length;
+    const rs=readySilos(G.player,r), inRange=owned(G.player).filter(s=>s.silo&&rdist(s,r)<=rangeOf(P));
     const ok=G.tension>=LAUNCH_AT&&rs.length>0;
     acts.push({id:'fire',label:'Lançar míssil',cls:'danger',ok,fn:()=>{launch(rs[0],r,G.route)}});
     acts.push({id:'salvo',label:'Salva ('+rs.length+')',cls:'danger',ok:ok&&rs.length>1,fn:()=>{for(const s of rs)launch(s,r,G.route)}});
     if(G.tension<LAUNCH_AT)hint='Lançamentos liberados quando a tensão chegar a '+LAUNCH_AT+' (agora '+Math.floor(G.tension)+').';
-    else if(!inRange)hint='Nenhum silo seu alcança esta região. Pesquise Alcance ou construa silos mais perto.';
+    else if(!inRange.length)hint='Nenhum silo seu alcança esta região. Pesquise Alcance ou construa silos mais perto.';
     else if(!rs.length)hint='Seus silos ao alcance estão recarregando.';
-    if(G.pickWay)hint='Toque no mapa para marcar por onde o míssil vai passar.';
-    else if(inRange){
-      const hits=new Set();for(const s0 of owned(G.player).filter(s=>s.silo&&rdist(s,r)<=rangeOf(P))){const [cx,cy]=routeCtrl(s0.cx,s0.cy,r.cx,r.cy,G.route);shieldsOnPath({ax:s0.cx,ay:s0.cy,bx:r.cx,by:r.cy,cx,cy},G.player).hit.forEach(h=>hits.add(h))}
+    if(G.pickWay)hint='Toque no globo para marcar por onde o míssil vai passar.';
+    else if(inRange.length){
+      const hits=new Set();for(const s0 of inRange)shieldsOnPath(makePath(s0.v,r.v,G.route),G.player).hit.forEach(h=>hits.add(h));
       hint=(hint?hint+' ':'')+(hits.size?'A rota cruza '+hits.size+(hits.size>1?' escudos inimigos':' escudo inimigo')+' (trecho vermelho). Tente outra curva.':'Rota livre de escudos inimigos prontos.');
     }
   }else{
     const c=annexCost(r), adj=canAnnex(G.player,r);
-    acts.push({id:'annex',label:(r.ruin?'Reocupar':'Anexar')+' · ¤'+c,cls:'primary',ok:adj&&P.money>=c,fn:()=>{annex(G.player,r)&&sfx('build')}});
+    acts.push({id:'annex',label:(r.ruin?'Reocupar':'Anexar')+' · ¤'+c,cls:'primary',ok:adj&&P.money>=c,fn:()=>{annex(G.player,r)}});
     if(G.mode==='survival'&&r.ruin&&r.rad>.3)hint='Radiação alta demais. Espere baixar de 30% para reocupar.';
     else if(!adj)hint='Precisa fazer fronteira com uma região sua.';
     else hint='Ao anexar, você recebe ¤'+Math.round((r.ruin?.6:r.pop)*BONUS_PER_MI)+' na hora (¤'+BONUS_PER_MI+' por milhão de habitantes).'+(r.ruin?' Ruínas voltam com metade da capacidade.':'');
@@ -796,6 +888,7 @@ function renderTech(){
       (l<3?'<button type="button" data-t="'+t.id+'"'+(P.money<techCost(l)?' disabled':'')+'>¤ '+techCost(l)+'</button>':'<button type="button" disabled>Máx.</button>')+'</div>'}).join('');
   $('#techList').querySelectorAll('button[data-t]').forEach(b=>b.onclick=()=>{if(research(P,b.dataset.t)){sfx('build');toast(TECH.find(x=>x.id===b.dataset.t).name+' aprimorado.','good')}renderTech()});
 }
+function renderTechLight(){const P=G.factions[G.player];$('#techList').querySelectorAll('button[data-t]').forEach(b=>{b.disabled=P.money<techCost(P.tech[b.dataset.t])})}
 
 // ---------- toasts ----------
 function toast(msg,kind){
@@ -826,22 +919,42 @@ function sfx(kind){
   else if(kind==='lose')tone('sawtooth',300,80,1.2,.08);
 }
 
-// ---------- entrada ----------
-let down=null;
-cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};audio()});
-cv.addEventListener('pointerup',e=>{
-  if(!down||!G||G.over)return;
-  const moved=d2(down.x,down.y,e.clientX,e.clientY);down=null;
-  if(moved>12)return;
-  const gx=(e.clientX-OX)/CS, gy=(e.clientY-OY)/CS;
-  if(G.pickWay){G.route={way:{x:gx,y:gy}};G.pickWay=false;sfx('tick');updatePanel();return}
-  let id=-1;
-  const cx=Math.floor(gx), cy=Math.floor(gy);
-  if(cx>=0&&cy>=0&&cx<G.cols&&cy<G.rows)id=G.reg[cy*G.cols+cx];
-  if(id<0){let bd=3.5;for(const r of G.regions){const dd=d2(r.cx,r.cy,gx,gy);if(dd<bd){bd=dd;id=r.id}}}
-  if(id<0||id===G.sel)closePanel();else openPanel(id);
+// ---------- entrada: girar, zoom e toque ----------
+const ptrs=new Map();let drag=null, pinch=null;
+cv.addEventListener('pointerdown',e=>{
+  try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});audio();
+  if(ptrs.size===1)drag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:false};
+  else if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:d2(a.x,a.y,b.x,b.y)||1,z:CAM.zoom};drag=null}
 });
+cv.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId))return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()];CAM.zoom=clamp(pinch.z*d2(a.x,a.y,b.x,b.y)/pinch.d,.7,3.2);return}
+  if(!drag)return;
+  if(!drag.moved&&d2(drag.sx,drag.sy,e.clientX,e.clientY)>8)drag.moved=true;
+  if(drag.moved){CAM.lon-=(e.clientX-drag.x)/CAM.R;CAM.lat=clamp(CAM.lat+(e.clientY-drag.y)/CAM.R,-1.35,1.35)}
+  drag.x=e.clientX;drag.y=e.clientY;
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId);
+  if(pinch){if(ptrs.size<2)pinch=null;drag=null;return}
+  if(drag&&!drag.moved&&e.type==='pointerup')handleTap(e.clientX,e.clientY);
+  drag=null;
+}
+cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
+cv.addEventListener('wheel',e=>{e.preventDefault();CAM.zoom=clamp(CAM.zoom*Math.exp(-e.deltaY*.0015),.7,3.2)},{passive:false});
+function handleTap(px,py){
+  if(!G||G.over)return;
+  const v=unproject(px,py);
+  if(!v){closePanel();return}
+  if(G.pickWay){G.route={way:v};G.pickWay=false;sfx('tick');updatePanel();return}
+  let id=G.reg[cellOf(v)];
+  if(id<0){let bd=3.5;for(const r of G.regions){const dd=gd(r.v,v);if(dd<bd){bd=dd;id=r.id}}}
+  if(id<0||id===G.sel)closePanel();else openPanel(id);
+}
 $('#pClose').onclick=closePanel;
+$('#bHome').onclick=()=>{if(G){lookAt(G.home);CAM.zoom=1}};
 $('#bSpeed').onclick=()=>{G.speed=G.speed>=3?1:G.speed+1;$('#bSpeed').textContent=G.speed+'×'};
 $('#bPause').onclick=()=>{G.paused=!G.paused;$('#bPause').textContent=G.paused?'▶':'II';$('#bPause').setAttribute('aria-label',G.paused?'Continuar':'Pausar');toast(G.paused?'Jogo pausado.':'Jogo retomado.')};
 $('#bTech').onclick=()=>{renderTech();$('#ovTech').hidden=false};
@@ -850,7 +963,13 @@ $('#bHow').onclick=()=>$('#ovHow').hidden=false;
 $('#bHowClose').onclick=()=>$('#ovHow').hidden=true;
 $('#bAgain').onclick=()=>{$('#ovEnd').hidden=true;$('#ovStart').hidden=false;G=null};
 $('#bStart').onclick=()=>{audio();$('#ovStart').hidden=true;newGame();$('#bSpeed').textContent='1×';$('#bPause').textContent='II'};
-document.addEventListener('keydown',e=>{if(!G||G.over)return;if(e.key===' '){$('#bPause').click();e.preventDefault()}if(e.key==='Escape')closePanel()});
+document.addEventListener('keydown',e=>{if(!G||G.over)return;
+  if(e.key===' '){$('#bPause').click();e.preventDefault()}
+  if(e.key==='Escape')closePanel();
+  const st=.08;
+  if(e.key==='ArrowLeft')CAM.lon-=st;if(e.key==='ArrowRight')CAM.lon+=st;
+  if(e.key==='ArrowUp')CAM.lat=clamp(CAM.lat+st,-1.35,1.35);if(e.key==='ArrowDown')CAM.lat=clamp(CAM.lat-st,-1.35,1.35);
+});
 
 const fc=$('#factionChoices');
 FACTIONS.forEach((f,i)=>{const b=document.createElement('button');b.type='button';b.className='choice'+(i===chosenFaction?' sel':'');
@@ -876,11 +995,14 @@ function tick(now){
     while(dt>0){const s=Math.min(.05,dt);update(s);dt-=s;if(G.over)break}
     G.shake=Math.max(0,G.shake-real*1.5);
   }
+  if(!G)CAM.lon+=real*.05;   // o planeta gira devagar na tela inicial
   if(G){hudT-=real;if(hudT<=0){hudT=.2;updateHUD();updatePanel();if(!$('#ovTech').hidden)renderTechLight()}}
   draw(now);
 }
-function renderTechLight(){const P=G.factions[G.player];$('#techList').querySelectorAll('button[data-t]').forEach(b=>{b.disabled=P.money<techCost(P.tech[b.dataset.t])})}
-layout();requestAnimationFrame(frame);
+layout();
+let glOk=false;try{glOk=initGL()}catch(e){console.error(e)}
+if(!glOk)toast('Seu navegador não conseguiu ativar o WebGL, necessário para desenhar o globo.','bad');
+requestAnimationFrame(frame);
 
 })();
 </script>
