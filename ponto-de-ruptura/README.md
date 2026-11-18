@@ -11,7 +11,7 @@ Abra `index.html` no navegador. Não precisa de instalação nem de servidor.
 - **Anexe** regiões neutras ou em ruínas que façam fronteira com as suas. Cada território coletado rende na hora ¤4 por milhão de habitantes, além de aumentar a renda contínua.
 - A **tensão** sobe com o tempo e a cada provocação. Lançamentos só ficam liberados a partir de 50.
 - Cada ataque alimenta o **Inverno**, que escurece o mapa e deixa os rivais mais cautelosos. Ele não encerra a partida.
-- **Pesquisa**: Economia (+30% de renda por nível), Alcance, Propulsão, Escudos e Ogivas, três níveis cada.
+- **Pesquisa**: Economia (+¤0,6/s fixos por nível, que bombas não reduzem), Alcance, Propulsão, Escudos e Ogivas, três níveis cada.
 - **Modo Cúpula**: vence quem tiver a maior população quando a Cúpula de Paz se reunir (10 minutos de jogo) ou a última nação de pé.
 - **Modo Sobrevivência**: sem relógio. A partida só acaba quando sobrar uma única nação. Depois de 8 minutos a guerra escala: o alcance dos mísseis e a agressividade de todos crescem com o tempo, e ruínas com radiação acima de 30% não podem ser reocupadas.
 

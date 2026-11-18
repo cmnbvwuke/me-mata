@@ -170,7 +170,7 @@ button.danger{background:#4a1220;border-color:var(--danger);color:#ffe6e9}
       <li>Arraste para girar o globo e use pinça (ou a roda do mouse) para zoom. O botão ⌖ volta para a sua nação.</li>
       <li>Toque numa região para ver detalhes e agir.</li>
       <li><b>Silos</b> guardam até 3 mísseis e recarregam sozinhos. <b>Escudos</b> já nascem com 1 míssil de defesa, guardam até 2 e disparam contra mísseis estrangeiros que passam por perto.</li>
-      <li>Pesquise <b>Economia</b> para o tesouro crescer mais rápido.</li>
+      <li>Pesquise <b>Economia</b> para ganhar renda extra fixa (+¤0,6/s por nível), que bombas não conseguem reduzir.</li>
       <li><b>Anexe</b> regiões neutras ou em ruínas que façam fronteira (por terra ou mar próximo) com as suas. Cada território coletado rende ¤4 por milhão de habitantes na hora, além de aumentar sua renda.</li>
       <li>A <b>tensão</b> sobe com o tempo e a cada provocação. Lançamentos só são possíveis a partir de 50.</li>
       <li>Cada ataque alimenta o <b>Inverno</b>, que escurece o mapa e deixa os rivais mais cautelosos.</li>
@@ -247,7 +247,7 @@ const DIFF=[
 ];
 const COST={silo:60, shield:45}, BONUS_PER_MI=4;
 const TECH=[
-  {id:'economy',name:'Economia',    desc:'O tesouro cresce 30% mais rápido por nível.'},
+  {id:'economy',name:'Economia',    desc:'+¤0,6 por segundo a cada nível, fixo. Bombas não reduzem esse bônus.'},
   {id:'range',  name:'Alcance',     desc:'Mísseis voam mais longe.'},
   {id:'speed',  name:'Propulsão',   desc:'Mísseis chegam mais rápido e escapam de escudos.'},
   {id:'shield', name:'Escudos',     desc:'Interceptação mais precisa e com raio maior.'},
@@ -386,7 +386,9 @@ const canAnnex=(fid,r)=>r.owner<0&&!(G.mode==='survival'&&r.ruin&&r.rad>.3)&&G.r
 // ---------- ações ----------
 // o escudo já nasce com 1 míssil de defesa pronto
 const newShield=()=>({ammo:1,reload:0,cd:0});
-const incomeOf=f=>popOf(f.id)*.042*(1+.3*f.tech.economy)*(f.isPlayer?1:G.diff.income);
+// a renda da Economia é um valor fixo por nível: bombas reduzem a população, mas não esse bônus
+const ECON_PER_LVL=.6;
+const incomeOf=f=>(popOf(f.id)*.042+ECON_PER_LVL*f.tech.economy)*(f.isPlayer?1:G.diff.income);
 function build(r,kind){
   const f=G.factions[r.owner];
   if(!f||r.ruin||r[kind]||f.money<COST[kind])return false;
