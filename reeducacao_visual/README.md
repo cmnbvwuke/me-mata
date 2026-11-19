@@ -40,9 +40,10 @@ Depois de baixado o modelo, **tudo roda offline**.
 python main.py                              # tela inicial dramática
 python main.py --video torajo.mp4           # já pré-seleciona o vídeo
 python main.py --video ep1.mp4 ep2.mp4      # playlist
-python main.py --sem-webcam                 # modo demo: o cursor do mouse finge ser seus olhos
+python main.py --sem-webcam                 # modo demo: o cursor do mouse finge ser seus olhos (botão direito = piscar)
 python main.py --camera 1                   # outra webcam
 python main.py --sem-voz --sem-laranja      # sem voz / sem o overlay de cílios
+python main.py --piscou-voltou              # Modo Pálpebra Proibida: cada piscada volta 10 s
 python main.py --direto --video x.mp4       # pula a tela inicial
 ```
 
@@ -59,13 +60,14 @@ o app é offline de propósito.
 | Minimizar / trocar de janela | Pausa + *"Covarde detectado. Voltando à terapia..."* e a janela tenta voltar |
 | Botão de desistência escondido (procure no canto) | *"Fraqueza detectada. Reiniciando o vídeo do zero."* |
 | Fechou os olhos | Conta como desvio. Piscar é tolerado; dormir não |
+| Piscou | Sempre entra no **contador de piscadas** (HUD e certificado). No **Modo Pálpebra Proibida** (opção na tela inicial ou `--piscou-voltou`), cada piscada **volta o vídeo 10 s** e desconta do progresso. Durante a punição o vídeo já está pausado, então a piscada só é contada |
 | Digitou `LARANJA` | Sai de verdade e recebe o certificado de **Desistência Honrosa** |
 
 A **barra de progresso** só avança enquanto seus olhos estão na tela e o vídeo está rodando.
 O período de tolerância de 1,5 s não conta. No final sai um **Certificado de Sobrevivência**
 (dá para salvar em PNG) com tempo total, tempo efetivo, taxa de comprometimento, desvios,
 tempo de punição, tentativas de fuga, maior sequência de atenção, volume máximo e uma nota
-de S+ a F.
+de S+ a F, além de piscadas por minuto e segundos perdidos piscando.
 
 **Extras:** voz sintetizada passivo-agressiva (QtTextToSpeech ou `pyttsx3`, se houver engine
 instalada) e o **Modo Laranja Mecânica**: pálpebras gigantes presas por grampos com cílios
@@ -79,7 +81,8 @@ tremendo nas bordas da tela. São só pixels, ninguém encosta no seu olho.
 - **yaw / pitch da cabeça**, pela decomposição da matriz de rotação (`cv2.RQDecomp3x3`);
 - **posição horizontal da íris**, projetando o centro da íris (468/473) no segmento entre os cantos do olho;
 - **olhar para cima/baixo**, pelos blendshapes `eyeLookUp*` / `eyeLookDown*`;
-- **olho fechado**, pelo blendshape `eyeBlink*`.
+- **olho fechado**, pelo blendshape `eyeBlink*`;
+- **piscadas**, por um detector à parte (`BlinkDetector`) que lê o valor bruto de `eyeBlink*` com histerese. Fechar e reabrir em até 0,6 s conta como piscada; fechar por mais tempo é cochilo e cai na regra de desvio.
 
 Antes do vídeo há uma **calibração** de 3 s (você encara um alvo no centro). Todas as métricas
 são comparadas com essa referência, porque a webcam quase nunca fica no centro do monitor.

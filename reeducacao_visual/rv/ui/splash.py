@@ -34,6 +34,7 @@ class SessionOptions:
     voice: bool = True
     use_webcam: bool = True
     camera_index: int = C.CAMERA_INDEX
+    blink_rewind: bool = False
 
 
 STYLE = f"""
@@ -63,7 +64,7 @@ class SplashWindow(QWidget):
         self.setObjectName("splash")
         self.setWindowTitle(f"{C.TITLE} — {C.SUBTITLE}")
         self.setStyleSheet(STYLE)
-        self.resize(1000, 860)
+        self.resize(1000, 900)
         self._opts = preset
 
         root = QVBoxLayout(self)
@@ -130,10 +131,15 @@ class SplashWindow(QWidget):
         self.cb_voice.setChecked(preset.voice)
         self.cb_webcam = QCheckBox("Rastreamento ocular via webcam (desmarque = modo demo: o mouse finge ser seus olhos)")
         self.cb_webcam.setChecked(preset.use_webcam)
+        self.cb_blink = QCheckBox(
+            f"Modo Pálpebra Proibida: cada piscada volta o vídeo {C.BLINK_REWIND_S:.0f} segundos "
+            "(o contador de piscadas funciona sempre)"
+        )
+        self.cb_blink.setChecked(preset.blink_rewind)
         self.cb_consent = QCheckBox("Eu consinto livremente com esta experiência ridícula e sei a palavra de segurança.")
         self.cb_consent.setStyleSheet(f"color:{C.RED}; font-weight:bold;")
         self.cb_consent.toggled.connect(self._refresh)
-        for cb in (self.cb_laranja, self.cb_voice, self.cb_webcam, self.cb_consent):
+        for cb in (self.cb_laranja, self.cb_voice, self.cb_webcam, self.cb_blink, self.cb_consent):
             root.addWidget(cb)
 
         root.addStretch()
@@ -183,5 +189,6 @@ class SplashWindow(QWidget):
                 voice=self.cb_voice.isChecked(),
                 use_webcam=self.cb_webcam.isChecked(),
                 camera_index=self._opts.camera_index,
+                blink_rewind=self.cb_blink.isChecked(),
             )
         )

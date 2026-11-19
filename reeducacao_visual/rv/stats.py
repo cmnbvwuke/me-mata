@@ -25,6 +25,10 @@ class SessionStats:
     give_ups: int = 0                # cliques no botão de desistência escondido
     max_volume: float = 0.0
     longest_streak: float = 0.0      # maior sequência contínua olhando
+    blink_count: int = 0             # piscadas detectadas durante o vídeo
+    blink_rewinds: int = 0           # vezes que o vídeo voltou por piscada
+    blink_rewound_s: float = 0.0     # segundos de vídeo perdidos piscando
+    blink_rewind_mode: bool = False
     _streak: float = 0.0
     completed: bool = False
     safeword_used: bool = False
@@ -39,6 +43,10 @@ class SessionStats:
             self._streak = 0.0
         if punished:
             self.punishment_time += dt
+
+    @property
+    def blinks_per_minute(self) -> float:
+        return self.blink_count / (self.total_time / 60) if self.total_time > 1 else 0.0
 
     @property
     def commitment(self) -> float:

@@ -58,3 +58,29 @@ def test_no_face_and_helpers():
     assert b.yaw == 2
     s = smooth(GazeMetrics(yaw=179), GazeMetrics(yaw=-179), 0.5)  # atravessa ±180 sem pular
     assert abs(abs(s.yaw) - 180) < 1.5
+
+
+def _feed_blinks(det, scores, fps=30.0, baseline=0.0):
+    """Alimenta uma sequência de notas de olho fechado; retorna nº de piscadas detectadas."""
+    return sum(det.update(s, i / fps, baseline) for i, s in enumerate(scores))
+
+
+def test_blink_detector_counts_quick_blinks():
+    from rv.gaze import BlinkDetector
+
+    open_, closed = [0.05] * 10, [0.8] * 5          # 5 frames ≈ 170 ms fechado
+    assert _feed_blinks(BlinkDetector(), open_ + closed + open_ + closed + open_) == 2
+
+
+def test_blink_detector_ignores_long_closure_noise_and_hysteresis():
+    from rv.gaze import BlinkDetector
+
+    open_ = [0.05] * 10
+    assert _feed_blinks(BlinkDetector(), open_ + [0.9] * 45 + open_) == 0   # 1,5 s = cochilo
+    assert _feed_blinks(BlinkDetector(), open_ + [0.40] * 5 + open_) == 0   # abaixo do limiar
+    # oscila perto do limiar sem reabrir de verdade: não conta várias vezes
+    assert _feed_blinks(BlinkDetector(), open_ + [0.5, 0.36, 0.5, 0.36, 0.5] + open_) == 1
+    # rosto some com o olho fechado: não afirma nada
+    assert _feed_blinks(BlinkDetector(), open_ + [0.8, 0.8, None] + open_) == 0
+    # pessoa de olhos naturalmente "meio fechados": limiar sobe com a calibração
+    assert _feed_blinks(BlinkDetector(), [0.35] * 10 + [0.5] * 4 + [0.35] * 10, baseline=0.35) == 0

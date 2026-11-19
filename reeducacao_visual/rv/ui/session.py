@@ -8,6 +8,7 @@ Regras do jogo:
   * Minimizar/trocar de janela -> pausa e "Covarde detectado".
   * Atalhos (ESC, Alt+F4, Ctrl+W, espaço, setas...) viram broncas.
   * Botão de desistência escondido -> reinicia o vídeo do zero.
+  * Piscadas são contadas; no Modo Pálpebra Proibida cada uma volta o vídeo 10s.
   * Palavra de segurança (config.SAFEWORD) -> sai DE VERDADE. Sempre.
 
 O que este programa NÃO faz (de propósito): não instala hooks de teclado no
@@ -78,7 +79,8 @@ class SessionWindow(QWidget):
         self.setStyleSheet(f"QWidget#session{{background:{C.BLACK};}} QLabel{{background:transparent;}}")
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-        self.stats = SessionStats()
+        self.stats = SessionStats(blink_rewind_mode=opts.blink_rewind)
+        self._last_blink_voice = 0.0
         self.monitor = AttentionMonitor(C.LOOK_AWAY_TOLERANCE_S, C.LOOK_BACK_REQUIRED_S)
         self.voice = Voice(opts.voice)
         self.phase = _Phase.CALIBRATING
@@ -247,6 +249,7 @@ class SessionWindow(QWidget):
         self.tracker.sample.connect(self._on_sample)
         self.tracker.preview.connect(self.camera.set_image)
         self.tracker.failed.connect(self._on_tracker_failed)
+        self.tracker.blink.connect(self._on_blink)
         if not self.opts.use_webcam:
             self.camera.view.setText("MODO DEMO\no mouse é\nseus olhos")
 
@@ -330,6 +333,27 @@ class SessionWindow(QWidget):
         self.toast.pop(random.choice(C.RESUME_MESSAGES))
         self._apply_playback()
 
+    def _on_blink(self):
+        """Uma piscada completa. Sempre conta; no Modo Pálpebra Proibida, rebobina."""
+        if self.phase != _Phase.RUNNING:
+            return
+        self.stats.blink_count += 1
+        if not self.opts.blink_rewind or self.monitor.is_punished or self.escape_paused:
+            return  # vídeo já está pausado: castigo em dobro seria crueldade (de verdade)
+        pos = self.player.position()
+        back_ms = min(pos, int(C.BLINK_REWIND_S * 1000))
+        self.player.setPosition(pos - back_ms)
+        back = back_ms / 1000
+        self.video_effective = max(0.0, self.video_effective - back)
+        self.stats.blink_rewinds += 1
+        self.stats.blink_rewound_s += back
+        msg = random.choice(C.BLINK_REWIND_MESSAGES).format(s=C.BLINK_REWIND_S)
+        self.toast.pop(f"⏪ {msg}", 1800)
+        now = time.monotonic()
+        if now - self._last_blink_voice > 6:  # a voz não acompanha o ritmo das suas pálpebras
+            self._last_blink_voice = now
+            self.voice.say(msg)
+
     def _on_give_up(self):
         if self.phase != _Phase.RUNNING:
             return
@@ -380,6 +404,11 @@ class SessionWindow(QWidget):
     def eventFilter(self, obj: QObject, e: QEvent) -> bool:
         if self.phase == _Phase.FINISHED or QApplication.activeModalWidget() is not None:
             return False
+        # modo demo: botão direito do mouse = piscar
+        if (not self.opts.use_webcam and e.type() == QEvent.Type.MouseButtonPress
+                and e.button() == Qt.MouseButton.RightButton):
+            self.tracker.blink.emit()
+            return True
         if e.type() == QEvent.Type.ShortcutOverride:
             e.accept()      # nenhum atalho global do Qt dispara durante a sessão
             return True
@@ -502,7 +531,9 @@ class SessionWindow(QWidget):
             f"{ep}Efetivo <span style='color:{C.RED}'>{fmt_time(self.video_effective)}</span>"
             f" / {fmt_time(dur)} · Total na cadeira {fmt_time(s.total_time)}"
             f" · Desvios <span style='color:{C.RED}'>{s.look_away_count}</span>"
-            f" · Punição {fmt_time(s.punishment_time)}"
+            f" · Piscadas <span style='color:{C.RED}'>{s.blink_count}</span>"
+            + (f" (⏪ −{fmt_time(s.blink_rewound_s)})" if self.opts.blink_rewind else "")
+            + f" · Punição {fmt_time(s.punishment_time)}"
             f" · <i style='color:#a08a80'>veredito: {reason}</i>"
         )
         self.lbl_volume.setText(f"VOLUME {self.volume * 100:.0f}%")

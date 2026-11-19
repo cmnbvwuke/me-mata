@@ -139,6 +139,40 @@ def classify(m: GazeMetrics | None, base: GazeMetrics) -> tuple[bool, str]:
     return True, "olhando (bom menino)"
 
 
+class BlinkDetector:
+    """
+    Detecta piscadas: a nota de "olho fechado" sobe acima do limiar e volta
+    a cair (com histerese) em até BLINK_MAX_DURATION_S. Usa o valor bruto
+    (sem suavização), senão uma piscada de 150 ms some na média.
+    Olho fechado por muito tempo não é piscada; é cochilo, e quem cuida
+    disso é a máquina de atenção.
+    """
+
+    def __init__(self, close_thr: float = C.BLINK_EVENT_CLOSE,
+                 hysteresis: float = C.BLINK_HYSTERESIS,
+                 max_duration: float = C.BLINK_MAX_DURATION_S):
+        self.close_thr = close_thr
+        self.hysteresis = hysteresis
+        self.max_duration = max_duration
+        self._closed_since: float | None = None
+
+    def update(self, score: float | None, now: float, baseline: float = 0.0) -> bool:
+        """Retorna True no frame em que uma piscada completa é detectada."""
+        if score is None:  # rosto sumiu no meio: não dá pra afirmar nada
+            self._closed_since = None
+            return False
+        close = max(self.close_thr, baseline + 0.25)
+        if self._closed_since is None:
+            if score >= close:
+                self._closed_since = now
+            return False
+        if score <= close - self.hysteresis:
+            duration = now - self._closed_since
+            self._closed_since = None
+            return duration <= self.max_duration
+        return False
+
+
 def baseline_from(samples: list[GazeMetrics]) -> GazeMetrics:
     """Mediana das amostras de calibração (robusta a piscadas)."""
     med = statistics.median
@@ -160,6 +194,7 @@ class GazeTracker(QThread):
     sample = pyqtSignal(object)    # GazeSample
     preview = pyqtSignal(QImage)   # miniatura com os olhos marcados
     failed = pyqtSignal(str)
+    blink = pyqtSignal()           # uma piscada completa (fechou e abriu)
 
     def __init__(self, camera_index: int = C.CAMERA_INDEX, model_path=C.MODEL_PATH):
         super().__init__()
@@ -223,6 +258,7 @@ class GazeTracker(QThread):
         t0 = time.monotonic()
         last_ts = -1
         smoothed: GazeMetrics | None = None
+        blinks = BlinkDetector()
         frame_no = 0
         try:
             while self._running:
@@ -253,6 +289,8 @@ class GazeTracker(QThread):
                     base = self._baseline
 
                 looking, reason = classify(smoothed, base)
+                if blinks.update(raw.blink if raw else None, time.monotonic(), base.blink):
+                    self.blink.emit()
                 self.sample.emit(
                     GazeSample(looking, smoothed is not None, reason, smoothed, time.monotonic())
                 )
@@ -291,12 +329,14 @@ class MouseGazeTracker(QObject):
     """
     Substituto para quem não tem webcam (ou quer testar a interface).
     "Olhando" = cursor do mouse dentro da região central da tela.
+    "Piscar" = clique com o botão direito (a sessão emite o sinal).
     Mesma interface de sinais do GazeTracker.
     """
 
     sample = pyqtSignal(object)
     preview = pyqtSignal(QImage)
     failed = pyqtSignal(str)
+    blink = pyqtSignal()
 
     def __init__(self, *_, **__):
         super().__init__()

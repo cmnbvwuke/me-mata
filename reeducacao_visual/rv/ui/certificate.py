@@ -65,6 +65,9 @@ class CertificateCanvas(QWidget):
             ("Cliques no botão de desistência", str(s.give_ups)),
             ("Maior sequência de atenção", fmt_time(s.longest_streak)),
             ("Volume máximo atingido", f"{s.max_volume * 100:.0f}%"),
+            ("Piscadas (por minuto)", f"{s.blink_count} ({s.blinks_per_minute:.0f}/min)"),
+            ("Retrocessos por piscada",
+             f"{s.blink_rewinds} (−{fmt_time(s.blink_rewound_s)})" if s.blink_rewind_mode else "modo desligado"),
         ]
         p.setFont(QFont("DejaVu Sans Mono", 13))
         y = 230
@@ -75,7 +78,7 @@ class CertificateCanvas(QWidget):
             p.drawLine(100, int(y + 22), 640, int(y + 22))
             p.setPen(QColor(C.RED))
             p.drawText(QRectF(470, y, 170, 28), Qt.AlignmentFlag.AlignRight, value)
-            y += 34
+            y += 29
 
         # carimbo da nota
         grade, comment = s.verdict()

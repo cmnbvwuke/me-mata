@@ -15,6 +15,7 @@ Uso:
     python main.py --video a.mp4 b.mp4     # playlist
     python main.py --sem-webcam            # modo demo: o mouse finge ser seus olhos
     python main.py --camera 1              # outra webcam
+    python main.py --piscou-voltou         # cada piscada volta o vídeo 10 segundos
     python main.py --direto --video x.mp4  # pula a tela inicial (consentimento implícito: você digitou o comando)
 """
 
@@ -39,6 +40,8 @@ def parse_args(argv=None):
     ap.add_argument("--camera", type=int, default=C.CAMERA_INDEX, help="índice da webcam (padrão 0)")
     ap.add_argument("--sem-voz", action="store_true", help="desliga a voz passivo-agressiva")
     ap.add_argument("--sem-laranja", action="store_true", help="desliga o overlay de cílios")
+    ap.add_argument("--piscou-voltou", action="store_true",
+                    help=f"Modo Pálpebra Proibida: cada piscada volta o vídeo {C.BLINK_REWIND_S:.0f}s")
     ap.add_argument("--direto", action="store_true", help="pula a tela inicial (exige --video)")
     return ap.parse_args(argv)
 
@@ -54,6 +57,7 @@ def main(argv=None) -> int:
         voice=not args.sem_voz,
         use_webcam=not args.sem_webcam,
         camera_index=args.camera,
+        blink_rewind=args.piscou_voltou,
     )
     windows = {}
 

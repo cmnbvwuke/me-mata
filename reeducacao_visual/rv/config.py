@@ -43,7 +43,14 @@ MAX_PITCH_DEG = 18.0       # cabeça para cima/baixo
 MAX_IRIS_H_OFFSET = 0.13   # deslocamento horizontal da íris (0..1 do olho)
 MAX_EYE_V_OFFSET = 0.40    # olhar para cima/baixo (blendshapes)
 BLINK_CLOSED = 0.55        # acima disso, consideramos olho fechado
-SMOOTHING = 0.35           # EMA: 0 = sem suavização, 1 = congelado
+SMOOTHING = 0.35
+
+# Piscadas (detector separado: fecha e abre rápido = piscada;
+# fechado por muito tempo = cochilo, quem pune é a máquina de atenção)
+BLINK_EVENT_CLOSE = 0.45     # nota de "olho fechado" que caracteriza a piscada
+BLINK_HYSTERESIS = 0.15      # precisa cair até CLOSE - isto para contar como reaberto
+BLINK_MAX_DURATION_S = 0.6   # mais que isso não é piscada
+BLINK_REWIND_S = 10.0        # Modo Pálpebra Proibida: quanto o vídeo volta por piscada           # EMA: 0 = sem suavização, 1 = congelado
 CAMERA_INDEX = 0
 CAMERA_FPS = 30
 
@@ -112,5 +119,15 @@ VOICE_LINES_ON_START = [
 CALIBRATION_TEXT = (
     "CALIBRAÇÃO\n\nEncare o centro da tela.\nNão pisque. Sim, é sério."
 )
+
+BLINK_REWIND_MESSAGES = [
+    "Piscou. Volta {s:.0f} segundos. Regras são regras.",
+    "Pálpebra não autorizada detectada. Rebobinando.",
+    "Você piscou. O Torajo viu. Volta tudo.",
+    "Piscar é um privilégio. Você não tem privilégios.",
+    "Mais uma piscada, mais {s:.0f} segundos de reeducação. Obrigado pela preferência.",
+    "Seus olhos fecharam por 0,2 s e isso custou {s:.0f} s. Vale a pena?",
+    "Rebobinando... porque você não aguenta 1 minuto sem piscar.",
+]
 
 NO_FACE_MESSAGE = "Rosto não encontrado. Você se escondeu embaixo da mesa?"
