@@ -23,7 +23,16 @@ vermelha, o volume sobe e um software julga você.
 
 ---
 
-## Instalação
+## Início rápido (um clique)
+
+1. Instale o **Python 3.10+** ([python.org](https://www.python.org/downloads/); no Windows marque *Add to PATH*).
+2. Baixe e descompacte a pasta.
+3. **Windows:** dois cliques em `iniciar.bat` · **Linux/Mac:** `./iniciar.sh`
+
+A primeira execução instala tudo sozinha (alguns minutos). Depois abre direto e funciona offline.
+Argumentos funcionam igual: `iniciar.bat --piscou-voltou`.
+
+## Instalação manual
 
 ```bash
 cd reeducacao_visual
