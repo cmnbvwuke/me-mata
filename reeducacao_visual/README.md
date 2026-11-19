@@ -27,10 +27,29 @@ vermelha, o volume sobe e um software julga você.
 
 1. Instale o **Python 3.10+** ([python.org](https://www.python.org/downloads/); no Windows marque *Add to PATH*).
 2. Baixe e descompacte a pasta.
-3. **Windows:** dois cliques em `iniciar.bat` · **Linux/Mac:** `./iniciar.sh`
+3. **Windows:** dois cliques em `iniciar.bat` (se o Windows bloquear, veja abaixo) · **Qualquer sistema:** `python iniciar.py` · **Linux/Mac:** `./iniciar.sh`
 
 A primeira execução instala tudo sozinha (alguns minutos). Depois abre direto e funciona offline.
 Argumentos funcionam igual: `iniciar.bat --piscou-voltou`.
+
+### O Windows bloqueou? ("Controle Inteligente de Aplicativos" / SmartScreen)
+
+O Windows 11 bloqueia arquivos `.bat` baixados da internet. Use uma destas saídas:
+
+1. **Iniciador em Python (recomendado):** abra a pasta no Explorador, clique na barra de
+   endereço, digite `cmd` e Enter. Na janela preta:
+   ```
+   python iniciar.py
+   ```
+   (ou `py iniciar.py`). Faz exatamente o mesmo que o `iniciar.bat`.
+2. **Desbloquear o zip antes de extrair:** botão direito no `.zip` → *Propriedades* →
+   marque **Desbloquear** → *OK*, e só então extraia. Os arquivos deixam de ser
+   tratados como "baixados da internet".
+3. **Se for a tela azul do SmartScreen** ("O Windows protegeu o computador"):
+   *Mais informações* → *Executar assim mesmo*.
+
+⚠️ **Não desligue o Controle Inteligente de Aplicativos** por causa disso: depois de
+desligado, o Windows só deixa religar reinstalando o sistema.
 
 ## Instalação manual
 

@@ -1,0 +1,23 @@
+SISTEMA DE REEDUCACAO VISUAL v1.0 - E UMA BRINCADEIRA. Palavra de seguranca: LARANJA
+
+O Windows bloqueou o iniciar.bat? ("Controle Inteligente de Aplicativos")
+
+1) Instale o Python 3.10+ em https://www.python.org/downloads/
+   (marque "Add python.exe to PATH" na instalacao).
+
+2) Abra esta pasta no Explorador de Arquivos, clique na barra de endereco,
+   digite  cmd  e aperte Enter.
+
+3) Na janela preta, digite:
+
+       python iniciar.py
+
+   (ou:  py iniciar.py)
+
+A primeira vez instala tudo sozinho (alguns minutos). Depois abre direto.
+
+Alternativa: antes de extrair o .zip, clique com o botao direito nele,
+Propriedades, marque "Desbloquear", OK, e entao extraia.
+
+NAO desligue o Controle Inteligente de Aplicativos: depois de desligado,
+o Windows so deixa religar reinstalando o sistema.
