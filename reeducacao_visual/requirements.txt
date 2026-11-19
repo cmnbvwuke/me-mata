@@ -1,0 +1,6 @@
+PyQt6>=6.6
+opencv-python>=4.8
+mediapipe>=0.10.14
+numpy>=1.24
+# Opcional: voz alternativa caso o QtTextToSpeech não tenha engine no seu sistema
+# pyttsx3>=2.90

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+# Modelo baixado por `python -m rv.model` (≈3.7 MB)
+models/*.task
+models/*.part
+certificado_sobrevivencia_*.png
